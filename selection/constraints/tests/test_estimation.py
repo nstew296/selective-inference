@@ -6,9 +6,11 @@ from selection.constraints.estimation import (softmax,
                                               gaussian_cumulant,
                                               gaussian_cumulant_conjugate,
                                               gaussian_cumulant_known,
-                                              gaussian_cumulant_conjugate_known)
+                                              gaussian_cumulant_conjugate_known,
+                                              selective_MLE)
 
 from selection.constraints.affine import constraints
+from selection.algorithms.lasso import lasso, instance
 
 def test_softmax():
 
@@ -137,3 +139,12 @@ def test_gaussian_known():
     M = conj.smooth_objective(G, 'grad')
     np.testing.assert_allclose(sufficient_stat, M)
 
+def test_selective_MLE():
+
+    X, y, beta, active, sigma = instance()
+    L = lasso.gaussian(X, y, 15., sigma=sigma)
+    L.fit()
+
+    print(selective_MLE(np.identity(len(L.active)), L.onestep_estimator, L.constraints))
+    print(L.soln[L.active])
+    print(beta[L.active])

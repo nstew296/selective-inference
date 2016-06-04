@@ -5,19 +5,36 @@ from scipy.linalg import cho_solve, cho_factor
 class softmax_conjugate(rr.smooth_atom):
 
     """
-
     Objective function that computes the value of 
 
     .. math..
 
         \inf_{\mu: A\mu \leq b} \frac{1}{2} \|y-z\|^2_2 + \sum_{i=1}^n \log(1 + 1 /(b_i - a_i^T\mu))
 
+    Its minimizer solves
+
+    .. math::
+
+        \text{min.}_{\mu} -y^Tz + \frac{1}{2} \|z\|^2_2 + \sum_{i=1}^n \log(1 + 1 /(b_i - a_i^T\mu))
+
+    Its value is
+
+    .. math::
+
+        -\frac{1}{2}\|y\|^2_2 - w^*(y)
+
+    where $w^*$ is the convex conjugate of the function
+
+    .. math::
+
+        w(r) = \frac{1}{2} \|r\|^2_2 + \sum_{i=1}^n \log(1 + 1 /(b_i - a_i^Tr))
+
     """
 
     def __init__(self, 
                  affine_con, 
                  feasible_point,
-                 sigma=1.,
+                 sigma_inv=None, # if None, assumes identity
                  offset=None,
                  quadratic=None,
                  initial=None):
@@ -30,7 +47,7 @@ class softmax_conjugate(rr.smooth_atom):
 
         self.affine_con = affine_con
         self.feasible_point = feasible_point
-        self.sigma = sigma
+        self.sigma_inv = sigma_inv
 
     def smooth_objective(self, natural_param, mode='func', check_feasibility=False):
 
@@ -51,7 +68,7 @@ class softmax_conjugate(rr.smooth_atom):
 
         affine_con = self.affine_con
 
-        loss = softmax(affine_con, sigma=self.sigma)
+        loss = softmax(affine_con, sigma_inv=self.sigma_inv)
 
         L = rr.identity_quadratic(0, 0, -natural_param, 0) # linear_term
         A = affine_con.linear_part
@@ -59,6 +76,7 @@ class softmax_conjugate(rr.smooth_atom):
         mean_param = self.feasible_point.copy()
         step = 1. / self.sigma
         f_cur = np.inf
+
         for i in range(niter):
             G = -natural_param + loss.smooth_objective(mean_param, 'grad')
             proposed = mean_param - step * G
@@ -91,14 +109,14 @@ class softmax(rr.smooth_atom):
 
     .. math..
 
-        \mu \mapsto \frac{1}{2\sigma^2} \|\mu\|^2 + 
-        \sum_{i=1}^n \log(1 + \sigma /(b_i - a_i^T\mu))
+        r \mapsto \frac{1}{2}r^T\Sigma^{-1}r +
+        \sum_{i=1}^n \log(1 + \sigma /(b_i - a_i^Tr))
 
     """
 
     def __init__(self, 
                  affine_con, 
-                 sigma=1.,
+                 sigma_inv=None, #if None, assumes identity
                  feasible_point=None,
                  offset=None,
                  quadratic=None,
@@ -112,7 +130,7 @@ class softmax(rr.smooth_atom):
 
         self.affine_con = affine_con
         self.feasible_point = feasible_point
-        self.sigma = sigma
+        self.sigma_inv = sigma_inv
 
     def smooth_objective(self, 
                          mean_param, 
@@ -127,10 +145,14 @@ class softmax(rr.smooth_atom):
         if np.any(slack < 0):
             raise ValueError('point not feasible')
 
-        value = ((np.log(slack + self.sigma) - np.log(slack)).sum() + 
-                 (mean_param**2).sum() / (2 * self.sigma**2))
-        grad = (-A.T.dot(1. / (slack + self.sigma) - 1. / slack) + 
-                 mean_param / self.sigma**2)
+        if self.sigma_inv is not None:
+            sigmainv_mean = self.sigma_inv.dot(mean_param)
+        else:
+            sigmainv_mean = mean_param
+        value = ((np.log(slack + 1.) - np.log(slack)).sum() + 
+                 (mean_param * sigmainv_mean).sum() / 2.)
+        grad = (-A.T.dot(1. / (slack + 1.) - 1. / slack) + 
+                 sigmainv_mean)
 
         if mode == 'func':
             return self.scale(value)
@@ -566,4 +588,69 @@ class optimal_tilt(rr.smooth_atom):
         self.optimal_point = np.dot(self.design, self.soln)
         self.reweight_func = -self.affine_con.solve(self.optimal_point)
         return self.optimal_point
+
+def selective_MLE(X, 
+                  y, 
+                  constraints, 
+                  smoothing_term=1.e-4,
+                  sigma_inv=None,
+                  step=1.e-3,
+                  niter=500,
+                  tol=1.e-7):
+    """
+    Solves selective MLE
+
+    Parameters
+    ----------
+
+    smoothing_term
+    """
+
+    affine_constraint = rr.zero_constraint.affine(X, X.T.dot(y))
+    Q = rr.identity_quadratic(smoothing_term, 0, 0, 0)
+    smoothed_constraint = affine_constraint.smoothed(Q)
+
+    if (not np.allclose(constraints.covariance, np.identity(y.shape[0]))
+        and sigma_inv is None):
+        sigma_inv = np.linalg.inv(constraints.covariance)
+
+    softmax_objective = softmax(constraints,
+                                sigma_inv=sigma_inv,
+                                feasible_point=y)
+
+    loss = rr.smooth_sum([softmax_objective,
+                          smoothed_constraint])
+
+    A = constraints.linear_part
+    b = constraints.offset
+    natural_param = y
+    mean_param = natural_param.copy()
+    f_cur = np.inf
+
+    for i in range(niter):
+        G = -natural_param + loss.smooth_objective(mean_param, 'grad')
+        proposed = mean_param - step * G
+        slack = b - A.dot(proposed) 
+        if i % 5 == 0:
+            step *= 2.
+        if np.any(slack < 0):
+            step *= 0.5
+        else:
+
+            f_proposed = (-(natural_param * proposed).sum() +
+                           loss.smooth_objective(proposed, 'func'))
+
+            if f_proposed > f_cur * (1 + tol):
+                step *= 0.5
+            else:
+                mean_param = proposed
+                if np.fabs(f_cur - f_proposed) < tol * max([1, 
+                                                            np.fabs(f_cur), 
+                                                            np.fabs(f_proposed)]):
+                    break
+                f_cur = f_proposed
+
+    saturated_estimator = softmax_objective.smooth_objective(mean_param, 'grad')
+    estimator = np.linalg.pinv(X).dot(saturated_estimator)
+    return estimator
 

@@ -1,0 +1,156 @@
+\documentclass{article}
+
+
+\usepackage[round]{natbib}
+\usepackage{amsmath,amssymb,amsthm,bm,enumerate,mathrsfs,mathtools}
+\usepackage{latexsym,color,verbatim,multirow}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\newcommand{\real}{\mathbb{R}}
+
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+
+\begin{document}
+
+We want to solve
+$$
+\text{minimize}_{\beta} \bar{w}^*(X\beta) - \beta^T(X^Ty) - \log \pi (\beta)
+$$
+where we can ignore the prior for now.
+
+Above, 
+$$
+\bar{w}(r) = \frac{1}{2} \|r\|^2_2 + \sum_{i=1}^k \log(1 + 1 /(b_i - a_i^Tr))
+$$
+
+Make the substitution $\mu=X\beta$ and form the Lagrangian
+$$
+L(\beta,\mu;r) = \bar{w}^*(\mu) - \beta^T(X^Ty) - \log \pi (\beta) + r^T(X\beta-\mu).
+$$
+
+Now, we minimize over $\beta$ yielding
+$$
+- \nabla \log \pi(\hat{\beta}) = X^T(y-r).
+$$
+With a flat prior this yields the constraint $X^Tr=X^Ty$, otherwise, we should plug it back in. If the prior was Gaussian this is straightforward. So, suppose it was Gaussian with variance
+$\tau^2$, then we would have
+$$
+\hat{\beta} = \tau^2 X^T(y-r).
+$$
+
+Plugging this back in yields a value
+$$
+-\frac{\tau^2}{2}(y-r)^TXX^T(y-r).
+$$
+
+Now, we minimize over $\mu$, yielding
+$-\bar{w}(r)$ by a standard conjugacy calculation.
+
+So, we have a dual problem of
+$$
+\text{minimize}_r \frac{\tau^2}{2}(r-y)^TXX^T(r-y) + \frac{1}{2} \|r\|^2_2 + \sum_{i=1}^k \log(1 + 1 /(b_i - a_i^Tr)).
+$$
+
+Sending $\tau^2 \to \infty$ (i.e. a flat prior) yields the problem
+$$
+\text{minimize}_{r:X^Tr=X^Ty} \frac{1}{2} \|r\|^2_2 + \sum_{i=1}^k \log(1 + 1 /(b_i - a_i^Tr)).
+$$
+
+\section{Solving for $\hat{\beta}$}
+
+Having solved the problem and having found the optimal $\hat{r}$ we can find the optimal
+$\hat{\mu}$ as
+$$
+\hat{\mu} = \nabla \bar{w}(\hat{r})
+$$
+and the optimal $\beta$ is 
+$$
+X^{\dagger}\hat{\mu}.
+$$
+
+\section{General covariance}
+
+Above, we did the special case of identity covariance. Let's try a general form.
+So, suppose our likelihood was $y|\beta \sim N(X\beta, \Sigma)$ with
+$\Sigma$ assumed invertible.  
+
+Our $\beta$ problem takes the form
+$$
+\text{minimize}_{\beta} \frac{1}{2}(y-X\beta)^T\Sigma^{-1}(y-X\beta) - h(X\beta) - \log \pi(\beta)
+$$
+where
+$$
+h(X\beta) = \inf_{r} \frac{1}{2}(r-X\beta)^T\Sigma^{-1}(r-X\beta) +  \sum_{i=1}^k \log(1 + 1 /(b_i - a_i^Tr)) 
+$$
+The general calculation we had before says that the $\beta$ problem is the same as solving
+$$
+\text{minimize}_{\beta} \bar{w}^*(X\beta) - \beta^T\Sigma^{-1}(X^Ty) - \log \pi (\beta)
+$$
+where
+$$
+\bar{w}(r) = \frac{1}{2}r^T\Sigma^{-1}r + \sum_{i=1}^k \log(1 + 1 /(b_i - a_i^Tr)) 
+$$
+
+Making the same substituion, using the same Lagrangian and having the same Gaussian prior on $\beta$ yields
+$$
+\hat{\beta} = \tau^2 (\Sigma^{-1} X^Ty-X^Tr)
+$$
+and plugging this in yields the  value
+$$
+\frac{\tau^2}{2}\|\Sigma^{-1} X^Ty-X^Tr\|^2_2
+$$
+Hence, our dual problem is
+$$
+\text{minimize}_r \frac{\tau^2}{2}\|\Sigma^{-1} X^Ty-X^Tr\|^2_2 + \frac{1}{2}r^T\Sigma^{-1}r +  \sum_{i=1}^k \log(1 + 1 /(b_i - a_i^Tr)).
+$$
+
+Solving this problem is the same as solving
+$$
+\text{minimize}_r -\tau^2 r^TX\Sigma^{-1}Xy + \frac{\tau^2}{2} r^TXX^Tr + \frac{1}{2}r^T\Sigma^{-1}r +  \sum_{i=1}^k \log(1 + 1 /(b_i - a_i^Tr)).
+$$
+With a flat prior, the problem is
+$$
+\text{minimize}_{r:X^Tr=X^Ty} \frac{1}{2}r^T\Sigma^{-1}r +  \sum_{i=1}^k \log(1 + 1 /(b_i - a_i^Tr)).
+$$
+
+Finding $\mu$ is identical
+$$
+\hat{\mu} = \nabla \bar{w}(\hat{r})
+$$
+and
+$$
+\hat{\beta}=X^{\dagger}\hat{\mu}.
+$$
+
+\subsection{Noninvertible $\Sigma$}
+
+If $\Sigma$ is not invertible, then we pick up a row space constraint and
+$$
+\bar{w}(r) = \frac{1}{2}r^T\Sigma^{\dagger}r +  \sum_{i=1}^k \log(1 + 1 /(b_i - a_i^Tr)) + I_{\text{row}(\Sigma)}(r).
+$$
+Also, in this case, our MLE should probably have the constraint that $X\beta$ is in $\text{row}(\Sigma)$. Or, more simply that $\text{col}(X) \subset \text{row}(\Sigma)$.
+
+In terms of solving for $\hat{\mu}$, I guess we might need to think briefly about the equation
+$
+\hat{\mu} = \nabla \bar{w}(\hat{r})$ but it seems OK because it was just conjugacy.
+
+\subsection{Flat prior simplification}
+
+With a flat prior, we need to solve a convex problem with a linear constraint. Given a matrix $U$ whose columns
+form a basis for the null space of $X$, we can rewrite this
+as an unconstrained problem $r=P_{\text{col}(X)}y + Uz=Py+Uz$ and solving
+$$
+\text{minimize}_z  \frac{1}{2}(Py+Uz)^T\Sigma^{-1}(Py+Uz) +  \sum_{i=1}^k \log(1 + 1 /(b_i - a_i^T(Py+Uz))).
+$$
+Having found $\hat{z}$, we can then find $\hat{r}$ and everything else follows.
+
+\end{document}
+
+
+
+
