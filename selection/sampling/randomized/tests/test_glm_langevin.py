@@ -123,8 +123,8 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     # subgrad part
     linear_term[nactive:][:,subgrad_slice] = linear_term[nactive:][:,subgrad_slice] + np.diag(penalty.lagrange * penalty.weights[inactive])
 
-    affine_term = np.zeros(p)
-    affine_term[:nactive] = penalty.lagrange * penalty.weights[active] * active_signs
+    offset_term = np.zeros(p)
+    offset_term[:nactive] = penalty.lagrange * penalty.weights[active] * active_signs
 
     # define the gradient
 
@@ -132,7 +132,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
                       lam=lam, epsilon=epsilon, ndata=ndata, active=active, inactive=inactive):
 
         # affine reconstruction map
-        omega = linear_term.dot(state) + affine_term
+        omega = linear_term.dot(state) + offset_term
 
         if randomization_dist == "laplace":
             randomization_derivative = np.sign(omega)/randomization_scale
