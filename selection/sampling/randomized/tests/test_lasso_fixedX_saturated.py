@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 import regreg.api as rr
 
 
-def selection(X, y, random_Z, sigma=1):
+def selection(X, y, random_Z, randomization_scale=1, sigma=1):
     n, p = X.shape
     loss = randomized.gaussian_Xfixed(X, y)
     epsilon = 1. / np.sqrt(n)
@@ -19,9 +19,12 @@ def selection(X, y, random_Z, sigma=1):
     penalty = randomized.selective_l1norm_lan(p, lagrange=lam)
 
     # initial solution
+
     problem = rr.simple_problem(loss, penalty)
-    random_term = rr.identity_quadratic(epsilon, 0,
-                                        -random_Z, 0)
+    random_term = rr.identity_quadratic(epsilon, 0, randomization_scale * random_Z, 0)
+    solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
+
+
     solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
     initial_soln = problem.solve(random_term, **solve_args)
     active = (initial_soln != 0)

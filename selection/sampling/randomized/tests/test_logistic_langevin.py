@@ -136,6 +136,53 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
         return np.concatenate((data, projected_betaE, projected_cube), 0)
 
 
+    # added
+
+    mle_slice = slice(0, nactive)
+    null_slice = slice(nactive, p)
+    beta_slice = slice(p, p + nactive)
+    subgrad_slice = slice(p + nactive, 2 * p)
+
+    linear_term = np.zeros((p, 2 * p))
+    # hessian part
+    H = loss.hessian[:, active]
+    linear_term[:, mle_slice] = -H
+    linear_term[:, beta_slice] = H
+    # null part
+    linear_term[nactive:][:, null_slice] = -np.identity(ninactive)
+    # quadratic part
+    linear_term[:nactive, beta_slice] += epsilon * np.identity(nactive)
+    # subgrad part
+    linear_term[nactive:, subgrad_slice] += lam*np.identity(ninactive)
+
+    affine_term = np.zeros(p)
+    affine_term[:nactive] = lam*signs
+    #print linear_term
+    #print 'lambda times signs', affine_term[:nactive]
+
+    # define the gradient
+
+    def full_gradient1(state, linear_term=linear_term, affine_term=affine_term, Sigma_full_inv=Sigma_full_inv):
+
+        # affine reconstruction map
+        omega = -(linear_term.dot(state) + affine_term)
+
+        if randomization_dist == "laplace":
+            randomization_derivative = np.sign(omega) / randomization_scale
+
+        if randomization_dist == "logistic":
+            omega_scaled = omega / randomization_scale
+            randomization_derivative = -(np.exp(-omega_scaled) - 1) / (np.exp(-omega_scaled) + 1)
+            randomization_derivative /= randomization_scale
+
+        _gradient = linear_term.T.dot(randomization_derivative)
+
+        # now add in the Gaussian derivative
+
+        _gradient[:p] -= np.dot(Sigma_full_inv, data)
+
+        return _gradient
+
     def full_gradient(vec_state, loss=loss, penalty = penalty, Sigma_full_inv=Sigma_full_inv,
                       lam=lam, epsilon=epsilon, ndata=ndata, active=active, inactive=inactive):
         nactive = np.sum(active); ninactive=np.sum(inactive)
@@ -179,7 +226,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
         return _gradient
 
 
-    null, alt = pval(init_vec_state, full_gradient, full_projection,
+    null, alt = pval(init_vec_state, full_gradient1, full_projection,
                       Sigma_full[:nactive, :nactive], data, nonzero, active,
                      Langevin_steps, burning, step_size)
 

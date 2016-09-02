@@ -13,7 +13,8 @@ plt.ion()
 
 
 def joint_Gaussian_parameters(X, y, active, signs, j, epsilon, lam, sigma, tau):
-
+    """ Sigma_inv_mu computed for beta_{E,j}^*=0
+    """
     n, p = X.shape
     nactive = np.sum(active)
     ninactive = p-nactive
@@ -167,16 +168,20 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
             eta_norm_sq = np.linalg.norm(eta)**2
             observed_vector[0] = np.inner(eta, y)
 
-            beta_mle[j] = compute_mle(observed_vector.copy(), Sigma_full[j], Sigma_inv[j], Sigma_inv_mu[j],
-                                      sigma, nactive, ninactive, signs, eta_norm_sq)
+            #beta_mle[j] = compute_mle(observed_vector.copy(), Sigma_full[j], Sigma_inv[j], Sigma_inv_mu[j],
+            #                          sigma, nactive, ninactive, signs, eta_norm_sq)
 
 
     print "MLE", beta_mle
+
+    beta_mle = np.zeros(nactive)
 
     _, _, all_observed, all_variances, all_samples = test_lasso(X, y, nonzero, sigma, lam, epsilon, active, betaE,
                                                                 cube, random_Z,
                                                                 beta_reference=beta_mle,
                                                                 randomization_distribution="normal")
+
+
 
     if set(nonzero).issubset(active_set):
         for j, idx in enumerate(active_set):
@@ -186,7 +191,7 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
             eta_norm_sq = np.linalg.norm(eta)**2
             observed_vector[0] = np.inner(eta, y)
 
-            param_values = np.linspace(-20, 20, num=300)
+            param_values = np.linspace(-10, 10, num=400)
             log_sel_prob_param = np.zeros(param_values.shape[0])
 
             #for i in range(param_values.shape[0]):
@@ -199,19 +204,24 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
 
             obs = np.inner(eta, y) # same as np.inner(eta, y)
             sd = np.linalg.norm(eta)*sigma
+
             indicator = np.array(all_samples[j,:]<all_observed[j], dtype =int)
+            #indicator = np.array(np.abs(all_samples[j, :]) > all_observed[j], dtype=int)
 
             pop = all_samples[j,:]
             variance = all_variances[j]
+            #print "variance", variance
+            #print (np.linalg.norm(eta)**2)*sigma
             log_sel_prob_ref = log_selection_probability(beta_mle[j].copy(), Sigma_full[j].copy(), Sigma_inv[j].copy(), Sigma_inv_mu[j].copy(),
                                                          sigma,
                                                          nactive, ninactive, signs, betaE, eta_norm_sq)
 
-            def pvalue_by_tilting(param_value, variance=variance, pop=pop, indicator=indicator):
+            def pvalue_by_tilting(param_value, variance=variance, pop=pop, indicator=indicator,
+                                  ref_param = beta_mle[j]):
                  log_sel_prob_param = log_selection_probability(param_value, Sigma_full[j], Sigma_inv[j], Sigma_inv_mu[j],
                                                                 sigma,
                                                                 nactive, ninactive, signs, betaE, eta_norm_sq)
-                 log_LR = pop*param_value/(2*variance)-param_value**2/(2*variance)
+                 log_LR = pop*(param_value-ref_param)/(2*variance)-(param_value**2-ref_param**2)/(2*variance)
                  log_LR += log_sel_prob_ref - log_sel_prob_param
                  return np.clip(np.sum(np.multiply(indicator, np.exp(log_LR)))/ indicator.shape[0], 0,1)
 
@@ -252,7 +262,7 @@ total_coverage = 0
 total_number = 0
 
 
-for i in range(50):
+for i in range(30):
     print "\n"
     print "iteration", i
     coverage, nactive = intervals()
