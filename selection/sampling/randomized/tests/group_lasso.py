@@ -42,6 +42,7 @@ def test_lasso(s=3, n=200, p=10):
     problem = rr.simple_problem(loss, penalty)
     random_term = rr.identity_quadratic(epsilon, 0,
                                         -random_Z, 0)
+
     solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
     initial_sol = problem.solve(random_term, **solve_args)
 
