@@ -32,13 +32,15 @@ def test_mv(s=5, n=200, p=20, randomization_scale=1., randomization_dist="laplac
     solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
 
     initial_soln = problem.solve(random_term, **solve_args)
-    initial_grad = loss.gradient(initial_soln)
 
     samplers = []
-    group_lasso_sampler = randomized.group_lasso_sampler(loss, initial_soln, epsilon, penalty)
+    group_lasso_sampler = randomized.group_lasso.group_lasso_sampler(loss, initial_soln, epsilon, penalty)
     samplers.append(group_lasso_sampler)
     data_length = samplers[0].data_length
-    multiple_views = randomized.multiple_views(samplers, np.identity(data_length), np.identity(data_length))
+    multiple_views = randomized.multiple_views.multiple_views(samplers, np.identity(data_length), np.identity(data_length))
+
+    ## now run the Langevin
+
 
     return
 
