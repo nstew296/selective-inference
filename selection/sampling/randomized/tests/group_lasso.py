@@ -21,7 +21,7 @@ def test_lasso(s=3, n=200, p=10):
     lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
     random_Z = randomization.rvs(p)
 
-    groups = [0,0,1,1,2,2,3,3,4,4]
+    groups = [0,1,2,3,4,5,6,7,8,9]
     ngroups  = np.unique(groups).shape[0]
     print 'ngroups', ngroups
 
@@ -186,7 +186,7 @@ def test_lasso(s=3, n=200, p=10):
 
         _gradient = np.zeros(ndata + nactive_groups+ninactive_vars)
         _gradient[:ndata] = - (data - np.dot(X, sign_vec))
-        _gradient_log_jacobian = gradient_log_jac(gamma_active)
+        _gradient_log_jacobian = 0 # gradient_log_jac(gamma_active)
         _gradient[ndata:(ndata + nactive_groups)] = - np.dot(_mat_gamma.T, sign_vec) + _gradient_log_jacobian
         _gradient[(ndata + nactive_groups):] = - np.dot(mat_z.T, sign_vec)
 
@@ -194,7 +194,7 @@ def test_lasso(s=3, n=200, p=10):
 
 
     null, alt = pval(init_vec_state, full_gradient, full_projection,
-                      X, y, nonzero, active_vars)
+                      X, y, nonzero, active_vars, Langevin_steps=10000, burning=2000, step_size=1./p)
 
     return null, alt
 
