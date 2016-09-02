@@ -10,3 +10,4 @@ from .sampler_high_dim import selective_sampler_MH_high_dim
 from .sampler_lan_logistic import selective_sampler_MH_lan_logistic
 from .sampler_kac_rice import kac_rice_sampler
 from .multiple_views import multiple_views
+from .samplers import group_lasso

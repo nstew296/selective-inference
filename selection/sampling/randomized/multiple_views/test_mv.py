@@ -19,6 +19,7 @@ def test_mv(s=5, n=200, p=20, randomization_scale=1., randomization_dist="laplac
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), lam * np.ones(p))),
                              lagrange=1.)
+
     if randomization_dist == "laplace":
         randomization = laplace(loc=0, scale=1.)
         random_Z = randomization.rvs(p)
@@ -33,7 +34,11 @@ def test_mv(s=5, n=200, p=20, randomization_scale=1., randomization_dist="laplac
     initial_soln = problem.solve(random_term, **solve_args)
     initial_grad = loss.gradient(initial_soln)
 
-    multiple_views = randomized.multiple_views()
+    samplers = []
+    group_lasso_sampler = randomized.group_lasso_sampler(loss, initial_soln, epsilon, penalty)
+    samplers.append(group_lasso_sampler)
+    data_length = samplers[0].data_length
+    multiple_views = randomized.multiple_views(samplers, np.identity(data_length), np.identity(data_length))
 
     return
 
