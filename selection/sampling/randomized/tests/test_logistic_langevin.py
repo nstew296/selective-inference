@@ -9,7 +9,7 @@ import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=0, n=200, p=5, Langevin_steps=10000, burning=2000,
+def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
                randomization_dist = "laplace", randomization_scale=1,
                covariance_estimate="nonparametric"):
 
@@ -145,22 +145,33 @@ def test_lasso(s=0, n=200, p=5, Langevin_steps=10000, burning=2000,
     linear_term = np.zeros((p, 2 * p))
     # hessian part
     H = loss.hessian[:, active]
+    #H = np.zeros_like(H_temp)
+    #H[:nactive,:] = H_temp[active,:].copy()
+    #H[nactive:, :] = H_temp[inactive,:].copy()
+
     linear_term[:, mle_slice] = -H
     linear_term[:, beta_slice] = H
     # null part
-    linear_term[nactive:, null_slice] = -np.identity(ninactive)
+    #print linear_term
+    linear_term[inactive, null_slice] -= np.identity(ninactive)
     # quadratic part
-    linear_term[:nactive, beta_slice] += epsilon * np.identity(nactive)
+    linear_term[active, beta_slice] += epsilon * np.identity(nactive)
     # subgrad part
-    linear_term[nactive:, subgrad_slice] += lam*np.identity(ninactive)
+    linear_term[inactive, subgrad_slice] += lam*np.identity(ninactive)
 
+    #print linear_term
+    #print "lam", lam
     affine_term = np.zeros(p)
-    affine_term[:nactive] = lam*signs
+    affine_term[active] = lam*signs
     #print linear_term
     #print 'lambda times signs', affine_term[:nactive]
 
     # define the gradient
     print "omega", -(linear_term.dot(init_vec_state)+affine_term)
+    #print "omega", np.dot(-H,beta_unpenalized)+np.dot(linear_term[:, null_slice], N)+\
+    #               np.dot(linear_term[:,beta_slice], betaE)\
+    #               +linear_term[:, subgrad_slice].dot(cube)+affine_term
+
     opt_vars = [betaE, cube]
     params, _, opt_vec = penalty.form_optimization_vector(opt_vars)  # opt_vec=\epsilon(\beta 0)+u, u=\grad P(\beta), P penalty
 
@@ -172,7 +183,7 @@ def test_lasso(s=0, n=200, p=5, Langevin_steps=10000, burning=2000,
     ninactive = cube.shape[0]
 
     omega = -(gradient + opt_vec)
-    print omega
+    print "omega mine", omega
     print 'random_Z', random_Z
 
 
@@ -188,7 +199,7 @@ def test_lasso(s=0, n=200, p=5, Langevin_steps=10000, burning=2000,
             omega_scaled = omega / randomization_scale
             randomization_derivative = -(np.exp(-omega_scaled) - 1) / (np.exp(-omega_scaled) + 1)
             randomization_derivative /= randomization_scale
-        _gradient = np.zeros(2*p)
+
         _gradient = linear_term.T.dot(randomization_derivative)
 
         # now add in the Gaussian derivative
@@ -240,7 +251,7 @@ def test_lasso(s=0, n=200, p=5, Langevin_steps=10000, burning=2000,
         return _gradient
 
 
-    null, alt = pval(init_vec_state, full_gradient1, full_projection,
+    null, alt = pval(init_vec_state, full_gradient, full_projection,
                       Sigma_full[:nactive, :nactive], data, nonzero, active,
                      Langevin_steps, burning, step_size)
 

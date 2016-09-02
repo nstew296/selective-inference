@@ -127,17 +127,17 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     linear_term[:,beta_slice] = H
 
     # null part
-    linear_term[nactive:][:,null_slice] = -np.identity(ninactive)
+    linear_term[inactive][:,null_slice] = -np.identity(ninactive)
 
     # quadratic part
-    linear_term[:nactive][:,beta_slice] = linear_term[:nactive][:,beta_slice] + epsilon * np.identity(nactive)
+    linear_term[active][:,beta_slice] = linear_term[active][:,beta_slice] + epsilon * np.identity(nactive)
 
     # subgrad part
-    linear_term[nactive:][:,subgrad_slice] = linear_term[nactive:][:,subgrad_slice] + np.diag(penalty.lagrange * inactive_weight)
+    linear_term[inactive][:,subgrad_slice] = linear_term[inactive][:,subgrad_slice] + np.diag(penalty.lagrange * inactive_weight)
 
     affine_term = np.zeros(p)
-    affine_term[:nactive] = penalty.lagrange * active_weight * active_signs
-    print 'lambda times signs', affine_term[:nactive]
+    affine_term[active] = penalty.lagrange * active_weight * active_signs
+
     # define the gradient
 
     print 'omega', linear_term.dot(init_state)+affine_term
