@@ -203,7 +203,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
 
         # now add in the Gaussian derivative
 
-        _gradient[:p] -= np.dot(Sigma_full_inv, data)
+        _gradient[:p] -= np.dot(Sigma_full_inv, state[:p])
 
         #print _gradient
 
