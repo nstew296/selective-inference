@@ -140,6 +140,9 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     print 'lambda times signs', affine_term[:nactive]
     # define the gradient
 
+    print 'omega', linear_term.dot(init_state)+affine_term
+    print "random_Z", random_Z
+
     def full_gradient(state, loss=loss, penalty = penalty, Sigma_full_inv=Sigma_full_inv,
                       lam=lam, epsilon=epsilon, ndata=ndata, active=active, inactive=inactive):
 

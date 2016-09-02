@@ -9,7 +9,7 @@ import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
+def test_lasso(s=0, n=200, p=5, Langevin_steps=10000, burning=2000,
                randomization_dist = "laplace", randomization_scale=1,
                covariance_estimate="nonparametric"):
 
@@ -137,7 +137,6 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
 
 
     # added
-
     mle_slice = slice(0, nactive)
     null_slice = slice(nactive, p)
     beta_slice = slice(p, p + nactive)
@@ -149,7 +148,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     linear_term[:, mle_slice] = -H
     linear_term[:, beta_slice] = H
     # null part
-    linear_term[nactive:][:, null_slice] = -np.identity(ninactive)
+    linear_term[nactive:, null_slice] = -np.identity(ninactive)
     # quadratic part
     linear_term[:nactive, beta_slice] += epsilon * np.identity(nactive)
     # subgrad part
@@ -161,6 +160,21 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     #print 'lambda times signs', affine_term[:nactive]
 
     # define the gradient
+    print "omega", -(linear_term.dot(init_vec_state)+affine_term)
+    opt_vars = [betaE, cube]
+    params, _, opt_vec = penalty.form_optimization_vector(opt_vars)  # opt_vec=\epsilon(\beta 0)+u, u=\grad P(\beta), P penalty
+
+    gradient = loss.gradient(data, params)
+    hessian = loss.hessian
+
+    ndata = data.shape[0]
+    nactive = betaE.shape[0]
+    ninactive = cube.shape[0]
+
+    omega = -(gradient + opt_vec)
+    print omega
+    print 'random_Z', random_Z
+
 
     def full_gradient1(state, linear_term=linear_term, affine_term=affine_term, Sigma_full_inv=Sigma_full_inv):
 
@@ -174,12 +188,12 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
             omega_scaled = omega / randomization_scale
             randomization_derivative = -(np.exp(-omega_scaled) - 1) / (np.exp(-omega_scaled) + 1)
             randomization_derivative /= randomization_scale
-
+        _gradient = np.zeros(2*p)
         _gradient = linear_term.T.dot(randomization_derivative)
 
         # now add in the Gaussian derivative
 
-        _gradient[:p] -= np.dot(Sigma_full_inv, data)
+        _gradient[:data.shape[0]] -= np.dot(Sigma_full_inv, data)
 
         return _gradient
 
