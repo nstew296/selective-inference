@@ -10,7 +10,7 @@ import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
 def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
-               randomization_dist = "laplace", randomization_scale=1,
+               randomization_dist = "laplace", randomization_scale=1.,
                covariance_estimate="nonparametric"):
 
     "randomization_dist: laplace or logistic"
@@ -157,7 +157,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     # quadratic part
     linear_term[active, beta_slice] += epsilon * np.identity(nactive)
     # subgrad part
-    linear_term[inactive, subgrad_slice] += lam*np.identity(ninactive)
+    linear_term[inactive, subgrad_slice] += lam * np.identity(ninactive)
 
     #print linear_term
     #print "lam", lam
@@ -186,7 +186,6 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     print "omega mine", omega
     print 'random_Z', random_Z
 
-
     def full_gradient1(state, linear_term=linear_term, affine_term=affine_term, Sigma_full_inv=Sigma_full_inv):
 
         # affine reconstruction map
@@ -204,12 +203,15 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
 
         # now add in the Gaussian derivative
 
-        _gradient[:data.shape[0]] -= np.dot(Sigma_full_inv, data)
+        _gradient[:p] -= np.dot(Sigma_full_inv, data)
+
+        #print _gradient
 
         return _gradient
 
     def full_gradient(vec_state, loss=loss, penalty = penalty, Sigma_full_inv=Sigma_full_inv,
                       lam=lam, epsilon=epsilon, ndata=ndata, active=active, inactive=inactive):
+
         nactive = np.sum(active); ninactive=np.sum(inactive)
 
         data = vec_state[:ndata]
@@ -248,11 +250,15 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
         _gradient[ndata:(ndata + nactive)] = np.dot(A_restricted.T, randomization_derivative)
         _gradient[(ndata + nactive):] = lam * randomization_derivative[inactive]
 
+        #print _gradient
         return _gradient
+
+    print "gradient1", full_gradient1(init_vec_state)
+    print "gradient", full_gradient(init_vec_state)
 
 
     null, alt = pval(init_vec_state, full_gradient1, full_projection,
-                      Sigma_full[:nactive, :nactive], data, nonzero, active,
+                     Sigma_full[:nactive, :nactive], data, nonzero, active,
                      Langevin_steps, burning, step_size)
 
     return null, alt
