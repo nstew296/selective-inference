@@ -251,7 +251,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
         return _gradient
 
 
-    null, alt = pval(init_vec_state, full_gradient, full_projection,
+    null, alt = pval(init_vec_state, full_gradient1, full_projection,
                       Sigma_full[:nactive, :nactive], data, nonzero, active,
                      Langevin_steps, burning, step_size)
 
