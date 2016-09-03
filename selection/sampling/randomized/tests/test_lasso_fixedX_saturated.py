@@ -86,7 +86,7 @@ if __name__ == "__main__":
     randomization_distribution = "normal"
 
     P0, PA = [], []
-    for i in range(10):
+    for i in range(50):
         print "iteration", i
         X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=False, s=s, sigma=1., rho=0)
         #print "true beta", true_beta

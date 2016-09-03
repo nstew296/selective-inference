@@ -175,7 +175,8 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
 
     _, _, all_observed, all_variances, all_samples = test_lasso(X, y, nonzero, sigma, lam, epsilon, active, betaE,
                                                              cube, random_Z, beta_reference=beta_mle,
-                                                             randomization_distribution="normal")
+                                                             randomization_distribution="normal",
+                                                             Langevin_steps=20000, burning=2000)
     true_pvalues = []
     mle_pvalues = []
 
@@ -207,6 +208,7 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
             indicator = np.array(all_samples[j,:]<all_observed[j], dtype =int)
             #indicator = np.array(np.abs(all_samples[j, :]) > all_observed[j], dtype=int)
             mle_pvalue = np.sum(indicator)/float(indicator.shape[0])
+            mle_pvalue = 2*min(mle_pvalue, 1-mle_pvalue)
             print "pvalue at mle", mle_pvalue
             mle_pvalues.append(mle_pvalue)
 
@@ -227,6 +229,7 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
 
 
             pvalue_at_0 = pvalue_by_tilting(truth_index)
+            pvalue_at_0=2 * min(pvalue_at_0, 1 - pvalue_at_0)
             print 'pvalue at the truth', pvalue_at_0
             true_pvalues.append(pvalue_at_0)
 
