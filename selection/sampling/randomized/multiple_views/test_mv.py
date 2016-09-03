@@ -39,10 +39,14 @@ def test_mv(s=5, n=200, p=20, randomization_scale=1., randomization_dist="laplac
     data_length = samplers[0].data_length
     multiple_views = randomized.multiple_views.multiple_views(samplers, np.identity(data_length), np.identity(data_length))
 
-    ## now run the Langevin
+    # now run the Langevin
 
+    # p0,pA = randomized.pvalues_fixedX.pval(multiple_views.init_opt_state, full_gradient, full_projection,
+    #                                        X, y,
+    #                                        nonzero, active,
+    #                                        Langevin_steps, burning, step_sizes)
 
-    return
+    return p0, pA
 
 if __name__ == "__main__":
 
@@ -52,8 +56,8 @@ if __name__ == "__main__":
 
     for i in range(50):
         print "iteration", i
-        p0, pA = test_mv(seed=i)
-        P0.extend(p0);
+        p0, pA = test_mv()
+        P0.extend(p0)
         PA.extend(pA)
         plt.clf()
         plt.xlim([0, 1])

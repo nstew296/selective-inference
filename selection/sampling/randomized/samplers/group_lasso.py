@@ -61,9 +61,10 @@ class group_lasso_sampler(object):
         # solve the restricted problem
 
         X, Y = loss.data
-        if self._is_transform:
-            raise NotImplementedError('to fit restricted model, X must be an ndarray or scipy.sparse; general transforms not implemented')
+        #if self._is_transform:
+        #    raise NotImplementedError('to fit restricted model, X must be an ndarray or scipy.sparse; general transforms not implemented')
         X_E = X[:,active]
+        self.loss=loss
         loss_E = rr.affine_smooth(self.loss, X_E)
         _beta_unpenalized = loss_E.solve(**solve_args)
         beta_full = np.zeros(active.shape)
