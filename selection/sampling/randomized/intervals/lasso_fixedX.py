@@ -24,7 +24,7 @@ def joint_Gaussian_parameters(X, y, active, signs, j, epsilon, lam, sigma, tau):
 
     mat = np.linalg.pinv(X[:, active])
     eta = mat[j, :]
-    eta_norm_sq = np.linalg.norm(eta) **2
+    eta_norm_sq = np.linalg.norm(eta)**2
 
     #from Snigdha's R code:
     #XE = X[:,active]
@@ -171,14 +171,18 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
 
     print "MLE", beta_mle
 
-    #beta_mle = np.zeros(nactive)
+    # beta_mle = np.zeros(nactive)
 
     _, _, all_observed, all_variances, all_samples = test_lasso(X, y, nonzero, sigma, lam, epsilon, active, betaE,
-                                                                cube, random_Z,
-                                                                beta_reference=beta_mle,
-                                                                randomization_distribution="normal")
-
+                                                             cube, random_Z, beta_reference=beta_mle,
+                                                             randomization_distribution="normal")
     true_pvalues = []
+
+    #plt.figure()
+    #probplot(p_values_mle, dist=uniform, sparams=(0, 1), plot=plt, fit=True)
+    #plt.plot([0, 1], color='k', linestyle='-', linewidth=2)
+    #plt.savefig("Pvalues at MLE")
+
 
     if set(nonzero).issubset(active_set):
         for j, idx in enumerate(active_set):
@@ -255,40 +259,43 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
 
     return coverage, nactive, true_pvalues
 
+
 total_coverage = 0
 total_number = 0
+true_pvalues_all = []
 
-
-for i in range(50):
+for i in range(2):
     print "\n"
     print "iteration", i
     coverage, nactive, true_pvalues = intervals()
     if coverage>=0:
         total_coverage += coverage
         total_number += nactive
+        true_pvalues_all.extend(true_pvalues)
 
 print "number covered out of", total_coverage, total_number
 print "total coverage", np.true_divide(total_coverage, total_number)
 
 # plotting the pvalues under the truth
-if true_pvalues[0]<0:
-    print "no p values"
-else:
-    fig = plt.figure()
-    plot_pvalues = fig.add_subplot(111)
-    true_pvalues=np.asarray(true_pvalues, dtype=np.float32)
-    print "true pvalues", true_pvalues
+#    plt.figure()
+#    probplot(true_pvalues, dist=uniform, sparams=(0, 1), plot=plt, fit=True)
+#    plt.plot([0, 1], color='k', linestyle='-', linewidth=2)
+#    plt.savefig("P values at the truth")
 
-    ecdf = sm.distributions.ECDF(true_pvalues)
-    x = np.linspace(min(true_pvalues), max(true_pvalues))
-    y = ecdf(x)
-    plot_pvalues.plot(x, y, '-o', lw=2)
-    plot_pvalues.plot([0, 1], [0, 1], 'k-', lw=2)
-    plot_pvalues.set_title("P values at the truth")
-    plot_pvalues.set_xlim([0,1])
-    plot_pvalues.set_ylim([0,1])
-    plt.show()
-    plt.savefig("P values at the truth")
+fig = plt.figure()
+plot_pvalues = fig.add_subplot(111)
+print true_pvalues_all
+true_pvalues_all=np.asarray(true_pvalues_all, dtype=np.float32)
+ecdf = sm.distributions.ECDF(true_pvalues_all)
+x = np.linspace(min(true_pvalues_all), max(true_pvalues_all))
+y = ecdf(x)
+plot_pvalues.plot(x, y, '-o', lw=2)
+plot_pvalues.plot([0, 1], [0, 1], 'k-', lw=2)
+plot_pvalues.set_title("P values at the truth")
+plot_pvalues.set_xlim([0,1])
+plot_pvalues.set_ylim([0,1])
+plt.show()
+plt.savefig("P values at the truth")
 
 #while True:
 #    plt.pause(0.05)
