@@ -135,7 +135,7 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
     lam, epsilon, active, betaE, cube = selection(X,y, random_Z)
     if lam < 0:
         print "no active covariates"
-        return -1, -1, [-1]
+        return -1, -1, [-1], [-1]
 
     nactive = np.sum(active)
     tau = 1.
@@ -177,7 +177,7 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
                                                              cube, random_Z, beta_reference=beta_mle,
                                                              randomization_distribution="normal")
     true_pvalues = []
-
+    mle_pvalues = []
     #plt.figure()
     #probplot(p_values_mle, dist=uniform, sparams=(0, 1), plot=plt, fit=True)
     #plt.plot([0, 1], color='k', linestyle='-', linewidth=2)
@@ -210,6 +210,7 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
 
             indicator = np.array(all_samples[j,:]<all_observed[j], dtype =int)
             #indicator = np.array(np.abs(all_samples[j, :]) > all_observed[j], dtype=int)
+            mle_pvalues.append(np.sum(indicator)/float(indicator.shape[0]))
 
             pop = all_samples[j,:]
             variance = all_variances[j]
@@ -222,7 +223,7 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
                                   ref_param = beta_mle[j]):
                  param_value = param_values[i]
                  log_sel_prob_param = log_sel_prob_grid[i]
-                 log_LR = np.true_divide(pop*(param_value-ref_param)-(param_value**2-ref_param**2), 2*variance)
+                 log_LR = np.true_divide(pop*(param_value-ref_param)-(param_value**2-(ref_param**2)), 2*variance)
                  log_LR += log_sel_prob_ref - log_sel_prob_param
                  return np.clip(np.sum(np.multiply(indicator, np.exp(log_LR)))/ float(indicator.shape[0]), 0,1)
 
@@ -237,13 +238,11 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
             #plt.title("Tilted p-values")
             #plt.plot(param_values, pvalues)
             #plt.pause(0.01)
-
             #accepted_indices = np.multiply(np.array(pvalues>alpha/2), np.array(pvalues<1.-alpha/2))
             accepted_indices = np.array(pvalues > alpha)
 
             if np.sum(accepted_indices)==0:
-                 L=0
-                 U=0
+                 L, U = 0, 0
             else:
                  L = np.min(param_values[accepted_indices])
                  U = np.max(param_values[accepted_indices])
@@ -257,21 +256,23 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
                  coverage += 1
             print "interval", L, U
 
-    return coverage, nactive, true_pvalues
+    return coverage, nactive, true_pvalues, mle_pvalues
 
 
 total_coverage = 0
 total_number = 0
 true_pvalues_all = []
-
-for i in range(2):
+mle_pvalues_all = []
+for i in range(50):
     print "\n"
     print "iteration", i
-    coverage, nactive, true_pvalues = intervals()
+    coverage, nactive, true_pvalues, mle_pvalues = intervals()
     if coverage>=0:
         total_coverage += coverage
         total_number += nactive
         true_pvalues_all.extend(true_pvalues)
+        mle_pvalues_all.extend(mle_pvalues)
+
 
 print "number covered out of", total_coverage, total_number
 print "total coverage", np.true_divide(total_coverage, total_number)
@@ -283,8 +284,9 @@ print "total coverage", np.true_divide(total_coverage, total_number)
 #    plt.savefig("P values at the truth")
 
 fig = plt.figure()
-plot_pvalues = fig.add_subplot(111)
-print true_pvalues_all
+plot_pvalues = fig.add_subplot(121)
+plot_pvalues1 = fig.add_subplot(122)
+
 true_pvalues_all=np.asarray(true_pvalues_all, dtype=np.float32)
 ecdf = sm.distributions.ECDF(true_pvalues_all)
 x = np.linspace(min(true_pvalues_all), max(true_pvalues_all))
@@ -294,8 +296,20 @@ plot_pvalues.plot([0, 1], [0, 1], 'k-', lw=2)
 plot_pvalues.set_title("P values at the truth")
 plot_pvalues.set_xlim([0,1])
 plot_pvalues.set_ylim([0,1])
+
+
+mle_pvalues_all = np.asarray(mle_pvalues_all, dtype=np.float32)
+ecdf = sm.distributions.ECDF(mle_pvalues_all)
+x = np.linspace(min(mle_pvalues_all), max(mle_pvalues_all))
+y = ecdf(x)
+plot_pvalues1.plot(x, y, '-o', lw=2)
+plot_pvalues1.plot([0, 1], [0, 1], 'k-', lw=2)
+plot_pvalues1.set_title("P values at the MLE")
+plot_pvalues1.set_xlim([0,1])
+plot_pvalues1.set_ylim([0,1])
+
 plt.show()
-plt.savefig("P values at the truth")
+plt.savefig("P values.png")
 
 #while True:
 #    plt.pause(0.05)
