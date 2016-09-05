@@ -3,6 +3,7 @@ import regreg.api as rr
 from regreg.smooth.glm import glm as regreg_glm, logistic_loglike
 import selection.sampling.randomized.api as randomized
 from selection.sampling.langevin_new import projected_langevin
+from selection.algorithms.randomized import logistic_instance
 
 
 class multiple_views(object):
@@ -69,10 +70,9 @@ class multiple_views(object):
 
 
 
+
 if __name__ == "__main__":
 
-
-    from selection.algorithms.randomized import logistic_instance
     #from selection.sampling.randomized.randomization import base
 
     s, n, p = 5, 200, 20
@@ -97,9 +97,12 @@ if __name__ == "__main__":
     print cov.shape
     result = []
 
+
     data_transform = rr.linear_transform(np.identity(p))
+
     sampler = projected_langevin(M_est._initial_data_state, M_est._initial_opt_state,
-                                M_est.gradient, M_est.projection, data_transform, stepsize=1./p)
+                                 M_est.gradient, M_est.projection, data_transform,
+                                 stepsize=1./p)
 
     sampler.next()
 
@@ -107,7 +110,8 @@ if __name__ == "__main__":
     multiple_views = multiple_views(objectives, rr.linear_transform(np.identity(p)), rr.linear_transform(np.identity(p)))
     multiple_views.setup_sampler()
     multiple_sampler = projected_langevin(multiple_views._initial_data_state, multiple_views._initial_opt_state,
-                                           multiple_views.gradient, multiple_views.projection, data_transform, stepsize=1./p)
+                                          multiple_views.gradient, multiple_views.projection, data_transform,
+                                          stepsize=1./p)
 
     multiple_sampler.next()
 
