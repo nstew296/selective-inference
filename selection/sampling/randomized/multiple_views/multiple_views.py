@@ -1,5 +1,8 @@
 import numpy as np
 import regreg.api as rr
+from regreg.smooth.glm import glm as regreg_glm, logistic_loglike
+import selection.sampling.randomized.api as randomized
+from selection.sampling.langevin_new import projected_langevin
 
 
 class multiple_views(object):
@@ -65,3 +68,43 @@ class multiple_views(object):
         return data_grad, opt_grad
 
 
+
+if __name__ == "__main__":
+
+
+    from selection.algorithms.randomized import logistic_instance
+    #from selection.sampling.randomized.randomization import base
+
+    s, n, p = 5, 200, 20
+
+    randomization = randomized.randomization.base.laplace((p,), scale=0.5)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)
+    print 'true_beta', beta
+    nonzero = np.where(beta)[0]
+    lam_frac = 1.
+
+    loss = regreg_glm.logistic(X, y)
+    epsilon = 1.
+
+    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
+    penalty = rr.group_lasso(np.arange(p),
+                             weights=dict(zip(np.arange(p), np.ones(p)*lam)), lagrange=1.)
+
+    M_est = randomized.M_est.glm(loss, epsilon, penalty, randomization)
+    M_est.solve()
+    M_est.setup_sampler()
+    cov = M_est.form_covariance(M_est.target_bootstrap)
+    print cov.shape
+    result = []
+
+    data_transform = rr.linear_transform(np.identity(p))
+    sampler = projected_langevin(M_est._initial_data_state, M_est._initial_state,
+                                M_est.gradient, M_est.projection, data_transform, stepsize=1./p)
+
+    sampler.next()
+
+    for _ in range(10):
+        indices = np.random.choice(n, size=(n,), replace=True)
+        result.append(M_est.bootstrap_score(indices))
+
+    print(np.array(result).shape)

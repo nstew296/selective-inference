@@ -110,5 +110,3 @@ class glm(regreg_glm):
         if not hasattr(self, "_cov"):
             self.bootstrap_covariance()
         return self._cov
-
-
