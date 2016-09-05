@@ -7,62 +7,62 @@ from selection.sampling.langevin_new import projected_langevin
 
 class multiple_views(object):
 
-    def __init__(self, samplers, data_construct_map, data_reconstruct_map):
+    def __init__(self, objectives, data_construct_map, data_reconstruct_map):
 
-        (self.samplers,
+        (self.objectives,
         self.data_construct_map,
-        self.data_reconstruct_map) = (samplers,
+        self.data_reconstruct_map) = (objectives,
                                       data_construct_map,
                                       data_reconstruct_map)
 
-        self.nviews = len(self.samplers)
-
+        self.nviews = len(self.objectives)
+       # print "obj num", self.nviews
 
     def solve(self):
 
         self.initial_soln = []
         for i in range(self.nviews):
-            self.samplers[i].solve()
-            self.initial_soln.append(self.samplers[i].initial_soln)
+            self.objectives[i].solve()
+            self.initial_soln.append(self.objectives[i].initial_soln)
 
 
-    def setup_sampling(self):
+    def setup_sampler(self):
 
         self.num_opt_var, self.num_data_var = 0, 0
         self.opt_slice, self.data_slice = [], []
 
         for i in range(self.nviews):
-            self.samplers[i].setup_sampler()
-            self.opt_slice.append(slice(self.num_opt_var, self.num_opt_var+self.samplers[i].num_opt_var))
-            self.data_slice.append(slice(self.num_data_var, self.num_data_var+self.samplers[i].num_data_var))
-            self.num_opt_var += self.samplers[i].num_opt_var
-            self.num_data_var += self.samplers[i].num_data_var
+            self.objectives[i].setup_sampler()
+            self.opt_slice.append(slice(self.num_opt_var, self.num_opt_var+self.objectives[i].num_opt_var))
+            self.data_slice.append(slice(self.num_data_var, self.num_data_var+self.objectives[i].num_data_var))
+            self.num_opt_var += self.objectives[i].num_opt_var
+            self.num_data_var += self.objectives[i].num_data_var
 
         _init_reconstruct_data_state = np.zeros(self.num_data_var)
-        self.init_opt_state = np.zeros(self.num_opt_var)
+        self._initial_opt_state = np.zeros(self.num_opt_var)
         for i in range(self.nviews):
-            self.init_opt_state[self.opt_slice[i]] = self.samplers[i].init_opt_state
-            _init_reconstruct_data_state[self.data_slice[i]] = self.samplers[i].init_data_state
+            self._initial_opt_state[self.opt_slice[i]] = self.objectives[i]._initial_opt_state
+            _init_reconstruct_data_state[self.data_slice[i]] = self.objectives[i]._initial_data_state
 
-        self.data_state = self.data_construct_map.affine_map(_init_reconstruct_data_state)
+        self._initial_data_state = self.data_construct_map.affine_map(_init_reconstruct_data_state)
 
 
     def projection(self, opt_state):
         new_opt_state = np.zeros_like(opt_state)
         for i in range(self.nviews):
-            new_opt_state[self.opt_slice[i]] = self.samplers[i].projection(opt_state[self.opt_slice[i]])
+            new_opt_state[self.opt_slice[i]] = self.objectives[i].projection(opt_state[self.opt_slice[i]])
         return new_opt_state
 
 
-    def gradient(self, data_state, opt_state):
+    def gradient(self, data_state, opt_state, data_transform):
         opt_grad, data_grad = np.zeros_like(data_state), np.zeros_like(opt_state)
         _data_reconstruct = self.data_reconstruct_map.affine_map(data_state)
         _reconstruct_data_grad = np.zeros(self.num_data_var)
         for i in range(self.nviews):
             data = _data_reconstruct[self.data_slice[i]]
-            data_transform = rr.linear_transform(np.identity(data.shape[0]))
+            #data_transform = rr.linear_transform(np.identity(data.shape[0]))
             _reconstruct_data_grad[self.data_slice[i]], opt_grad[self.opt_slice[i]] =\
-                self.samplers[i].gradient(data, data_transform, opt_state[self.opt_slice[i]])
+                self.objectives[i].gradient(data, opt_state[self.opt_slice[i]], data_transform)
 
         data_grad = self.data_construct_map.affine_map(_reconstruct_data_grad)
         return data_grad, opt_grad
@@ -98,10 +98,18 @@ if __name__ == "__main__":
     result = []
 
     data_transform = rr.linear_transform(np.identity(p))
-    sampler = projected_langevin(M_est._initial_data_state, M_est._initial_state,
+    sampler = projected_langevin(M_est._initial_data_state, M_est._initial_opt_state,
                                 M_est.gradient, M_est.projection, data_transform, stepsize=1./p)
 
     sampler.next()
+
+    objectives = [M_est]
+    multiple_views = multiple_views(objectives, rr.linear_transform(np.identity(p)), rr.linear_transform(np.identity(p)))
+    multiple_views.setup_sampler()
+    multiple_sampler = projected_langevin(multiple_views._initial_data_state, multiple_views._initial_opt_state,
+                                           multiple_views.gradient, multiple_views.projection, data_transform, stepsize=1./p)
+
+    multiple_sampler.next()
 
     for _ in range(10):
         indices = np.random.choice(n, size=(n,), replace=True)

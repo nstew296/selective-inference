@@ -103,7 +103,7 @@ class M_estimator(object):
         initial_subgrad = -(self.loss.smooth_objective(self.initial_soln, 'grad') + self._random_term.objective(self.initial_soln, 'grad'))
         initial_subgrad = initial_subgrad[inactive]
         initial_unpenalized = self.initial_soln[unpenalized]
-        self._initial_state = np.concatenate([initial_scalings,
+        self._initial_opt_state = np.concatenate([initial_scalings,
                                               initial_unpenalized,
                                               initial_subgrad], axis=0)
 
@@ -178,7 +178,7 @@ class M_estimator(object):
         self._initial_data_state = np.zeros(p)
         self._initial_data_state[Mest_slice] = _beta_unpenalized
         self._initial_data_state[null_slice] = - self.loss.smooth_objective(self.initial_soln, 'grad')[inactive]
-
+        self.num_data_var = p
 
         # two transforms that encode score and optimization
         # variable roles
