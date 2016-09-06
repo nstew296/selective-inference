@@ -29,7 +29,7 @@ def selection(X, y, random_Z, randomization_scale=1, sigma=1):
     initial_soln = problem.solve(random_term, **solve_args)
     active = (initial_soln != 0)
     if np.sum(active) == 0:
-        return -1, -1, np.nan, np.nan, np.nan
+        return -1, -1, np.nan, np.nan, np.nan, np.nan
     initial_grad = loss.smooth_objective(initial_soln, mode='grad')
     betaE, cube = penalty.setup_sampling(initial_grad,
                                          initial_soln,
@@ -37,7 +37,7 @@ def selection(X, y, random_Z, randomization_scale=1, sigma=1):
                                          epsilon)
 
     #active = penalty.active_set
-    return lam, epsilon, active, betaE, cube
+    return lam, epsilon, active, betaE, cube, initial_soln
 
 
 

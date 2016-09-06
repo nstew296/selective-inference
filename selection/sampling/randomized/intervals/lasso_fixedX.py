@@ -289,7 +289,7 @@ fig = plt.figure()
 plot_pvalues = fig.add_subplot(121)
 plot_pvalues1 = fig.add_subplot(122)
 
-true_pvalues_all=np.asarray(true_pvalues_all, dtype=np.float32)
+true_pvalues_all = np.asarray(true_pvalues_all, dtype=np.float32)
 ecdf = sm.distributions.ECDF(true_pvalues_all)
 x = np.linspace(min(true_pvalues_all), max(true_pvalues_all))
 y = ecdf(x)
