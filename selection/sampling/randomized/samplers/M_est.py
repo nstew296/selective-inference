@@ -246,7 +246,8 @@ class M_estimator(object):
         full_state = (data_transform.affine_map(data_state) +
                       self.opt_transform.affine_map(opt_state))
         randomization_derivative = self.randomization.gradient(full_state)
-        data_grad = data_transform.adjoint_map(randomization_derivative)
+        data_grad = self.score_transform.adjoint_map(randomization_derivative) + data_transform.affine_map(data_state)
+        #data_grad = self.score_transform.adjoint_map(data_transform.adjoint_map(randomization_derivative))
         opt_grad = self.opt_transform.adjoint_map(randomization_derivative)
         return data_grad, opt_grad
 
@@ -340,7 +341,7 @@ class glm(M_estimator):
         Bootstrap the `overall` M-estimator coefficients
         """
         overall = self.overall
-        return self.bootstrap_score(indices)[:overall.sum()]
+        return self.bootstrap_score(indices) #[:overall.sum()]
 
 if __name__ == "__main__":
 

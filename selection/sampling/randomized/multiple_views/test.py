@@ -11,12 +11,12 @@ from matplotlib import pyplot as plt
 from scipy.stats import laplace, probplot, uniform
 
 
-def test(s=5, n=200, p=20, Langevin_steps=10000, burning=2000):
+def test(s=0, n=200, p=10, Langevin_steps=10000, burning=2000):
     """
     """
 
     randomization = randomized.randomization.base.laplace((p,), scale=0.5)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=7)
     print 'true_beta', beta
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -30,16 +30,19 @@ def test(s=5, n=200, p=20, Langevin_steps=10000, burning=2000):
 
     M_est = randomized.M_est.glm(loss, epsilon, penalty, randomization)
     M_est.solve()
+    if np.sum(M_est.initial_soln==0)==p:
+        print "no var selected"
+
     M_est.setup_sampler()
     cov = M_est.form_covariance(M_est.target_bootstrap)
 
-    print cov.shape
+    print cov
+    #print "covariance size", cov.shape
 
     overall = M_est.overall
     noverall = overall.sum()
 
-    Sigma = cov[:, overall]
-
+    data_transform = rr.linear_transform(np.linalg.inv(cov))
     #objectives = [M_est]
     #multiple_views = multiple_views(objectives, rr.linear_transform(np.identity(p)),
     #                                rr.linear_transform(np.identity(p)))
@@ -55,27 +58,27 @@ def test(s=5, n=200, p=20, Langevin_steps=10000, burning=2000):
         indices = np.random.choice(n, size=(n,), replace=True)
         result.append(M_est.bootstrap_score(indices))
 
-    print(np.array(result).shape)
+    #print(np.array(result).shape)
 
     ndata = p
     data0 = M_est._initial_data_state.copy()
 
-    null = []
-    alt = []
+    #null = []
+    #alt = []
 
     overall_set = np.where(overall)[0]
 
     print "true nonzero ", nonzero, "active set", overall_set
-
+    pval = 0
     if set(nonzero).issubset(overall_set):
-        for j, idx in enumerate(overall_set):
+        #for j, idx in enumerate(overall_set):
 
-            eta = np.zeros(noverall)
-            eta[j] = 1
-            sigma_eta_sq = Sigma[j,j]
+            #eta = np.zeros(noverall)
+            #eta[j] = 1
+            #sigma_eta_sq = Sigma[j,j]
 
-            linear_part = np.zeros((ndata, ndata))
-            linear_part[:noverall,:noverall]  = np.identity(noverall) - (np.outer(np.dot(Sigma, eta), eta) / sigma_eta_sq)
+            #linear_part = np.zeros((ndata, ndata))
+            #linear_part[:noverall,:noverall]  = np.identity(noverall) - (np.outer(np.dot(Sigma, eta), eta) / sigma_eta_sq)
             #saturated model
             #linear_part[nactive:,nactive:] = np.identity(ndata - nactive)
 
@@ -85,12 +88,11 @@ def test(s=5, n=200, p=20, Langevin_steps=10000, burning=2000):
             #I = np.identity(linear_part.shape[1])
             #R = I - P
 
-            data_transform = rr.linear_transform(linear_part)
+
 
             sampler = projected_langevin(M_est._initial_data_state, M_est._initial_opt_state,
                                          M_est.gradient, M_est.projection, data_transform,
                                          stepsize=1. / p)
-
             samples = []
 
             for i in range(Langevin_steps):
@@ -101,22 +103,23 @@ def test(s=5, n=200, p=20, Langevin_steps=10000, burning=2000):
             samples = np.array(samples)
             data_samples = samples[:, :ndata]
 
-            eta1 = np.zeros(ndata)
-            eta1[:noverall] = eta
-            pop = [z[j] for z in data_samples]
-            obs = data0[j]
+            #eta1 = np.zeros(ndata)
+            #eta1[:noverall] = eta
+            pop = [np.linalg.norm(z[:noverall]) for z in data_samples]
+            obs = np.linalg.norm(data0[:noverall])
 
             fam = discrete_family(pop, np.ones_like(pop))
             pval = fam.cdf(0, obs)
             pval = 2 * min(pval, 1-pval)
             print "observed: ", obs, "p value: ", pval
+
             #if pval < 0.0001:
             #    print obs, pval, np.percentile(pop, [0.2,0.4,0.6,0.8,1.0])
-            if idx in nonzero:
-                alt.append(pval)
-            else:
-                null.append(pval)
-    return null, alt
+            #if idx in nonzero:
+            #    alt.append(pval)
+            #else:
+            #    null.append(pval)
+    return pval
 
 if __name__ == "__main__":
 
@@ -126,8 +129,8 @@ if __name__ == "__main__":
 
     for i in range(20):
         print "iteration", i
-        p0, pA = test()
-        P0.extend(p0); PA.extend(pA)
+        p0 = test()
+        P0.append(p0) #PA.extend(pA)
         plt.clf()
         plt.xlim([0, 1])
         plt.ylim([0, 1])

@@ -42,7 +42,7 @@ class projected_langevin(object):
             data_candidate = (self.data_state
                              + 0.5 * self.stepsize * data_gradient
                              + self._noise.rvs(self.num_data_var) * self._sqrt_step)
-            data_candidate = self.data_transform(data_candidate)
+            #data_candidate = self.data_transform(data_candidate)
             proj_opt_arg = (self.opt_state
                             + 0.5 * self.stepsize * opt_gradient
                             + self._noise.rvs(self.num_opt_var) * self._sqrt_step)
