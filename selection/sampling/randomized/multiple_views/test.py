@@ -22,6 +22,8 @@ def test(s=0, n=200, p=10, Langevin_steps=10000, burning=2000):
     lam_frac = 1.
 
     loss = regreg_glm.logistic(X, y)
+    print type(y)
+    print type(loss.data[0])
     epsilon = 1.
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
@@ -35,14 +37,16 @@ def test(s=0, n=200, p=10, Langevin_steps=10000, burning=2000):
 
     M_est.setup_sampler()
     cov = M_est.form_covariance(M_est.target_bootstrap)
-
-    print cov
+    print cov[1:,]
+    cov = M_est.bootstrap_covariance_old(y)
+    print cov[1:,]
     #print "covariance size", cov.shape
 
     overall = M_est.overall
     noverall = overall.sum()
 
     data_transform = rr.linear_transform(np.linalg.inv(cov))
+
     #objectives = [M_est]
     #multiple_views = multiple_views(objectives, rr.linear_transform(np.identity(p)),
     #                                rr.linear_transform(np.identity(p)))
@@ -53,10 +57,10 @@ def test(s=0, n=200, p=10, Langevin_steps=10000, burning=2000):
 
     #multiple_sampler.next()
 
-    result = []
-    for _ in range(10):
-        indices = np.random.choice(n, size=(n,), replace=True)
-        result.append(M_est.bootstrap_score(indices))
+    #result = []
+    #for _ in range(10):
+    #    indices = np.random.choice(n, size=(n,), replace=True)
+    #    result.append(M_est.bootstrap_score(indices))
 
     #print(np.array(result).shape)
 

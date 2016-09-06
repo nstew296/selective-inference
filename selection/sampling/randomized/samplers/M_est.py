@@ -254,6 +254,57 @@ class M_estimator(object):
 
 class glm(M_estimator):
 
+    def bootstrap_covariance_old(self, y):
+        """
+        """
+        if not hasattr(self, "_cov"):
+
+            X = self.loss.data[0]
+
+            n, p = X.shape
+            nsample = 2000
+            overall = self.overall
+            inactive = ~overall
+            noverall = overall.sum()
+
+            def pi(X):
+                w = np.exp(np.dot(X[:, overall], self._initial_data_state[:noverall]))
+                return w / (1 + w)
+
+            _mean_cum = 0
+
+            self._cov = np.zeros((p, p))
+            Q = np.zeros((p, p))
+
+            pi_E = pi(X)
+            W = np.diag(np.diag(np.outer(pi_E, 1 - pi_E)))
+            Q = np.dot(X[:, overall].T, np.dot(W, X[:, overall]))
+            Q_inv = np.linalg.inv(Q)
+            C = np.dot(X[:, inactive].T, np.dot(W, X[:, overall]))
+            I = np.dot(C, Q_inv)
+
+            for _ in range(nsample):
+                indices = np.random.choice(n, size=(n,), replace=True)
+                y_star = y[indices]
+                X_star = X[indices]
+                pi_star = pi(X_star)
+                # print 'pi size', pi_star.shape
+                Z_star_active = np.dot(X_star[:, overall].T, y_star - pi_star)
+                Z_star_inactive = np.dot(X_star[:, inactive].T, y_star - pi_star)
+
+                Z_1 = np.dot(Q_inv, Z_star_active)
+                Z_2 = Z_star_inactive + np.dot(I, Z_star_active)
+                Z_star = np.concatenate((Z_1, Z_2), axis=0)
+
+                _mean_cum += Z_star
+                self._cov += np.multiply.outer(Z_star, Z_star)
+
+            self._cov /= float(nsample)
+            _mean = _mean_cum / float(nsample)
+            self._cov -= np.multiply.outer(_mean, _mean)
+
+            return self._cov
+
     def form_covariance(self, target_bootstrap, nsample=2000):
         """
         """
