@@ -50,6 +50,8 @@ class estimation(object):
         self.observed_vec = np.zeros(self.p+1)
         self.observed_vec[1:] = np.concatenate((self.betaE, self.cube), axis=0)
 
+        self.mle = np.zeros(self.nactive)
+
     def setup_joint_Gaussian_parameters(self, j):
         """
         Sigma_inv_mu computed for beta_{E,j}^*=0
@@ -149,40 +151,95 @@ class estimation(object):
 
         initial_guess_mle = 0
         res_mle = minimize(objective_mle, x0=initial_guess_mle)
-        return res_mle.x
+        self.mle[j] = res_mle.x
+        return self.mle[j]
 
 
 
-def test(n=100, p=10, s=0):
+class instance(object):
 
-    X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, snr =2, sigma=1., rho=0)
-    random_Z = np.random.standard_normal(p)
+    def __init__(self, n, p, s, snr, sigma=1., rho=0, random_signs=True, scale =True, center=True):
+         (self.n, self.p, self.s,
+         self.snr,
+         self.sigma,
+         self.rho) = (n, p, s,
+                     snr,
+                     sigma,
+                     rho)
 
-    lam, epsilon, active, betaE, cube, initial_soln = selection(X,y, random_Z)
-    if lam < 0:
-        print "no active covariates"
-        return -1
+         self.X = (np.sqrt(1 - self.rho) * np.random.standard_normal((self.n, self.p)) +
+              np.sqrt(self.rho) * np.random.standard_normal(self.n)[:, None])
+         if center:
+             self.X -= self.X.mean(0)[None, :]
+         if scale:
+             self.X /= (self.X.std(0)[None, :] * np.sqrt(self.n))
 
+         self.beta = np.zeros(p)
+         self.beta[:self.s] = self.snr
+         if random_signs:
+             self.beta[:self.s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
+         self.active = np.zeros(p, np.bool)
+         self.active[:self.s] = True
+
+    def _noise(self):
+        return np.random.standard_normal(self.n)
+
+    def generate_response(self):
+
+        Y = (self.X.dot(self.beta) + self._noise()) * self.sigma
+        return self.X, Y, self.beta * self.sigma, np.nonzero(self.active)[0], self.sigma
+
+
+def MSE(snr=1, n=100, p=10, s=1):
+
+    ninstance = 50
+    total_mse = 0
+    nvalid_instance=0
+    data_instance = instance(n, p, s, snr)
     tau = 1.
-    est = estimation(X, y, initial_soln, cube, epsilon, lam, sigma, tau)
-    est.setup_joint_Gaussian_parameters(0)
+    for i in range(ninstance):
+        X, y, true_beta, nonzero, sigma = data_instance.generate_response()
+        #print "true param value", true_beta[0]
+        random_Z = np.random.standard_normal(p)
+        lam, epsilon, active, betaE, cube, initial_soln = selection(X,y, random_Z)
+        if lam < 0:
+            print "no active covariates"
+        else:
+            nvalid_instance += 1
+            est = estimation(X, y, initial_soln, cube, epsilon, lam, sigma, tau)
+            est.setup_joint_Gaussian_parameters(0)
 
-    grid_length = 400
-    param_values = np.linspace(-10, 10, num=grid_length)
-    log_sel_prob_grid = [est.log_selection_probability(param_values[i], 0) for i in range(grid_length)]
+            #grid_length = 400
+            #param_values = np.linspace(-10, 10, num=grid_length)
+            #log_sel_prob_grid = [est.log_selection_probability(param_values[i], 0) for i in range(grid_length)]
+            #plt.clf()
+            #plt.title("Log of selection probabilities")
+            #plt.plot(param_values, log_sel_prob_grid)
+            #plt.pause(0.01)
+            beta0_mle = est.compute_mle(0)
+            #print "MLE", beta0_mle
+            total_mse += (beta0_mle-true_beta[0]) **2
+
+    return np.true_divide(total_mse, nvalid_instance)
+
+
+def test():
+    snr_seq = np.linspace(-10, 10, num=200)
+    mse_seq = []
+    for i in range(snr_seq.shape[0]):
+        print "parameter value", snr_seq[i]
+        mse = MSE(snr_seq[i])
+        print "MSE", mse
+        mse_seq.append(mse)
+
     plt.clf()
-    plt.title("Log of selection probabilities")
-    plt.plot(param_values, log_sel_prob_grid)
+    plt.title("MSE")
+    plt.plot(snr_seq, mse_seq)
     plt.pause(0.01)
-
-    beta_mle = est.compute_mle(0)
-    print "MLE ", beta_mle
-    return 0
+    plt.savefig("MSE")
 
 
-for i in range(2):
-    print "iteration", i
-    test()
+test()
 
 while True:
     plt.pause(0.05)
