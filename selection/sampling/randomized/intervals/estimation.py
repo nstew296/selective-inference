@@ -224,7 +224,7 @@ def MSE(snr=1, n=100, p=10, s=1):
 
 
 def test():
-    snr_seq = np.linspace(-10, 10, num=200)
+    snr_seq = np.linspace(-10, 10, num=20)
     mse_seq = []
     for i in range(snr_seq.shape[0]):
         print "parameter value", snr_seq[i]

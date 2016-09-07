@@ -104,8 +104,8 @@ class M_estimator(object):
         initial_subgrad = initial_subgrad[inactive]
         initial_unpenalized = self.initial_soln[unpenalized]
         self._initial_opt_state = np.concatenate([initial_scalings,
-                                              initial_unpenalized,
-                                              initial_subgrad], axis=0)
+                                                  initial_unpenalized,
+                                                  initial_subgrad], axis=0)
 
         active_directions = np.array(active_directions).T
 
@@ -123,6 +123,10 @@ class M_estimator(object):
         _hessian = loss.hessian(beta_full)
         self._beta_full = beta_full
 
+        # initial state for score
+
+        self._initial_score_state = np.hstack([_beta_unpenalized,
+                                               loss.smooth_objective(beta_full, 'grad')[inactive]])
 
         # form linear part
 
@@ -163,7 +167,6 @@ class M_estimator(object):
         subgrad_slice = slice(active_groups.sum() + unpenalized.sum(), active_groups.sum() + inactive.sum() + unpenalized.sum())
         _opt_linear_term[inactive][:,subgrad_slice] = np.identity(inactive.sum())
 
-
         # form affine part
 
         _opt_affine_term = np.zeros(p)
@@ -174,19 +177,13 @@ class M_estimator(object):
                 _opt_affine_term[group] = active_directions[:,idx][group] * penalty.weights[g]
                 idx += 1
 
-        # setting the initial data vector
-        self._initial_data_state = np.zeros(p)
-        self._initial_data_state[Mest_slice] = _beta_unpenalized
-        self._initial_data_state[null_slice] = - self.loss.smooth_objective(self.initial_soln, 'grad')[inactive]
-        self.num_data_var = p
-
         # two transforms that encode score and optimization
         # variable roles
 
         # later, conditioning will modify `score_transform`
 
-        self.opt_transform = rr.affine_transform(_opt_linear_term, _opt_affine_term)
-        self.score_transform = rr.linear_transform(_score_linear_term)
+        self.opt_transform = (_opt_linear_term, _opt_affine_term)
+        self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
 
         # now store everything needed for the projections
         # the projection acts only on the optimization
@@ -202,6 +199,8 @@ class M_estimator(object):
 
         self.group_lasso_dual = rr.group_lasso_dual(new_groups, weights=new_weights, bound=1.)
         self.subgrad_slice = subgrad_slice
+
+        # store active sets, etc.
 
         (self.overall,
          self.active,
@@ -234,7 +233,7 @@ class M_estimator(object):
 
         return new_state
 
-    def gradient(self, data_state, opt_state, data_transform):
+    def gradient(self, data_state, data_transform, opt_state):
         """
         Randomization derivative at full state.
         """
@@ -243,79 +242,56 @@ class M_estimator(object):
             raise ValueError('setup_sampler should be called before using this function')
 
         # omega
-        full_state = (data_transform.affine_map(data_state) +
-                      self.opt_transform.affine_map(opt_state))
+        opt_linear, opt_offset = self.opt_transform
+        data_linear, data_offset = data_transform
+        data_piece = data_linear.dot(data_state) + data_offset
+        opt_piece = opt_linear.dot(opt_state) + opt_offset
+        full_state = (data_piece + opt_piece)
         randomization_derivative = self.randomization.gradient(full_state)
-        data_grad = self.score_transform.adjoint_map(randomization_derivative) + data_transform.affine_map(data_state)
-        #data_grad = self.score_transform.adjoint_map(data_transform.adjoint_map(randomization_derivative))
-        opt_grad = self.opt_transform.adjoint_map(randomization_derivative)
+        data_grad = data_linear.T.dot(randomization_derivative)
+        opt_grad = opt_linear.T.dot(randomization_derivative)
         return data_grad, opt_grad
+
+
+    def condition(self, target_score_cov, target_cov, initial_target_state):
+        """
+        condition the score on the target,
+        return a new score_transform
+        that is composition of `self.score_transform`
+        with the affine map from conditioning
+        """
+
+        target_score_cov = np.atleast_2d(target_score_cov)
+        target_cov = np.atleast_2d(target_cov)
+        initial_target_state = np.atleast_1d(initial_target_state)
+
+        linear_part = target_score_cov.T.dot(np.linalg.pinv(target_cov))
+        offset = self._initial_score_state - linear_part.dot(initial_target_state)
+
+        # now compute the composition of this map with
+        # self.score_transform
+
+        score_linear, score_offset = self.score_transform
+        composition_linear_part = score_linear.dot(linear_part)
+        composition_offset = score_linear.dot(offset) + score_offset
+
+        return (composition_linear_part, composition_offset)
+
 
 
 class glm(M_estimator):
 
-    def bootstrap_covariance_old(self, y):
-        """
-        """
-        if not hasattr(self, "_cov"):
-
-            X = self.loss.data[0]
-
-            n, p = X.shape
-            nsample = 2000
-            overall = self.overall
-            inactive = ~overall
-            noverall = overall.sum()
-
-            def pi(X):
-                w = np.exp(np.dot(X[:, overall], self._initial_data_state[:noverall]))
-                return w / (1 + w)
-
-            _mean_cum = 0
-
-            self._cov = np.zeros((p, p))
-            Q = np.zeros((p, p))
-
-            pi_E = pi(X)
-            W = np.diag(np.diag(np.outer(pi_E, 1 - pi_E)))
-            Q = np.dot(X[:, overall].T, np.dot(W, X[:, overall]))
-            Q_inv = np.linalg.inv(Q)
-            C = np.dot(X[:, inactive].T, np.dot(W, X[:, overall]))
-            I = np.dot(C, Q_inv)
-
-            for _ in range(nsample):
-                indices = np.random.choice(n, size=(n,), replace=True)
-                y_star = y[indices]
-                X_star = X[indices]
-                pi_star = pi(X_star)
-                # print 'pi size', pi_star.shape
-                Z_star_active = np.dot(X_star[:, overall].T, y_star - pi_star)
-                Z_star_inactive = np.dot(X_star[:, inactive].T, y_star - pi_star)
-
-                Z_1 = np.dot(Q_inv, Z_star_active)
-                Z_2 = Z_star_inactive + np.dot(I, Z_star_active)
-                Z_star = np.concatenate((Z_1, Z_2), axis=0)
-
-                _mean_cum += Z_star
-                self._cov += np.multiply.outer(Z_star, Z_star)
-
-            self._cov /= float(nsample)
-            _mean = _mean_cum / float(nsample)
-            self._cov -= np.multiply.outer(_mean, _mean)
-
-            return self._cov
-
-    def form_covariance(self, target_bootstrap, nsample=2000):
+    def form_covariance(self, bootstrap_target, nsample=2000):
         """
         """
         self.setup_bootstrap()
 
-        _target_mean = 0
-        _score_mean = 0
-        _cov = 0
+        _target_mean = 0.
+        _score_mean = 0.
+        _cov = 0.
         for _ in range(nsample):
             indices = np.random.choice(self.n, size=(self.n,), replace=True)
-            target_star = target_bootstrap(indices)
+            target_star = bootstrap_target(indices)
             score_star = self.bootstrap_score(indices)
 
             _target_mean += target_star
@@ -323,9 +299,9 @@ class glm(M_estimator):
 
             _cov += np.multiply.outer(target_star, score_star)
 
-        _cov /= float(nsample)
-        _target_mean = _target_mean / float(nsample)
-        _score_mean = _score_mean / float(nsample)
+        _cov /= nsample
+        _target_mean = _target_mean / nsample
+        _score_mean = _score_mean / nsample
         _cov -= np.multiply.outer(_target_mean, _score_mean)
 
         return _cov
@@ -349,6 +325,7 @@ class glm(M_estimator):
         overall, inactive = self.overall, self.inactive
 
         X, Y = self.loss.data
+        self.n, self.p = X.shape
 
         if isinstance(self.loss.loss, logistic_loglike):
             Y = Y[0]
@@ -356,8 +333,7 @@ class glm(M_estimator):
 
         _boot_mu = lambda X: self.loss.loss.smooth_objective(X.dot(self._beta_full), 'grad') + Y
 
-        self.n, self.p = X.shape
-        _bootQ = np.zeros((self.p,self.p))
+        _bootQ = np.zeros((self.p, self.p))
 
         _bootW = np.diag(self.loss.loss.hessian(X.dot(self._beta_full)))
         _bootQ = X[:, overall].T.dot(_bootW.dot(X[:, overall]))
@@ -367,10 +343,10 @@ class glm(M_estimator):
 
         noverall = overall.sum()
         def _boot_score(X_star, Y_star):
-            initial_score = X_star.T.dot(Y_star - _boot_mu(X_star))
-            result = np.zeros_like(initial_score)
-            result[:noverall] = _bootQinv.dot(initial_score[overall])
-            result[noverall:] = initial_score[inactive] + _bootI.dot(result[:noverall])
+            score = X_star.T.dot(Y_star - _boot_mu(X_star))
+            result = np.zeros_like(score)
+            result[:noverall] = _bootQinv.dot(score[overall])
+            result[noverall:] = score[inactive] + _bootI.dot(result[:noverall])
             return result
         self._boot_score = _boot_score
 
@@ -387,17 +363,32 @@ class glm(M_estimator):
 
         return self._boot_score(X_star, Y_star)
 
-    def target_bootstrap(self, indices):
+    def bootstrap_target(self, indices):
         """
         Bootstrap the `overall` M-estimator coefficients
         """
         overall = self.overall
-        return self.bootstrap_score(indices) #[:overall.sum()]
+        return self.bootstrap_score(indices)[:overall.sum()]
+
+    def form_target_cov(self, nsample=2000):
+        _mean = 0.
+        _crossprod = 0
+
+        for _ in range(nsample):
+            indices = np.random.choice(self.n, size=(self.n,), replace=True)
+            _target = self.bootstrap_target(indices)
+            _mean += _target
+            _crossprod += np.multiply.outer(_target, _target)
+
+        _mean /= nsample
+        _crossprod /= nsample
+        return _crossprod - np.multiply.outer(_mean, _mean)
 
 if __name__ == "__main__":
 
     from selection.algorithms.randomized import logistic_instance
     from selection.sampling.randomized.randomization import base
+    from selection.sampling.langevin import projected_langevin
 
     s, n, p = 5, 200, 20
 
@@ -414,15 +405,81 @@ if __name__ == "__main__":
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), np.ones(p)*lam)), lagrange=1.)
 
+    # first randomization
+
     M_est = glm(loss, epsilon, penalty, randomization)
     M_est.solve()
     M_est.setup_sampler()
-    cov = M_est.form_covariance(M_est.target_bootstrap)
-    print cov.shape
-    result = []
 
-    for _ in range(10):
-        indices = np.random.choice(n, size=(n,), replace=True)
-        result.append(M_est.bootstrap_score(indices))
+    # second randomization
 
-    print(np.array(result).shape)
+    M_est2 = glm(loss, epsilon, penalty, randomization)
+    M_est2.solve()
+    M_est2.setup_sampler()
+
+    # for exposition, we will just take
+    # the target from first randomization
+    # should really do something different
+
+    cov = M_est.form_covariance(M_est.bootstrap_target)
+    cov2 = M_est2.form_covariance(M_est.bootstrap_target)
+    target_cov = M_est.form_target_cov()
+
+    print cov.shape, target_cov.shape
+
+    target_initial = M_est._initial_score_state[:M_est.active.sum()]
+
+    # for second coefficient
+    A1, b1 = M_est.condition(cov[1], target_cov[1,1], target_initial[1])
+    A2, b2 = M_est2.condition(cov2[1], target_cov[1,1], target_initial[1])
+
+    target_inv_cov = 1. / target_cov[1,1]
+
+    initial_state = np.hstack([target_initial[1],
+                               M_est._initial_opt_state,
+                               M_est2._initial_opt_state])
+
+    target_slice = slice(0,1)
+    opt_slice = slice(1, p+1)
+    opt_slice2 = slice(p+1, 2*p+1)
+
+    def target_gradient(state):
+        # with many samplers, we will add up the `target_slice` component
+        # many target_grads
+        # and only once do the Gaussian addition of full_grad
+
+        target = state[target_slice]
+        opt_state = state[opt_slice]
+        opt_state2 = state[opt_slice2]
+        target_grad = M_est.gradient(target, (A1, b1), opt_state)
+        target_grad2 = M_est2.gradient(target, (A2, b2), opt_state2)
+
+        full_grad = np.zeros_like(state)
+        full_grad[opt_slice] = target_grad[1]
+        full_grad[opt_slice2] = target_grad2[1]
+        full_grad[target_slice] = target_grad[0] + target_grad2[0]
+
+        full_grad[target_slice] -= target / target_cov[1,1]
+
+        return full_grad
+
+    def target_projection(state):
+        opt_state = state[opt_slice]
+        state[opt_slice] = M_est.projection(opt_state)
+        opt_state2 = state[opt_slice2]
+        state[opt_slice2] = M_est2.projection(opt_state2)
+        return state
+
+    target_langevin = projected_langevin(initial_state,
+                                         target_gradient,
+                                         target_projection,
+                                         1. / p)
+
+
+    Langevin_steps = 1000
+    burning = 100
+    samples = []
+    for i in range(Langevin_steps):
+        if (i>burning):
+            target_langevin.next()
+            samples.append(target_langevin.state[target_slice].copy())
