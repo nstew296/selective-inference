@@ -132,7 +132,7 @@ def intervals(n=200, p=20, s=0, alpha=0.1):
     X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, snr =2, sigma=1., rho=0)
     random_Z = np.random.standard_normal(p)
 
-    lam, epsilon, active, betaE, cube = selection(X,y, random_Z)
+    lam, epsilon, active, betaE, cube, initial_soln = selection(X,y, random_Z)
     if lam < 0:
         print "no active covariates"
         return -1, -1, [-1], [-1]
@@ -222,9 +222,9 @@ def intervals(n=200, p=20, s=0, alpha=0.1):
             def pvalue_by_tilting(i, variance=variance, pop=pop, indicator=indicator,
                                   ref_param = beta_mle[j]):
                  param_value = param_values[i]
-                 log_sel_prob_param = log_sel_prob_grid[i]
+                 #log_sel_prob_param = log_sel_prob_grid[i]
                  log_LR = np.true_divide(pop*(param_value-ref_param)-(param_value**2-(ref_param**2)), 2*variance)
-                 log_LR += log_sel_prob_ref - log_sel_prob_param
+                 #log_LR += log_sel_prob_ref - log_sel_prob_param
                  return np.clip(np.sum(np.multiply(indicator, np.exp(log_LR)))/ float(indicator.shape[0]), 0,1)
 
 

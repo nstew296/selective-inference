@@ -59,7 +59,7 @@ class multiple_views(object):
 
 
 def test():
-    s, n, p = 5, 200, 20
+    s, n, p = 5, 200, 10
 
     randomization = randomized.randomization.base.laplace((p,), scale=0.5)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)
@@ -82,6 +82,7 @@ def test():
     M_est2 = randomized.M_estimator.M_estimator(loss, epsilon, penalty, randomization)
 
     mv = multiple_views([M_est1, M_est2])
+    #mv = multiple_views([M_est1])
     mv.solve()
     mv.setup_sampler()
 
@@ -96,7 +97,6 @@ def test():
                                                                # this is private -- we "shouldn't" observe this
                                                                inactive=mv.objectives[i].inactive)[0],)
         active += mv.objectives[i].overall
-
 
 
 
@@ -116,6 +116,8 @@ def test():
         active_set = np.nonzero(active)[0]
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
 
+        if len(I)==0:
+            return -1
 
         data_transform = ()
         for i in range(mv.nviews):
@@ -154,9 +156,8 @@ def test():
                                              target_projection,
                                              .5 / (2*p + 1))
 
-
-        Langevin_steps = 20000
-        burning = 10000
+        Langevin_steps = 10000
+        burning = 2000
         samples = []
         for i in range(Langevin_steps):
             if (i>=burning):
@@ -170,16 +171,17 @@ def test():
         family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
         pval = family.ccdf(0, observed)
         print "pvalue", pval
+
         return pval
 
 
 if __name__ == "__main__":
 
     pvalues = []
-    for i in range(50):
+    for i in range(100):
         print "iteration", i
         pval = test()
-        if pval >-1:
+        if (pval>-1):
             pvalues.append(pval)
 
     plt.clf()
