@@ -15,16 +15,12 @@ class multiple_views(object):
 
         self.objectives = objectives
         self.nviews = len(self.objectives)
-        # print "obj num", self.nviews
-        self.model=1
 
     def solve(self):
         self.initial_soln = []
         for i in range(self.nviews):
             self.objectives[i].solve()
             self.initial_soln.append(self.objectives[i].initial_soln)
-            #if self.objectives[i].model==0:
-            #    self.model = 0
 
 
     def setup_sampler(self):
@@ -119,9 +115,6 @@ def test():
 
         active_set = np.nonzero(active)[0]
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
-
-        # is it enough only to bootstrap the inactive ones?
-        # seems so...
 
 
         data_transform = ()
