@@ -4,6 +4,9 @@ from regreg.smooth.glm import glm as regreg_glm, logistic_loglike
 import selection.sampling.randomized.api as randomized
 from selection.sampling.langevin_new import projected_langevin
 from selection.algorithms.randomized import logistic_instance
+from selection.distributions.discrete_family import discrete_family
+from matplotlib import pyplot as plt
+from scipy.stats import laplace, probplot, uniform
 
 
 class multiple_views(object):
@@ -13,13 +16,15 @@ class multiple_views(object):
         self.objectives = objectives
         self.nviews = len(self.objectives)
         # print "obj num", self.nviews
+        self.model=1
 
     def solve(self):
-
         self.initial_soln = []
         for i in range(self.nviews):
             self.objectives[i].solve()
             self.initial_soln.append(self.objectives[i].initial_soln)
+            if self.objectives[i].model==0:
+                self.model = 0
 
 
     def setup_sampler(self):
@@ -58,16 +63,16 @@ class multiple_views(object):
 
 
 
-if __name__ == "__main__":
+def test():
 
     from selection.algorithms.randomized import logistic_instance
     from selection.sampling.langevin import projected_langevin
 
-    s, n, p = 5, 200, 20
+    s, n, p = 0, 200, 20
 
     randomization = randomized.randomization.base.laplace((p,), scale=0.5)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)
-    print 'true_beta', beta
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=7)
+    # print 'true_beta', beta
     nonzero = np.where(beta)[0]
     lam_frac = 1.
 
@@ -85,6 +90,8 @@ if __name__ == "__main__":
     #multiple views
     mv = multiple_views([M_est, M_est2])
     mv.solve()
+    if mv.model==0: # checks if there exists a model that didn't select anything
+        return -1
     mv.setup_sampler()
     # for exposition, we will just take
     # the target from first randomization
@@ -94,17 +101,18 @@ if __name__ == "__main__":
     cov2 = M_est2.form_covariance(M_est.bootstrap_target)
     target_cov = M_est.form_target_cov()
 
-    print cov.shape, target_cov.shape
+    #print cov.shape, target_cov.shape
 
     target_initial = M_est._initial_score_state[:M_est.active.sum()]
 
     # for second coefficient
-    A1, b1 = M_est.condition(cov[1], target_cov[1,1], target_initial[1])
-    A2, b2 = M_est2.condition(cov2[1], target_cov[1,1], target_initial[1])
+    A1, b1 = M_est.condition(cov[0], target_cov[0,0], target_initial[0])
+    A2, b2 = M_est2.condition(cov2[0], target_cov[0,0], target_initial[0])
 
-    target_inv_cov = 1. / target_cov[1,1]
+    target_inv_cov = 1. / target_cov[0,0]
 
-    initial_state = np.hstack([target_initial[1],
+    obs = target_initial[0].copy()
+    initial_state = np.hstack([target_initial[0],
                                mv._initial_opt_state])
 
     target_slice = slice(0,1)
@@ -126,7 +134,7 @@ if __name__ == "__main__":
         full_grad[target_slice] = target_grad[0]
         full_grad[opt_slice] = target_grad[1]
 
-        full_grad[target_slice] -= target / target_cov[1,1]
+        full_grad[target_slice] -= target * target_inv_cov
 
         return full_grad
 
@@ -135,16 +143,49 @@ if __name__ == "__main__":
         state[opt_slice] = M_est.projection(opt_state)
         return state
 
-    target_langevin = projected_langevin(initial_state,
+    target_langevin = projected_langevin(initial_state.copy(),
                                          target_gradient,
                                          target_projection,
                                          1. / p)
 
-
-    Langevin_steps = 1000
-    burning = 100
+    Langevin_steps = 10000
+    burning = 2000
     samples = []
     for i in range(Langevin_steps):
         if (i>burning):
             target_langevin.next()
             samples.append(target_langevin.state[target_slice].copy())
+
+    samples = np.array(samples)
+    data_samples = samples[:, 0]
+    #obs = target_initial[0]
+
+    fam = discrete_family(data_samples, np.ones_like(data_samples))
+    pval = fam.cdf(0, obs)
+    pval = 2 * min(pval, 1 - pval)
+
+    print "pvalue", pval
+    return pval
+
+
+if __name__ == "__main__":
+
+    pvalues = []
+    for i in range(10):
+        print "iteration", i
+        pval = test()
+        if pval >-1:
+            pvalues.append(pval)
+
+    plt.clf()
+    plt.xlim([0, 1])
+    plt.ylim([0, 1])
+    probplot(pvalues, dist=uniform, sparams=(0, 1), plot=plt, fit=False)
+    plt.plot([0, 1], color='k', linestyle='-', linewidth=2)
+    plt.pause(0.01)
+
+    while True:
+        plt.pause(0.05)
+    plt.show()
+
+

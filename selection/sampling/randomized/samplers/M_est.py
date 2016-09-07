@@ -53,7 +53,9 @@ class M_estimator(object):
         self._randomZ = self.randomization.sample()
         self._random_term = rr.identity_quadratic(epsilon, 0, -self._randomZ, 0)
         self.initial_soln = problem.solve(self._random_term, **solve_args)
-
+        self.model = 1
+        if np.sum(self.initial_soln!=0)<1:
+            self.model = 0
 
     def setup_sampler(self, solve_args={'min_its':50, 'tol':1.e-10}):
 
@@ -483,3 +485,4 @@ if __name__ == "__main__":
         if (i>burning):
             target_langevin.next()
             samples.append(target_langevin.state[target_slice].copy())
+
