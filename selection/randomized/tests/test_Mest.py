@@ -8,9 +8,90 @@ from selection.randomized.M_estimator import M_estimator
 from selection.randomized.multiple_views import multiple_views
 from selection.randomized.glm_boot import pairs_bootstrap_glm, bootstrap_cov, glm_group_lasso
 
-from selection.algorithms.randomized import logistic_instance
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
+
+def logistic_instance(n=100, p=200, s=7, rho=0.3, snr=7,
+                      random_signs=False, df=np.inf,
+                      scale=True, center=True):
+    """
+    A testing instance for the LASSO.
+    Design is equi-correlated in the population,
+    normalized to have columns of norm 1.
+
+    Parameters
+    ----------
+
+    n : int
+        Sample size
+
+    p : int
+        Number of features
+
+    s : int
+        True sparsity
+
+    rho : float
+        Equicorrelation value (must be in interval [0,1])
+
+    snr : float
+        Size of each coefficient
+
+    random_signs : bool
+        If true, assign random signs to coefficients.
+        Else they are all positive.
+
+    df : int
+        Degrees of freedom for noise (from T distribution).
+
+    Returns
+    -------
+
+    X : np.float((n,p))
+        Design matrix.
+
+    y : np.float(n)
+        Response vector.
+
+    beta : np.float(p)
+        True coefficients.
+
+    active : np.int(s)
+        Non-zero pattern.
+
+    """
+
+    X = (np.sqrt(1-rho) * np.random.standard_normal((n,p)) + 
+        np.sqrt(rho) * np.random.standard_normal(n)[:,None])
+    if center:
+        X -= X.mean(0)[None,:]
+    if scale:
+        X /= X.std(0)[None,:]
+    
+    X /= np.sqrt(n)
+    beta = np.zeros(p) 
+    beta[:s] = snr
+    if random_signs:
+        beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
+
+    active = np.zeros(p, np.bool)
+    active[:s] = True
+
+    # noise model
+
+    def _noise(n, df=np.inf):
+        if df == np.inf:
+            return np.random.standard_normal(n)
+        else:
+            sd_t = np.std(tdist.rvs(df,size=50000))
+            return tdist.rvs(df, size=n) / sd_t
+
+    eta = linpred = np.dot(X, beta) 
+    pi = np.exp(eta) / (1 + np.exp(eta))
+
+    Y = np.random.binomial(1, pi)
+    return X, Y, beta, np.nonzero(active)[0]
+
 
 def test_logistic_selected_inactive_coordinate(seed=None):
     s, n, p = 5, 200, 20 
@@ -18,7 +99,7 @@ def test_logistic_selected_inactive_coordinate(seed=None):
     randomization = base.laplace((p,), scale=1.)
     if seed is not None:
         np.random.seed(seed)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=10, scale=False)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -69,7 +150,7 @@ def test_logistic_selected_inactive_coordinate(seed=None):
         target_langevin = projected_langevin(mv.observed_state.copy(),
                                              mv.gradient,
                                              mv.projection,
-                                             .5 / (null_observed.shape[0] + p))
+                                             2. / (null_observed.shape[0] + p))
 
 
         Langevin_steps = 30000
@@ -96,7 +177,7 @@ def test_logistic_selected_inactive_coordinate_burnin(seed=None):
     randomization = base.laplace((p,), scale=1.)
     if seed is not None:
         np.random.seed(seed)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=10)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -147,7 +228,7 @@ def test_logistic_selected_inactive_coordinate_burnin(seed=None):
         target_langevin = projected_langevin(mv.observed_state.copy(),
                                              mv.gradient,
                                              mv.projection,
-                                             .5 / (null_observed.shape[0] + p))
+                                             2. / (null_observed.shape[0] + p))
 
 
         Langevin_steps = 30000
