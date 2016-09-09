@@ -90,9 +90,9 @@ def pval(vec_state0, full_projection,
             samples = []
 
             for i in range(Langevin_steps):
-                if (i>burning):
                     sampler.next()
-                    samples.append(sampler.state.copy())
+                    if (i > burning):
+                        samples.append(sampler.state.copy())
 
             samples = np.array(samples)
             pop = samples[:, 0]

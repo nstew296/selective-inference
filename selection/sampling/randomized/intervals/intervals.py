@@ -29,17 +29,18 @@ class intervals(estimation):
         Sigma_inv_mu_param, Sigma_inv_mu_ref = self.Sigma_inv_mu[j].copy(), self.Sigma_inv_mu[j].copy()
         Sigma_inv_mu_param[0] += param / (self.eta_norm_sq[j] * self.sigma_sq)
         mu_param = np.dot(self.Sigma_full[j], Sigma_inv_mu_param)
-        Sigma_inv_mu_ref += ref / (self.eta_norm_sq[j] * self.sigma_sq)
+        Sigma_inv_mu_ref[0] += ref / (self.eta_norm_sq[j] * self.sigma_sq)
         mu_ref = np.dot(self.Sigma_full[j], Sigma_inv_mu_ref)
         log_gaussian_part = (-np.inner(mu_param, Sigma_inv_mu_param)+np.inner(mu_ref, Sigma_inv_mu_ref))/float(2)
-        return log_gaussian_part*self.empirical_exp(j, param, ref)
+        return log_gaussian_part*np.log(self.empirical_exp(j, param, ref))
 
 
     def pvalue_by_tilting(self, j, param, ref):
         indicator = np.array(self.samples[j,:] < self.observed[j], dtype =int)
-        gaussian_tilt = np.true_divide(self.samples[j,:] * (param - ref) - (param ** 2 - (ref ** 2)),
-                                       2*self.eta_norm_sq[j]*self.variances[j])
-        log_LR = gaussian_tilt * self.log_ratio_selection_prob(j, param, ref)
+
+        gaussian_tilt = 2*self.samples[j,:] * (param - ref) - (param ** 2) + (ref ** 2),
+        gaussian_tilt /= 2*self.eta_norm_sq[j]*self.sigma_sq
+        log_LR = gaussian_tilt * (-self.log_ratio_selection_prob(j, param, ref))
         return np.clip(np.sum(np.multiply(indicator, np.exp(log_LR))) / float(self.nsamples), 0, 1)
 
 
@@ -61,15 +62,16 @@ def test_intervals(n=200, p=10, s=0):
     if lam < 0:
         return None
     int_class = intervals(X, y, active, betaE, cube, epsilon, lam, sigma, tau)
-
+    #ref_vec = int_class.mle.copy()
+    ref_vec = np.ones(np.sum(active))/2
     _, _, all_observed, all_variances, all_samples = test_lasso(X, y, nonzero, sigma, lam, epsilon, active, betaE,
-                                                                cube, random_Z, beta_reference=int_class.mle.copy(),
+                                                                cube, random_Z, beta_reference=ref_vec.copy(),
                                                                 randomization_distribution="normal",
                                                                 Langevin_steps=20000, burning=2000)
 
     int_class.setup_samples(all_samples, all_observed, all_variances)
 
-    pvalues.extend(int_class.pvalues_all(np.zeros(active.sum()), int_class.mle.copy()))
+    pvalues.extend(int_class.pvalues_all(np.zeros(active.sum()), ref_vec.copy()))
     print pvalues
     return pvalues
 
