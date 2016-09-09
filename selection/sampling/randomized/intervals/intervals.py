@@ -45,7 +45,7 @@ class intervals(estimation):
         indicator = np.array(self.samples[j,:] < self.observed[j], dtype =int)
         log_gaussian_tilt = np.array(self.samples[j,:]) * (param - ref)
         log_gaussian_tilt /= self.eta_norm_sq[j]*self.sigma_sq
-        emp_exp = np.log(self.empirical_exp(j, param))
+        emp_exp = self.empirical_exp(j, param)
         LR = np.true_divide(np.exp(log_gaussian_tilt), emp_exp)
         return np.clip(np.sum(np.multiply(indicator, LR)) / float(self.nsamples), 0, 1)
 
@@ -96,7 +96,7 @@ def test_intervals(n=100, p=10, s=0):
 if __name__ == "__main__":
     P_param_all = []
     P_ref_all = []
-    for i in range(50):
+    for i in range(100):
         print "iteration", i
         pvalues = test_intervals()
         if pvalues is not None:
