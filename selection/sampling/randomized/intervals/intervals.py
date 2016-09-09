@@ -7,8 +7,8 @@ from selection.sampling.randomized.intervals.estimation import estimation, insta
 
 class intervals(estimation):
 
-    def __init__(self, X, y, initial_soln, cube, epsilon, lam, sigma, tau):
-        estimation.__init__(self, X, y, initial_soln, cube, epsilon, lam, sigma, tau)
+    def __init__(self, X, y, active, betaE, cube, epsilon, lam, sigma, tau):
+        estimation.__init__(self, X, y, active, betaE, cube, epsilon, lam, sigma, tau)
         estimation.setup_estimation(self)
 
     def setup_samples(self, samples, observed, variances):
@@ -17,27 +17,31 @@ class intervals(estimation):
          self.variances) = (samples,
                             observed,
                             variances)
+        self.nsamples = self.samples.shape[1]
 
     def empirical_exp(self, j, param, ref):
-        tilted_samples = np.exp(self.samples[j,:] * np.true_divide(param-ref, 2*self.eta_norm_sq[j]*self.sigma))
-        return np.true_divide(np.sum(tilted_samples), self.samples.shape[1])
+        tilted_samples = np.exp(self.samples[j,:] * np.true_divide(param-ref, 2*self.eta_norm_sq[j]*self.sigma_sq))
+        #print self.samples.shape[1]
+        return np.sum(tilted_samples)/float(self.nsamples)
 
 
     def log_ratio_selection_prob(self, j, param, ref):
-        Sigma_inv_mu_param = self.Sigma_inv_mu[j].copy()
-        Sigma_inv_mu_param[0] += param / (self.eta_norm_sq[j] * (self.sigma ** 2))
+        Sigma_inv_mu_param, Sigma_inv_mu_ref = self.Sigma_inv_mu[j].copy(), self.Sigma_inv_mu[j].copy()
+        Sigma_inv_mu_param[0] += param / (self.eta_norm_sq[j] * self.sigma_sq)
         mu_param = np.dot(self.Sigma_full[j], Sigma_inv_mu_param)
-        Sigma_inv_mu_ref = self.Sigma_inv_mu[j].copy()
-        Sigma_inv_mu_ref += ref / (self.eta_norm_sq[j] * (self.sigma ** 2))
+        Sigma_inv_mu_ref += ref / (self.eta_norm_sq[j] * self.sigma_sq)
         mu_ref = np.dot(self.Sigma_full[j], Sigma_inv_mu_ref)
-        log_gaussian_part = -np.inner(mu_param, Sigma_inv_mu_param)+np.inner(mu_ref, Sigma_inv_mu_ref)
+        log_gaussian_part = (-np.inner(mu_param, Sigma_inv_mu_param)+np.inner(mu_ref, Sigma_inv_mu_ref))/float(2)
         return log_gaussian_part*self.empirical_exp(j, param, ref)
 
+
     def pvalue_by_tilting(self, j, param, ref):
-        indicator = np.array(self.samples[j] < self.observed[j], dtype =int)
-        gaussian_tilt = np.true_divide(self.samples[j] * (param - ref) - (param ** 2 - (ref ** 2)), 2 * self.variances[j])
-        log_LR = np.multiply(gaussian_tilt, self.log_ratio_selection_prob(j, param, ref))
-        return np.clip(np.sum(np.multiply(indicator, np.exp(log_LR))) / float(indicator.shape[0]), 0, 1)
+        indicator = np.array(self.samples[j,:] < self.observed[j], dtype =int)
+        gaussian_tilt = np.true_divide(self.samples[j,:] * (param - ref) - (param ** 2 - (ref ** 2)),
+                                       2*self.eta_norm_sq[j]*self.variances[j])
+        log_LR = gaussian_tilt * self.log_ratio_selection_prob(j, param, ref)
+        return np.clip(np.sum(np.multiply(indicator, np.exp(log_LR))) / float(self.nsamples), 0, 1)
+
 
     def pvalues_all(self, param_vec, ref_vector):
         pvalues = []
@@ -54,22 +58,21 @@ def test_intervals(n=200, p=10, s=0):
     X, y, true_beta, nonzero, sigma = data_instance.generate_response()
     random_Z = np.random.standard_normal(p)
     lam, epsilon, active, betaE, cube, initial_soln = selection(X,y, random_Z)
-
-    int_class = intervals(X, y, initial_soln, cube, epsilon, lam, sigma, tau)
+    if lam < 0:
+        return None
+    int_class = intervals(X, y, active, betaE, cube, epsilon, lam, sigma, tau)
 
     _, _, all_observed, all_variances, all_samples = test_lasso(X, y, nonzero, sigma, lam, epsilon, active, betaE,
                                                                 cube, random_Z, beta_reference=int_class.mle.copy(),
                                                                 randomization_distribution="normal",
                                                                 Langevin_steps=20000, burning=2000)
-    if lam < 0:
-            print "no active covariates"
-    else:
 
-        int_class.setup_samples(all_samples, all_observed, all_variances)
+    int_class.setup_samples(all_samples, all_observed, all_variances)
 
-        pvalues.extend(int_class.pvalues_all(np.zeros(active.sum()), int_class.mle.copy()))
-        print pvalues
-        return pvalues
+    pvalues.extend(int_class.pvalues_all(np.zeros(active.sum()), int_class.mle.copy()))
+    print pvalues
+    return pvalues
+
 
 
 if __name__ == "__main__":
@@ -78,13 +81,21 @@ if __name__ == "__main__":
         print "iteration", i
         pvalues = test_intervals()
         if pvalues is not None:
-            P0.append(pvalues)
+            P0.extend(pvalues)
 
     from matplotlib import pyplot as plt
     from scipy.stats import laplace, probplot, uniform
+    import statsmodels.api as sm
 
-    plt.figure()
-    probplot(P0, dist=uniform, sparams=(0,1), plot=plt, fit=True)
-    plt.plot([0,1], color='k', linestyle='-', linewidth=2)
+    fig = plt.figure()
+    P0 = np.asarray(P0, dtype=np.float32)
+    ecdf = sm.distributions.ECDF(P0)
+    x = np.linspace(min(P0), max(P0))
+    y = ecdf(x)
+    plt.plot(x, y, '-o', lw=2)
+    plt.plot([0, 1], [0, 1], 'k-', lw=2)
+    plt.title("P values at the truth")
+    plt.xlim([0, 1])
+    plt.ylim([0, 1])
     plt.show()
 

@@ -12,29 +12,27 @@ import statsmodels.api as sm
 
 class estimation(object):
 
-    def __init__(self, X, y, initial_soln, cube, epsilon, lam, sigma, tau):
+    def __init__(self, X, y, active, betaE, cube, epsilon, lam, sigma, tau):
 
-        (self.X,
-         self.y,
-         self.initial_soln,
-         self.cube,
+        (self.X, self.y,
+         self.active,
+         self.betaE, self.cube,
          self.epsilon,
          self.lam,
          self.sigma,
-         self.tau) = (X,
-                      y,
-                      initial_soln,
-                      cube,
+         self.tau) = (X, y,
+                      active,
+                      betaE, cube,
                       epsilon,
                       lam,
                       sigma,
                       tau)
 
-        self.active = (self.initial_soln != 0)
-        self.betaE = self.initial_soln[self.active]
+        self.sigma_sq = self.sigma **2
+
         self.signs = np.sign(self.betaE)
         self.n, self.p = X.shape
-        self.nactive = self.active.sum()
+        self.nactive = np.sum(active)
         self.ninactive = self.p-self.nactive
         self.XE_pinv = np.linalg.pinv(self.X[:, self.active])
 
@@ -213,7 +211,7 @@ def MSE(snr=1, n=100, p=10, s=1):
             print "no active covariates"
         else:
             nvalid_instance += 1
-            est = estimation(X, y, initial_soln, cube, epsilon, lam, sigma, tau)
+            est = estimation(X, y, acive, betaE, cube, epsilon, lam, sigma, tau)
             est.setup_joint_Gaussian_parameters(0)
 
             #grid_length = 400
