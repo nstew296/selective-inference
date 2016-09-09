@@ -31,7 +31,7 @@ class estimation(object):
                       tau)
 
         self.active = (self.initial_soln != 0)
-        self.betaE = initial_soln[self.active]
+        self.betaE = self.initial_soln[self.active]
         self.signs = np.sign(self.betaE)
         self.n, self.p = X.shape
         self.nactive = self.active.sum()
@@ -154,11 +154,18 @@ class estimation(object):
         self.mle[j] = res_mle.x
         return self.mle[j]
 
+    def setup_estimation(self):
+
+        for j in range(self.nactive):
+            self.setup_joint_Gaussian_parameters(j)
+            self.compute_mle(j)
+
+        return self.mle
 
 
 class instance(object):
 
-    def __init__(self, n, p, s, snr, sigma=1., rho=0, random_signs=True, scale =True, center=True):
+    def __init__(self, n, p, s, snr=5, sigma=1., rho=0, random_signs=True, scale =True, center=True):
          (self.n, self.p, self.s,
          self.snr,
          self.sigma,
@@ -223,7 +230,7 @@ def MSE(snr=1, n=100, p=10, s=1):
     return np.true_divide(total_mse, nvalid_instance)
 
 
-def test():
+def test_estimation():
     snr_seq = np.linspace(-10, 10, num=20)
     mse_seq = []
     for i in range(snr_seq.shape[0]):
@@ -238,12 +245,12 @@ def test():
     plt.pause(0.01)
     plt.savefig("MSE")
 
+if __name__ == "__main__":
+    test_estimation()
 
-test()
-
-while True:
-    plt.pause(0.05)
-plt.show()
+    while True:
+        plt.pause(0.05)
+    plt.show()
 
 
 

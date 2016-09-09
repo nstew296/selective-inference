@@ -35,7 +35,7 @@ def selection(X, y, random_Z, randomization_scale=1, sigma=1):
                                          initial_soln,
                                          random_Z,
                                          epsilon)
-
+    #print initial_soln
     #active = penalty.active_set
     return lam, epsilon, active, betaE, cube, initial_soln
 
