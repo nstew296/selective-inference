@@ -194,9 +194,14 @@ def intervals(n=200, p=20, s=0, alpha=0.1):
             param_values = np.linspace(-10, 10, num=grid_length)
             param_values[truth_index] = 0
             log_sel_prob_grid = np.zeros(param_values.shape[0])
-            for i in range(param_values.shape[0]):
-                 log_sel_prob_grid[i] = log_selection_probability(param_values[i], Sigma_full[j], Sigma_inv[j],
-                                                Sigma_inv_mu[j], sigma, nactive, ninactive, signs, betaE, eta_norm_sq)
+            #for i in range(param_values.shape[0]):
+            #     log_sel_prob_grid[i] = log_selection_probability(param_values[i], Sigma_full[j], Sigma_inv[j],
+            #                                    Sigma_inv_mu[j], sigma, nactive, ninactive, signs, betaE, eta_norm_sq)
+
+            log_sel_prob_grid[truth_index] = log_selection_probability(param_values[truth_index], Sigma_full[j], Sigma_inv[j],
+                                                                       Sigma_inv_mu[j], sigma, nactive, ninactive,
+                                                                       signs, betaE, eta_norm_sq)
+
             #plt.clf()
             #plt.title("Log of selection probabilities")
             #plt.plot(param_values, log_sel_prob_grid)
@@ -222,9 +227,9 @@ def intervals(n=200, p=20, s=0, alpha=0.1):
             def pvalue_by_tilting(i, variance=variance, pop=pop, indicator=indicator,
                                   ref_param = beta_mle[j]):
                  param_value = param_values[i]
-                 #log_sel_prob_param = log_sel_prob_grid[i]
-                 log_LR = np.true_divide(pop*(param_value-ref_param)-(param_value**2-(ref_param**2)), 2*variance)
-                 #log_LR += log_sel_prob_ref - log_sel_prob_param
+                 log_sel_prob_param = log_sel_prob_grid[i]
+                 log_LR = np.true_divide(2*pop*(param_value-ref_param)-(param_value**2-(ref_param**2)), 2*variance)
+                 log_LR += log_sel_prob_ref - log_sel_prob_param
                  return np.clip(np.sum(np.multiply(indicator, np.exp(log_LR)))/ float(indicator.shape[0]), 0,1)
 
 
