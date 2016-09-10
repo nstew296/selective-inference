@@ -10,6 +10,9 @@ class intervals(estimation):
     def __init__(self, X, y, active, betaE, cube, epsilon, lam, sigma, tau):
         estimation.__init__(self, X, y, active, betaE, cube, epsilon, lam, sigma, tau)
         estimation.setup_estimation(self)
+        self.grid_length = 400
+        self.param_values_at_grid = np.linspace(-10, 10, num=self.grid_length)
+
 
     def setup_samples(self, ref_vec, samples, observed, variances):
         (self.ref_vec,
@@ -64,6 +67,33 @@ class intervals(estimation):
         return pvalues
 
 
+    def pvalues_grid(self, j):
+        pvalues_at_grid = [self.pvalue_by_tilting(j, self.param_values_at_grid[i]) for i in range(self.grid_length)]
+        pvalues_at_grid = np.asarray(pvalues_at_grid, dtype=np.float32)
+        return pvalues_at_grid
+
+
+    def construct_intervals(self, j, alpha=0.1):
+        pvalues_at_grid = self.pvalues_grid(j)
+        accepted_indices = np.array(pvalues_at_grid > alpha)
+        if np.sum(accepted_indices)>0:
+            self.L = np.min(self.param_values_at_grid[accepted_indices])
+            self.U = np.max(self.param_values_at_grid[accepted_indices])
+            return self.L, self.U
+
+    def construct_intervals_all(self, truth_vec, alpha=0.1):
+        coverage = 0
+        nparam = 0
+        for j in range(self.nactive):
+            LU = self.construct_intervals(j, alpha=alpha)
+            if LU is not None:
+                L, U = LU
+                print "interval", L, U
+                nparam +=1
+                if (L <= truth_vec[j]) and (U >= truth_vec[j]):
+                     coverage +=1
+        return coverage, nparam
+
 
 def test_intervals(n=100, p=10, s=0):
 
@@ -78,7 +108,10 @@ def test_intervals(n=100, p=10, s=0):
 
     ref_vec = int_class.mle.copy()
     param_vec = np.zeros(np.sum(active))
+
     #ref_vec = np.ones(np.sum(active))/2
+
+    # running the Langevin sampler
     _, _, all_observed, all_variances, all_samples = test_lasso(X, y, nonzero, sigma, lam, epsilon, active, betaE,
                                                                 cube, random_Z, beta_reference=ref_vec.copy(),
                                                                 randomization_distribution="normal",
@@ -88,26 +121,38 @@ def test_intervals(n=100, p=10, s=0):
 
     pvalues_ref = int_class.pvalues_ref()
     pvalues_param = int_class.pvalues_param(param_vec)
-    print pvalues_param
-    return pvalues_ref, pvalues_param
+
+    coverage, nparam = int_class.construct_intervals_all(true_beta)
+
+    print "pvalue(s) at the truth", pvalues_param
+    return pvalues_ref, pvalues_param, coverage, nparam
 
 
 
 if __name__ == "__main__":
     P_param_all = []
     P_ref_all = []
-    for i in range(100):
+    ncovered = 0
+    nparams = 0
+    for i in range(200):
         print "iteration", i
-        pvalues = test_intervals()
-        if pvalues is not None:
+        pvals_ints = test_intervals()
+        if pvals_ints is not None:
             #print pvalues
-            P_ref_all.extend(pvalues[0])
-            P_param_all.extend(pvalues[1])
-            #print P0
-            #print P1
+            P_ref_all.extend(pvals_ints[0])
+            P_param_all.extend(pvals_ints[1])
+            coverage = pvals_ints[2]
+            if coverage is not None:
+                ncovered += pvals_ints[2]
+                nparams += pvals_ints[3]
+
+
+    print "number of intervals", nparams
+    print "coverage", ncovered/float(nparams)
+
+
 
     from matplotlib import pyplot as plt
-    from scipy.stats import laplace, probplot, uniform
     import statsmodels.api as sm
 
     fig = plt.figure()
