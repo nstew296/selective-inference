@@ -79,9 +79,9 @@ class umvu(estimation):
         self.unbiased[j] = c * (observed_vector[0] - np.inner(Sigma22_inv_Sigma21, observed_vector[1:])) - a
 
         # starting umvu
-        Sigma_tilde = - np.true_divide(np.outer(self.Sigma_full[j][0, 1:], self.Sigma_full[j][0, 1:]), self.Sigma_full[j][0, 0])
+        Sigma_tilde = self.Sigma_full[j][1:, 1:]- np.true_divide(np.outer(self.Sigma_full[j][0, 1:], self.Sigma_full[j][0, 1:]), self.Sigma_full[j][0, 0])
         mu_tilde = np.dot(Sigma_tilde.copy(), self.Sigma_inv_mu[j][1:])
-        Sigma_tilde += self.Sigma_full[j][1:, 1:]
+        mu_tilde += self.Sigma_full[j][0,1:]*observed_vector[0]/self.Sigma_full[j][0,0]
         z_star = self.log_selection_probability_umvu(mu_tilde.copy(), Sigma_tilde.copy())
 
         self.umvu[j] = c * (observed_vector[0] - np.inner(Sigma22_inv_Sigma21, z_star)) - a
@@ -91,13 +91,12 @@ class umvu(estimation):
     def compute_unbiased_all(self):
         for j in range(self.nactive):
             self.compute_unbiased(j)
-        print self.unbiased, self.umvu
         return self.unbiased, self.umvu
 
 
 def MSE_three(snr=5, n=100, p=10, s=1):
 
-    ninstance = 10
+    ninstance = 50
     total_mse_mle, total_mse_unbiased, total_mse_umvu = 0, 0, 0
     nvalid_instance = 0
     data_instance = instance(n, p, s, snr)
@@ -114,17 +113,10 @@ def MSE_three(snr=5, n=100, p=10, s=1):
             nvalid_instance += 1
             est = umvu(X, y, active, betaE, cube, epsilon, lam, sigma, tau)
             est.compute_unbiased(0)
-                # grid_length = 400
-                # param_values = np.linspace(-10, 10, num=grid_length)
-                # log_sel_prob_grid = [est.log_selection_probability(param_values[i], 0) for i in range(grid_length)]
-                # plt.clf()
-                # plt.title("Log of selection probabilities")
-                # plt.plot(param_values, log_sel_prob_grid)
-                # plt.pause(0.01)
-            beta0_mle = est.mle[0]
-            beta0_unbiased = est.unbiased[0]
-            beta0_umvu = est.umvu[0]
-                # print "MLE", beta0_mle
+
+            beta0_mle, beta0_unbiased, beta0_umvu = est.mle[0], est.unbiased[0], est.umvu[0]
+            print "truth", true_beta[0]
+            print "MLE", beta0_mle, "Unbiased", beta0_unbiased, "UMVU", beta0_umvu
             total_mse_mle += (beta0_mle - true_beta[0]) ** 2
             total_mse_unbiased += (beta0_unbiased - true_beta[0]) ** 2
             total_mse_umvu += (beta0_umvu - true_beta[0]) ** 2
@@ -133,9 +125,10 @@ def MSE_three(snr=5, n=100, p=10, s=1):
 
 
 def test_estimation_three():
-    snr_seq = np.linspace(-10, 10, num=10)
+    snr_seq = np.linspace(-10, 10, num=50)
     filter = np.zeros(snr_seq.shape[0], dtype=bool)
     mse_mle_seq, mse_unbiased_seq, mse_umvu_seq = [], [], []
+
     for i in range(snr_seq.shape[0]):
             print "parameter value", snr_seq[i]
             mse = MSE_three(snr_seq[i])
@@ -149,7 +142,7 @@ def test_estimation_three():
     plt.clf()
     plt.title("MSE")
     fig, ax = plt.subplots()
-    ax.plot(snr_seq[filter], mse_mle_seq, label = "MLE")
+    ax.plot(snr_seq[filter], mse_mle_seq, label = "MLE", linestyle=':', marker='o')
     ax.plot(snr_seq[filter], mse_unbiased_seq, label = "Unbiased")
     ax.plot(snr_seq[filter], mse_umvu_seq, label ="UMVU")
 
@@ -161,12 +154,6 @@ def test_estimation_three():
 
     for label in legend.get_lines():
         label.set_linewidth(1.5)  # the legend line width
-
-
-    #first_legend = plt.legend(handles=[mle_line], loc=1)
-    #ax = plt.gca().add_artist(first_legend)
-    #plt.legend(handles=[unbiased_line], loc=2)
-    #plt.legend(handles=[umvu_line], loc=4)
 
     plt.pause(0.01)
     plt.savefig("MSE")
