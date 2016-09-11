@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.optimize import minimize, bisect
+from scipy.optimize import minimize
 from selection.sampling.randomized.tests.test_lasso_fixedX_saturated import test_lasso
 from selection.sampling.randomized.tests.test_lasso_fixedX_saturated import selection
 import selection.sampling.randomized.api as randomized
@@ -48,7 +48,9 @@ class estimation(object):
         self.observed_vec = np.zeros(self.p+1)
         self.observed_vec[1:] = np.concatenate((self.betaE, self.cube), axis=0)
 
+
         self.mle = np.zeros(self.nactive)
+
 
     def setup_joint_Gaussian_parameters(self, j):
         """
@@ -134,6 +136,7 @@ class estimation(object):
         mu = np.dot(self.Sigma_full[j], Sigma_inv_mu_modified)
         return - np.true_divide(np.inner(mu, Sigma_inv_mu_modified), 2) - res.fun
 
+
     def compute_mle(self, j):
 
         observed_vector = self.observed_vec.copy()
@@ -152,7 +155,8 @@ class estimation(object):
         self.mle[j] = res_mle.x
         return self.mle[j]
 
-    def setup_estimation(self):
+
+    def compute_mle_all(self):
 
         for j in range(self.nactive):
             self.setup_joint_Gaussian_parameters(j)
@@ -197,7 +201,7 @@ class instance(object):
 
 def MSE(snr=1, n=100, p=10, s=1):
 
-    ninstance = 50
+    ninstance = 1
     total_mse = 0
     nvalid_instance=0
     data_instance = instance(n, p, s, snr)
@@ -211,7 +215,7 @@ def MSE(snr=1, n=100, p=10, s=1):
             print "no active covariates"
         else:
             nvalid_instance += 1
-            est = estimation(X, y, acive, betaE, cube, epsilon, lam, sigma, tau)
+            est = estimation(X, y, active, betaE, cube, epsilon, lam, sigma, tau)
             est.setup_joint_Gaussian_parameters(0)
 
             #grid_length = 400

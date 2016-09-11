@@ -9,7 +9,7 @@ class intervals(estimation):
 
     def __init__(self, X, y, active, betaE, cube, epsilon, lam, sigma, tau):
         estimation.__init__(self, X, y, active, betaE, cube, epsilon, lam, sigma, tau)
-        estimation.setup_estimation(self)
+        estimation.compute_mle_all(self)
         self.grid_length = 400
         self.param_values_at_grid = np.linspace(-10, 10, num=self.grid_length)
 
