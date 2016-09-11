@@ -95,9 +95,9 @@ class umvu(estimation):
         return self.unbiased, self.umvu
 
 
-def MSE_three(snr=1, n=100, p=10, s=1):
+def MSE_three(snr=5, n=100, p=10, s=1):
 
-    ninstance = 1
+    ninstance = 10
     total_mse_mle, total_mse_unbiased, total_mse_umvu = 0, 0, 0
     nvalid_instance = 0
     data_instance = instance(n, p, s, snr)
@@ -133,7 +133,8 @@ def MSE_three(snr=1, n=100, p=10, s=1):
 
 
 def test_estimation_three():
-    snr_seq = np.linspace(-10, 10, num=20)
+    snr_seq = np.linspace(-10, 10, num=10)
+    filter = np.zeros(snr_seq.shape[0], dtype=bool)
     mse_mle_seq, mse_unbiased_seq, mse_umvu_seq = [], [], []
     for i in range(snr_seq.shape[0]):
             print "parameter value", snr_seq[i]
@@ -143,12 +144,30 @@ def test_estimation_three():
                 mse_mle_seq.append(mse_mle)
                 mse_unbiased_seq.append(mse_unbiased)
                 mse_umvu_seq.append(mse_umvu)
+                filter[i] = True
 
     plt.clf()
     plt.title("MSE")
-    plt.plot(snr_seq, mse_mle_seq)
-    plt.plot(snr_seq, mse_unbiased_seq)
-    plt.plot(snr_seq, mse_umvu_seq)
+    fig, ax = plt.subplots()
+    ax.plot(snr_seq[filter], mse_mle_seq, label = "MLE")
+    ax.plot(snr_seq[filter], mse_unbiased_seq, label = "Unbiased")
+    ax.plot(snr_seq[filter], mse_umvu_seq, label ="UMVU")
+
+    legend = ax.legend(loc='upper center', shadow=True)
+    frame = legend.get_frame()
+    frame.set_facecolor('0.90')
+    for label in legend.get_texts():
+        label.set_fontsize('large')
+
+    for label in legend.get_lines():
+        label.set_linewidth(1.5)  # the legend line width
+
+
+    #first_legend = plt.legend(handles=[mle_line], loc=1)
+    #ax = plt.gca().add_artist(first_legend)
+    #plt.legend(handles=[unbiased_line], loc=2)
+    #plt.legend(handles=[umvu_line], loc=4)
+
     plt.pause(0.01)
     plt.savefig("MSE")
 
@@ -156,8 +175,8 @@ def test_estimation_three():
 if __name__ == "__main__":
         test_estimation_three()
 
-        #while True:
-        #    plt.pause(0.05)
+        while True:
+            plt.pause(0.05)
         plt.show()
 
 
