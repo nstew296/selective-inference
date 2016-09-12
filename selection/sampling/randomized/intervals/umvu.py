@@ -12,8 +12,7 @@ class umvu(estimation):
 
     def __init__(self, X, y, active, betaE, cube, epsilon, lam, sigma, tau):
         estimation.__init__(self, X, y, active, betaE, cube, epsilon, lam, sigma, tau)
-        estimation.setup_joint_Gaussian_parameters(self, 0)
-        estimation.compute_mle(self, 0)
+        estimation.compute_mle_all(self)
         self.unbiased = np.zeros(self.nactive)
         self.umvu = np.zeros(self.nactive)
 
@@ -93,10 +92,13 @@ class umvu(estimation):
             self.compute_unbiased(j)
         return self.unbiased, self.umvu
 
+    def mse_unbiased(self, true_vec):
+        return (np.linalg.norm(self.unbiased-true_vec))**2, (np.linalg.norm(self.umvu-true_vec))**2
 
-def MSE_three(snr=5, n=100, p=10, s=1):
 
-    ninstance = 50
+def MSE_three(snr=5, n=100, p=10, s=0):
+
+    ninstance = 5
     total_mse_mle, total_mse_unbiased, total_mse_umvu = 0, 0, 0
     nvalid_instance = 0
     data_instance = instance(n, p, s, snr)
@@ -110,18 +112,21 @@ def MSE_three(snr=5, n=100, p=10, s=1):
         if lam < 0:
             print "no active covariates"
         else:
-            nvalid_instance += 1
             est = umvu(X, y, active, betaE, cube, epsilon, lam, sigma, tau)
-            est.compute_unbiased(0)
+            est.compute_unbiased_all()
+            true_vec = true_beta[active]
 
-            beta0_mle, beta0_unbiased, beta0_umvu = est.mle[0], est.unbiased[0], est.umvu[0]
-            print "truth", true_beta[0]
-            print "MLE", beta0_mle, "Unbiased", beta0_unbiased, "UMVU", beta0_umvu
-            total_mse_mle += (beta0_mle - true_beta[0]) ** 2
-            total_mse_unbiased += (beta0_unbiased - true_beta[0]) ** 2
-            total_mse_umvu += (beta0_umvu - true_beta[0]) ** 2
+            print "true vector", true_vec
+            print "MLE", est.mle, "Unbiased", est.unbiased, "UMVU", est.umvu
+            total_mse_mle += est.mse_mle(true_vec)
 
-            return total_mse_mle/float(nvalid_instance), total_mse_unbiased/float(nvalid_instance), total_mse_umvu/float(nvalid_instance)
+            mse = est.mse_unbiased(true_vec)
+            total_mse_unbiased += mse[0]
+            total_mse_umvu += mse[1]
+            nvalid_instance +=np.sum(active)
+
+    if nvalid_instance > 0:
+        return total_mse_mle/float(nvalid_instance), total_mse_unbiased/float(nvalid_instance), total_mse_umvu/float(nvalid_instance)
 
 
 def test_estimation_three():

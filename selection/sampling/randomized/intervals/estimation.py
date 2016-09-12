@@ -164,6 +164,9 @@ class estimation(object):
 
         return self.mle
 
+    def mse_mle(self, true_vec):
+        return (np.linalg.norm(self.mle-true_vec))**2
+
 
 class instance(object):
 
@@ -211,23 +214,17 @@ def MSE(snr=1, n=100, p=10, s=1):
         #print "true param value", true_beta[0]
         random_Z = np.random.standard_normal(p)
         lam, epsilon, active, betaE, cube, initial_soln = selection(X,y, random_Z)
+        print "active set", np.where(active)[0]
         if lam < 0:
             print "no active covariates"
         else:
-            nvalid_instance += 1
             est = estimation(X, y, active, betaE, cube, epsilon, lam, sigma, tau)
-            est.setup_joint_Gaussian_parameters(0)
+            est.compute_mle_all()
 
-            #grid_length = 400
-            #param_values = np.linspace(-10, 10, num=grid_length)
-            #log_sel_prob_grid = [est.log_selection_probability(param_values[i], 0) for i in range(grid_length)]
-            #plt.clf()
-            #plt.title("Log of selection probabilities")
-            #plt.plot(param_values, log_sel_prob_grid)
-            #plt.pause(0.01)
-            beta0_mle = est.compute_mle(0)
-            #print "MLE", beta0_mle
-            total_mse += (beta0_mle-true_beta[0]) **2
+            mse_mle = est.mse_mle(true_beta[active])
+            print "MLE", est.mle
+            total_mse += mse_mle
+            nvalid_instance += np.sum(active)
 
     return np.true_divide(total_mse, nvalid_instance)
 
