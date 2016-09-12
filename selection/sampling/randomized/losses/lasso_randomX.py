@@ -229,8 +229,9 @@ class lasso_randomX(selective_loss):
 
         #g = np.dot(self._XTXE, beta[self.active]-data[:self.size_active])
 
-        g = - data1 + np.dot(self._XTX_b[:, self.active], beta[self.active]-data[:self.size_active])
-
+        #g = - data1 + np.dot(self._XTX_b[:, self.active], beta[self.active]-data[:self.size_active])
+        g = np.dot(self._XTX_b[:, self.active], beta[self.active] - data[:self.size_active])
+        g[~self.active] -= data1[self.size_active:]
         return g
 
 

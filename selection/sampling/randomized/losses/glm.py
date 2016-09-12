@@ -51,7 +51,10 @@ class glm(regreg_glm):
             beta_full = np.zeros(active.shape)
             beta_full[active] = self._beta_unpenalized
             self._hessian = self.hessian(beta_full)
-            self._restricted_hessian = self._hessian[:, self.active]
+            _restricted_hessian = self._hessian[:, self.active]
+            self._restricted_hessian = np.zeros_like(_restricted_hessian)
+            self._restricted_hessian[:size_active] = _restricted_hessian[self.active]
+            self._restricted_hessian[size_active:] = _restricted_hessian[self.inactive]
             self.bootstrap_covariance()
         else:
             raise ValueError("Empty active set.")
@@ -76,7 +79,7 @@ class glm(regreg_glm):
             beta_full[self.active] = self._beta_unpenalized
 
             def mu(X):
-                return self.loss.smooth_objective(X.dot(beta_full), 'grad')
+                return self.loss.smooth_objective(X.dot(beta_full), 'grad') + y
 
             _mean_cum = 0
 
@@ -117,8 +120,3 @@ class glm(regreg_glm):
         if not hasattr(self, "_cov"):
             self.bootstrap_covariance()
         return self._cov
-
-
-
-
-

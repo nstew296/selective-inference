@@ -90,9 +90,9 @@ def pval(vec_state0, full_projection,
             samples = []
 
             for i in range(Langevin_steps):
-                if (i>burning):
                     sampler.next()
-                    samples.append(sampler.state.copy())
+                    if (i > burning):
+                        samples.append(sampler.state.copy())
 
             samples = np.array(samples)
             pop = samples[:, 0]
@@ -104,8 +104,8 @@ def pval(vec_state0, full_projection,
 
             fam = discrete_family(pop, np.ones_like(pop))
             pval = fam.cdf(0, obs)
-            pval = 2 * min(pval, 1-pval)
-            print "observed: ", obs, "p value: ", pval
+            #pval = 2 * min(pval, 1-pval)
+            #print "observed: ", obs, "p value: ", pval
             #if pval < 0.0001:
             #    print obs, pval, np.percentile(pop, [0.2,0.4,0.6,0.8,1.0])
             if idx in nonzero:
