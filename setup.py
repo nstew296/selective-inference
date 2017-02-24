@@ -86,6 +86,7 @@ def main(**extra_args):
                           'selection.sampling.tests',
                           'selection.randomized',
                           'selection.randomized.tests',
+                          'selection.bayesian',
                           'selection.tests'
                           ],
           ext_modules = EXTS,
