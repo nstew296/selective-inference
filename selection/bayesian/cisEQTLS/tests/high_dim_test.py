@@ -15,6 +15,7 @@ from selection.bayesian.cisEQTLS.Simes_selection import BH_q
 def one_trial(txtfile, n=350, p= 5000, s= 10, snr = 5., seed_n = 19, bh_level=0.1, method="theoretical"):
 
     random.seed(seed_n)
+    print seed_n
 
     sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
 
