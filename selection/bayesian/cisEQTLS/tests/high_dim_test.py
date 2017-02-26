@@ -1,4 +1,6 @@
 from __future__ import print_function
+import os
+import argparse
 import time
 import random
 import numpy as np
@@ -15,7 +17,7 @@ from selection.bayesian.cisEQTLS.Simes_selection import BH_q
 def one_trial(txtfile, n=350, p= 5000, s= 10, snr = 5., seed_n = 19, bh_level=0.1, method="theoretical"):
 
     random.seed(seed_n)
-    print seed_n
+    print(seed_n)
 
     sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
 
@@ -151,7 +153,33 @@ def one_trial(txtfile, n=350, p= 5000, s= 10, snr = 5., seed_n = 19, bh_level=0.
 
 
 
-R = one_trial()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-o', '--output')
+    parser.add_argument('-s', '--seed')
+    parser.add_argument('-m', '--tsig')
+    args = parser.parse_args()
+
+    print(args.output)
+    print(args.seed)
+    print(args.tsig)
+
+    one_trial(args.output, 
+              n =350, 
+              p = 5000, 
+              s = int(args.tsig), 
+              snr = 5., 
+              seed_n = int(args.seed),
+              bh_level = 0.1, 
+              method = "theoretical")
+
+    # DIR='/scratch/PI/sabatti/controlled_access_data/simulation_data/high_dim_test'
+    # seed_n = 0
+    # txtfile=os.path.join(DIR,str(seed_n))
+
+# R = one_trial(txtfile, n=50, p=20, s=20, seed_n=seed_n)
+
+
 #print("true parameter",R[0])
 #print("active indices",R[1])
 #print("indices covered by adjusted",R[2])
