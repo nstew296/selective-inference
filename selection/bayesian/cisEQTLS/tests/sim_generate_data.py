@@ -32,16 +32,24 @@ def imerge(a, b, mode="concat"):
         sys.exit(1)
         
 
-def signal_setting(setting, tot_s, snr=5.0, sigma=1.0):
+def signal_setting(setting, tot_s, snr=5.0, sigma=1.0, outdir=None):
     if setting == 0:
         svals = itertools.chain(itertools.repeat((1, snr, sigma), tot_s/4),
                                 itertools.repeat((5, snr, sigma), tot_s/4), 
                                 itertools.repeat((10, snr, sigma), tot_s/4), 
                                 itertools.repeat((0, snr, sigma), tot_s-3*(tot_s/4)))
+        svals, svals_return = itertools.tee(svals)
     else:
         sys.stderr.write("Setting not recognized\n")
         sys.exit(1)
-    return(svals)
+
+    if outdir:
+        outfile = os.path.join(outdir,'signals.txt')
+        with open(outfile, 'w') as f:
+            for signal in svals:
+                f.write("\t".join(map(str,signal))+"\n")
+
+    return(svals_return)
 
 def generate_fixed_design(fltuple):
     """ 
@@ -143,15 +151,17 @@ if __name__ == "__main__":
         pool.map(generate_fixed_design, fltuple)
 
     if args.job_type == "generateY":
+        # generate responses for each signal
         s = int(args.seed)
-        svals= signal_setting(int(args.setting), g)
             
-        sys.stderr.write("Generating Y data\n")
-        sim_dir = os.path.join(args.outdir,"sim_"+str(s))
-        y_dir = os.path.join(sim_dir,"y_data")
-        mkdir_p(sim_dir)
+        trial_dir = os.path.join(args.outdir,"trial_"+str(s))
+        mkdir_p(trial_dir)
+        sys.stderr.write("Generating signals in "+trial_dir+"\n")
+        svals= signal_setting(int(args.setting), g, outdir=trial_dir)
+
+        y_dir = os.path.join(trial_dir,"y_data")
         mkdir_p(y_dir)
-        sys.stderr.write("Writing to: "+y_dir+"\n")
+        sys.stderr.write("Writing y data to: "+y_dir+"\n")
 
         y_fnames = [os.path.join(y_dir,"y_"+str(i)+".txt") for i in xrange(g)]
         x_dir = os.path.join(args.outdir,"X_data")
@@ -159,10 +169,8 @@ if __name__ == "__main__":
         seed_ns = xrange(s, g+s) # seed for additive noise
         
         meta_info = imerge(itertools.izip(y_fnames,x_fnames), seed_ns, mode="append")
+        
         fltuple = imerge(meta_info, svals)
         pool=mp.Pool(processes=int(args.nproc))
         pool.map(generate_response, fltuple)
-        
-        # 2. generate responses for each signal
-
-
+         
