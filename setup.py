@@ -87,6 +87,7 @@ def main(**extra_args):
                           'selection.randomized',
                           'selection.randomized.tests',
                           'selection.bayesian', # was not here in bayesian branch before
+                          'selection.bayesian.cisEQTLS', # was not here in bayesian branch before
                           'selection.tests'
                           ],
           ext_modules = EXTS,
