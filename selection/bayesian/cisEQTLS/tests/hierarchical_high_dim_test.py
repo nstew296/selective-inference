@@ -1,41 +1,59 @@
 from __future__ import print_function
-import os
-import argparse
 import time
 import random
+import glob
 import numpy as np
 from selection.tests.instance import gaussian_instance
 from selection.bayesian.initial_soln import selection, instance
 from selection.randomized.api import randomization
 from selection.bayesian.cisEQTLS.Simes_selection import simes_selection
-from selection.bayesian.cisEQTLS.inference_per_gene import selection_probability_variants, \
-    sel_prob_gradient_map_lasso, selective_inf_lasso
 from scipy.stats import norm as normal
 from selection.bayesian.cisEQTLS.Simes_selection import BH_q
+from selection.bayesian.cisEQTLS.inference_2sels import selection_probability_genes_variants, \
+    sel_prob_gradient_map_simes_lasso, selective_inf_simes_lasso
 
 
-def one_trial(txtfile, n=350, p= 5000, s= 10, snr = 5., seed_n = 19, bh_level=0.1, method="theoretical"):
+#note that bh level is to decided upon how many we end up selecting:
+def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, snr=5., s=5, simes_level=0.1, X = None, y=None, seed_n = 19,
+              bh_level=0.1, method="theoretical"):
+
+    if X is None and y is None:
+        X, y, true_beta, nonzero, noise_variance = gaussian_instance(n=350, p=5000, s=0, sigma=1, rho=0, snr=5.)
 
     random.seed(seed_n)
-    print(seed_n)
-
-    sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
-
-    X, y, true_beta, nonzero, noise_variance = sample.generate_response()
 
     n, p = X.shape
 
+    T_sign = T_sign * np.ones(1)
+
+    snr = float(snr)
+
+    s = int(s)
+
+    true_beta = np.zeros(p)
+
+    true_beta[:s] = snr
+
+    if t_0 == 0:
+        threshold = normal.ppf(1. - simes_level / (2. * p)) * np.ones(1)
+
+    else:
+        J_card = J.shape[0]
+        threshold = np.zeros(J_card + 1)
+        threshold[:J_card] = normal.ppf(1. - (simes_level / (2. * p)) * (np.arange(J_card) + 1.))
+        threshold[J_card] = normal.ppf(1. - (simes_level / (2. * p)) * t_0)
+
     random_Z = np.random.standard_normal(p)
-    sel = selection(X, y, random_Z, method ="theoretical")
+    sel = selection(X, y, random_Z)
     lam, epsilon, active, betaE, cube, initial_soln = sel
 
     if sel is not None:
-
         lagrange = lam * np.ones(p)
         active_sign = np.sign(betaE)
         nactive = active.sum()
+        print("number of selected variables by Lasso", nactive)
 
-        feasible_point = np.fabs(betaE)
+        feasible_point = np.append(1, np.fabs(betaE))
 
         noise_variance = 1.
 
@@ -44,17 +62,21 @@ def one_trial(txtfile, n=350, p= 5000, s= 10, snr = 5., seed_n = 19, bh_level=0.
         generative_X = X[:, active]
         prior_variance = 1000.
 
-        grad_map = sel_prob_gradient_map_lasso(X,
-                                               feasible_point,
-                                               active,
-                                               active_sign,
-                                               lagrange,
-                                               generative_X,
-                                               noise_variance,
-                                               randomizer,
-                                               epsilon)
+        grad_map = sel_prob_gradient_map_simes_lasso(X,
+                                                     feasible_point,
+                                                     index,
+                                                     J,
+                                                     active,
+                                                     T_sign,
+                                                     active_sign,
+                                                     lagrange,
+                                                     threshold,
+                                                     generative_X,
+                                                     noise_variance,
+                                                     randomizer,
+                                                     epsilon)
 
-        inf = selective_inf_lasso(y, grad_map, prior_variance)
+        inf = selective_inf_simes_lasso(y, grad_map, prior_variance)
 
         samples = inf.posterior_samples()
 
@@ -62,27 +84,24 @@ def one_trial(txtfile, n=350, p= 5000, s= 10, snr = 5., seed_n = 19, bh_level=0.
 
         selective_mean = np.mean(samples, axis=0)
 
-        # Q = np.linalg.inv(prior_variance * (generative_X.dot(generative_X.T)) + noise_variance * np.identity(n))
-        # post_mean = prior_variance * ((generative_X.T.dot(Q)).dot(y))
-        # post_var = prior_variance * np.identity(nactive) - ((prior_variance ** 2) * (generative_X.T.dot(Q).dot(generative_X)))
-        # unadjusted_intervals = np.vstack([post_mean - 1.65 * (post_var.diagonal()), post_mean + 1.65 * (post_var.diagonal())])
-
         projection_active = X[:, active].dot(np.linalg.inv(X[:, active].T.dot(X[:, active])))
-        M_1 = prior_variance *(X.dot(X.T)) + noise_variance * np.identity(n)
-        M_2 = prior_variance *((X.dot(X.T)).dot(projection_active))
+        M_1 = prior_variance * (X.dot(X.T)) + noise_variance * np.identity(n)
+        M_2 = prior_variance * ((X.dot(X.T)).dot(projection_active))
         M_3 = prior_variance * (projection_active.T.dot(X.dot(X.T)).dot(projection_active))
         post_mean = M_2.T.dot(np.linalg.inv(M_1)).dot(y)
         post_var = M_3 - M_2.T.dot(np.linalg.inv(M_1)).dot(M_2)
+
+        # Q = np.linalg.inv(prior_variance * (generative_X.dot(generative_X.T)) + noise_variance * np.identity(n))
+        # post_mean = prior_variance * ((generative_X.T.dot(Q)).dot(y))
+        # post_var = prior_variance * np.identity(nactive) - ((prior_variance ** 2) * (generative_X.T.dot(Q).dot(generative_X)))
         unadjusted_intervals = np.vstack([post_mean - 1.65 * (np.sqrt(post_var.diagonal())),
                                           post_mean + 1.65 * (np.sqrt(post_var.diagonal()))])
-
 
         coverage_ad = np.zeros(p)
         coverage_unad = np.zeros(p)
         nerr = 0.
-        # true_val = true_beta[active]
+        #true_val = true_beta[active]
         true_val = projection_active.T.dot(X.dot(true_beta))
-
         active_set = [i for i in range(p) if active[i]]
         active_ind = np.zeros(p)
         active_ind[active_set] = 1
@@ -146,15 +165,17 @@ def one_trial(txtfile, n=350, p= 5000, s= 10, snr = 5., seed_n = 19, bh_level=0.
             list_results.append(ad_mean)
             list_results.append(unad_mean)
 
-            #txtfile = "/Users/snigdhapanigrahi/Results_cisEQTLS/output.txt"
+            # txtfile = "/Users/snigdhapanigrahi/Results_cisEQTLS/output.txt"
 
             # Assuming res is a flat list
-            with open(txtfile, "w") as output:
+            with open(outputfile, "w") as output:
                 for val in range(p):
                     output.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(true_beta[val],
-                                                                                       active_ind[val], coverage_ad[val],
+                                                                                       active_ind[val],
+                                                                                       coverage_ad[val],
                                                                                        coverage_unad[val],
-                                                                                       D_BH[val], ad_lower_credible[val],
+                                                                                       D_BH[val],
+                                                                                       ad_lower_credible[val],
                                                                                        ad_upper_credible[val],
                                                                                        unad_lower_credible[val],
                                                                                        unad_upper_credible[val],
@@ -165,46 +186,4 @@ def one_trial(txtfile, n=350, p= 5000, s= 10, snr = 5., seed_n = 19, bh_level=0.
 
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--output')
-    parser.add_argument('-s', '--seed')
-    parser.add_argument('-m', '--tsig')
-    args = parser.parse_args()
-
-    print(args.output)
-    print(args.seed)
-    print(args.tsig)
-
-    one_trial(args.output, 
-              n =350, 
-              p = 5000, 
-              s = int(args.tsig), 
-              snr = 5., 
-              seed_n = int(args.seed),
-              bh_level = 0.1, 
-              method = "theoretical")
-
-    # DIR='/scratch/PI/sabatti/controlled_access_data/simulation_data/high_dim_test'
-    # seed_n = 0
-    # txtfile=os.path.join(DIR,str(seed_n))
-
-# R = one_trial(txtfile, n=50, p=20, s=20, seed_n=seed_n)
-
-
-#print("true parameter",R[0])
-#print("active indices",R[1])
-#print("indices covered by adjusted",R[2])
-#print("indices covered by unadjusted",R[3])
-#print("indices declared significant after BH",R[4])
-#print("adjusted lower bounds", R[5])
-#print("adjusted upper bounds", R[6])
-#print("unadjusted lower bounds", R[7])
-#print("unadjusted upper bounds", R[8])
-#print("selective mean", R[9])
-#print("unadjusted mean", R[10])
-
-
-
-
-
+one_trial("/Users/snigdhapanigrahi/Results_cisEQTLS/output.txt")
