@@ -31,6 +31,24 @@ def imerge(a, b, mode="concat"):
         sys.stderr.write("Mode not recognized\n")
         sys.exit(1)
         
+def run_simes_selection(fltuple):
+    """ 
+    Run simes selection and store results 
+    """
+    X_f, y_f, alpha = fltuple 
+    X = np.loadtxt(X_f, delimiter='\t')
+    y = np.loadtxt(y_f, delimiter='\t')
+    sel_simes = simes_selection(X, y, alpha=alpha, randomizer='gaussian')
+
+    print(sel_simes)
+    # n_outputs = ## TODO 
+    # 
+    # if sel_simes:
+    #     # (level, select, ssig, rej, order, sign_T)
+    #     
+    # else:
+        
+
 
 def signal_setting(setting, tot_s, snr=5.0, sigma=1.0, outdir=None):
     if setting == 0:
@@ -123,7 +141,7 @@ def generate_response(fltuple):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('job_type', help='generateX or generateY')
+    parser.add_argument('job_type', help='runSimes, generateX or generateY')
     parser.add_argument('-o', '--outdir', required=True)
     parser.add_argument('-n', '--nsamples', default=350)
     parser.add_argument('-p', '--nsnps', default=5000)
@@ -138,9 +156,24 @@ if __name__ == "__main__":
     p = int(args.nsnps)
     n = int(args.nsamples)
     
+    if args.job_type =="runSimes":
+        # run simes procedure on the matrices
+        s = int(args.seed)
+        trial_dir = os.path.join(args.outdir,"trial_"+str(s))
+        y_dir = os.path.join(trial_dir,"y_data")
+        x_dir = os.path.join(args.outdir,"X_data")
+        y_fnames = [os.path.join(y_dir,"y_"+str(i)+".txt") for i in xrange(g)]
+        x_fnames = [os.path.join(x_dir,"X_"+str(i)+".txt") for i in xrange(g)]
+        simes_level = itertools.repeat(0.1, g)
+    
+        fltuple = imerge(itertools.izip(x_fnames,y_fnames), simes_level, mode="append")
+        pool=mp.Pool(processes=int(args.nproc))
+        pool.map(run_simes_selection, fltuple)
+        
+
     if args.job_type == "generateX":
-        sys.stderr.write("Generating X data\n")
         # store random designs in X_data, one per gene
+        sys.stderr.write("Generating X data\n")
         x_dir = os.path.join(args.outdir,"X_data")
         mkdir_p(x_dir)
         sys.stderr.write("Writing to: "+x_dir+"\n")
