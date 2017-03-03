@@ -101,6 +101,10 @@ def run_simes_selection(fltuple):
     Run simes selection and store results 
     """
     s_f, X_f, y_f, alpha = fltuple 
+    # check if the simes result already exists
+    if os.path.isfile(s_f):
+        return 
+
     X = read_X(X_f)
     y = read_y(y_f)
     sel_simes = simes_selection(X, y, alpha=alpha, randomizer='gaussian')

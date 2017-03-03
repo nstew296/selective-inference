@@ -10,4 +10,7 @@ source /home/jjzhu/source_code/cis_eqtl_pipeline/.env/bin/activate
 # python sim_ciseqtl.py generateY -o $DIR -g $NGENES -k 10 -s $YSEED
 
 # python sim_ciseqtl.py runSimes -o $DIR -g $NGENES -k 10 -s $YSEED
+# python sim_ciseqtl.py evalSimes -o $DIR -s $YSEED
+DIR=/scratch/PI/sabatti/controlled_access_data/cisEQTLS_sim_exp2
+YSEED=3
 python sim_ciseqtl.py evalSimes -o $DIR -s $YSEED
