@@ -11,6 +11,7 @@ from selection.bayesian.cisEQTLS.Simes_selection import simes_selection
 from selection.tests.instance import gaussian_instance
 from selection.bayesian.cisEQTLS.initial_sol_wocv import selection, instance
 
+
 def mkdir_p(path):
     try:
         os.makedirs(path)
