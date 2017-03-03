@@ -80,7 +80,6 @@ def one_trial(txtfile, n=350, p= 5000, s= 10, snr = 5., seed_n = 19, bh_level=0.
         coverage_ad = np.zeros(p)
         coverage_unad = np.zeros(p)
         nerr = 0.
-        # true_val = true_beta[active]
         true_val = projection_active.T.dot(X.dot(true_beta))
 
         active_set = [i for i in range(p) if active[i]]
