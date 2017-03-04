@@ -16,38 +16,36 @@ from selection.bayesian.cisEQTLS.inference_per_gene import selection_probability
     sel_prob_gradient_map_lasso, selective_inf_lasso
 
 
-#note that bh level is to decided upon how many we end up selecting:
-def hierarchical_inference(outputfile=None,
-                           index = 10,
-                           J=[],
-                           t_0=0,
-                           T_sign=1,
-                           simes_level = None, #simes level divided by number of genes
-                           pgenes = 0.8, #proportion of egenes in total number of genes
-                           X = None,
-                           y=None,
-                           seed_n = 19,
-                           bh_level=0.1,
-                           selection_method = "single",
-                           method = "theoretical"):
-    random.seed(seed_n)
+def hierarchical_inference(outputfile,  # file to save results
+                           X,           # input X data
+                           y,           # input y data
+                           index,       # index of the lead variable that passes simes TODO
+                           simes_level, #simes level divided by number of genes
+                           pgenes,# proportion of egenes in total number of genes
+                           J,        # rejection list
+                           t_0, # order index of the lead variable that passes simes 
+                           T_sign, # the sign of the test statistic of the lead variable
+                           seed_n = 19, # seed to run the procedure
+                           bh_level=0.1, # benjamini-hotchburg level to control the FDR
+                           selection_method = "single", # method selection
+                           lambda_method = "theoretical"):
+
+
+    np.random.seed(seed_n)
 
     n, p = X.shape
-
     T_sign = T_sign * np.ones(1)
 
     if t_0 == 0:
         threshold = normal.ppf(1. - simes_level / (2. * p)) * np.ones(1)
-
     else:
         J_card = J.shape[0]
         threshold = np.zeros(J_card + 1)
         threshold[:J_card] = normal.ppf(1. - (simes_level / (2. * p)) * (np.arange(J_card) + 1.))
         threshold[J_card] = normal.ppf(1. - (simes_level / (2. * p)) * t_0)
 
-
     random_Z = np.random.standard_normal(p)
-    sel = selection(X, y, random_Z)
+    sel = selection(X, y, random_Z, method=lambda_method)
 
     lam, epsilon, active, betaE, cube, initial_soln = sel
 
@@ -55,19 +53,14 @@ def hierarchical_inference(outputfile=None,
         lagrange = lam * np.ones(p)
         active_sign = np.sign(betaE)
         nactive = active.sum()
-        print("number of selected variables by Lasso", nactive)
-
         noise_variance = 1.
-
         randomizer = randomization.isotropic_gaussian((p,), 1.)
-
         generative_X = X[:, active]
         prior_variance = 1000.
 
-        if selection_method is "double":
-
+        if selection_method == "double":
+            # account for selection and randomlized lasso
             feasible_point = np.append(1, np.fabs(betaE))
-
             grad_map = sel_prob_gradient_map_simes_lasso(X,
                                                          feasible_point,
                                                          index,
@@ -81,13 +74,12 @@ def hierarchical_inference(outputfile=None,
                                                          noise_variance,
                                                          randomizer,
                                                          epsilon)
-
             inf = selective_inf_simes_lasso(y, grad_map, prior_variance)
 
-        elif selection_method is "single":
-
+        elif selection_method == "single":
+            # account for only randomized lasso with a more stringent level
+            bh_level = bh_level * pgenes
             feasible_point = np.fabs(betaE)
-
             grad_map = sel_prob_gradient_map_lasso(X,
                                                    feasible_point,
                                                    active,
@@ -97,13 +89,9 @@ def hierarchical_inference(outputfile=None,
                                                    noise_variance,
                                                    randomizer,
                                                    epsilon)
-
             inf = selective_inf_lasso(y, grad_map, prior_variance)
-
-            bh_level = bh_level * pgenes
-
         else:
-            sys.stderr.write("Wrong method, use double or single")
+            sys.stderr.write("Method '"+selection_method+"' does not exist (use 'double' or 'single')\n")
             sys.exit(1)
 
         samples = inf.posterior_samples()
@@ -124,82 +112,74 @@ def hierarchical_inference(outputfile=None,
 
         nerr = 0.
 
-        active_set = [i for i in range(p) if active[i]]
+        active_set = [i for i in xrange(p) if active[i]]
         active_ind = np.zeros(p)
         active_ind[active_set] = 1
 
-        list_results = []
-        list_results.append(active_ind)
 
+        # compute intervals
         ad_lower_credible = np.zeros(p)
         ad_upper_credible = np.zeros(p)
-
         unad_lower_credible = np.zeros(p)
         unad_upper_credible = np.zeros(p)
-
         ad_mean = np.zeros(p)
         unad_mean = np.zeros(p)
+        for l in xrange(int(nactive)):
+            ad_lower_credible[active_set[l]] = adjusted_intervals[0, l]
+            ad_upper_credible[active_set[l]] = adjusted_intervals[1, l]
+            unad_lower_credible[active_set[l]] = unadjusted_intervals[0, l]
+            unad_upper_credible[active_set[l]] = unadjusted_intervals[1, l]
+            ad_mean[active_set[l]] = selective_mean[l]
+            unad_mean[active_set[l]] = post_mean[l]
 
-        if nactive > 1:
-            try:
-                for l in range(nactive):
-                    ad_lower_credible[active_set[l]] = adjusted_intervals[0, l]
-                    ad_upper_credible[active_set[l]] = adjusted_intervals[1, l]
-                    unad_lower_credible[active_set[l]] = unadjusted_intervals[0, l]
-                    unad_upper_credible[active_set[l]] = unadjusted_intervals[1, l]
-                    ad_mean[active_set[l]] = selective_mean[l]
-                    unad_mean[active_set[l]] = post_mean[l]
+        ngrid = 1000
+        quantiles = np.zeros((ngrid, nactive))
 
-            except ValueError:
-                nerr += 1
-                print('ignore iteration raising ValueError')
+        for i in xrange(ngrid):
+            quantiles[i, :] = np.percentile(samples, (i * 100.) / ngrid, axis=0)
 
-            ngrid = 1000
-            quantiles = np.zeros((ngrid, nactive))
-            for i in range(ngrid):
-                quantiles[i, :] = np.percentile(samples, (i * 100.) / ngrid, axis=0)
+        index_grid = np.argmin(np.abs(quantiles - np.zeros((ngrid, nactive))), axis=0)
+        p_value = 2 * np.minimum(np.true_divide(index_grid, ngrid), 1. - np.true_divide(index_grid, ngrid))
+        p_BH = BH_q(p_value, bh_level)
 
-            index_grid = np.argmin(np.abs(quantiles - np.zeros((ngrid, nactive))), axis=0)
-            p_value = 2 * np.minimum(np.true_divide(index_grid, ngrid), 1. - np.true_divide(index_grid, ngrid))
-            p_BH = BH_q(p_value, bh_level)
+        # selection 
+        D_BH = np.zeros(p)
+        if p_BH is not None:
+            for indx in p_BH[1]:
+                D_BH[active_set[indx]] = 1
 
-            D_BH = np.zeros(p)
+        list_results = np.array([active_ind,
+                                 D_BH,
+                                 ad_lower_credible,
+                                 ad_upper_credible,
+                                 unad_lower_credible,
+                                 unad_upper_credible,
+                                 ad_mean,
+                                 unad_mean])
 
-            if p_BH is not None:
-                for indx in p_BH[1]:
-                    D_BH[active_set[indx]] = 1
-
-            list_results.append(D_BH)
-
-            list_results.append(ad_lower_credible)
-            list_results.append(ad_upper_credible)
-            list_results.append(unad_lower_credible)
-            list_results.append(unad_upper_credible)
-
-            list_results.append(ad_mean)
-            list_results.append(unad_mean)
-
-            with open(outputfile, "w") as output:
-                for val in range(p):
-                    output.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(active_ind[val],
-                                                                           D_BH[val],
-                                                                           ad_lower_credible[val],
-                                                                           ad_upper_credible[val],
-                                                                           unad_lower_credible[val],
-                                                                           unad_upper_credible[val],
-                                                                           ad_mean[val],
-                                                                           unad_mean[val]))
+        with open(outputfile, "w") as output:
+            for val in range(p):
+                output.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(active_ind[val],
+                                                                       D_BH[val],
+                                                                       ad_lower_credible[val],
+                                                                       ad_upper_credible[val],
+                                                                       unad_lower_credible[val],
+                                                                       unad_upper_credible[val],
+                                                                       ad_mean[val],
+                                                                       unad_mean[val]))
 
 
-            return list_results
-
+        return list_results
     else:
-
-        print("Lasso selecting null")
+        sys.stderr.write("Lasso did not select any variables\n")
         return None
 
 if __name__ == "__main__":
-    X, y, true_beta, nonzero, noise_variance = gaussian_instance(n=10, p=20, s=0, sigma=1, rho=0, snr=5.)
-    # hierarchical_inference(outputfile="/Users/snigdhapanigrahi/Results_cisEQTLS/output.txt",X=X, y=y, selection_method ="single")
-    hierarchical_inference(outputfile="/Users/snigdhapanigrahi/Results_cisEQTLS/output_double.txt",simes_level=0.01,
-                           X=X, y=y, selection_method ="double")
+    np.random.seed(0)
+    X, y, true_beta, nonzero, noise_variance = gaussian_instance(n=10, p=10, s=5, sigma=1, rho=0, snr=5.)
+    print(X)
+    print(y)
+    result_file = "res_test_hierarchical_single.txt"
+    hierarchical_inference(outputfile=result_file, X=X, y=y, index=0, simes_level=0.01, pgenes = 0.8, selection_method ="single")
+    result_file = "res_test_hierarchical_double.txt"
+    hierarchical_inference(outputfile=result_file, X=X, y=y, index=0, simes_level=0.01, pgenes = 0.8, selection_method ="double")
