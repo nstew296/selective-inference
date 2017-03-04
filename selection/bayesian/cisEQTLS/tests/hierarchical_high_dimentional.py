@@ -148,27 +148,16 @@ def hierarchical_inference(outputfile,  # file to save results
             for indx in p_BH[1]:
                 D_BH[active_set[indx]] = 1
 
-        list_results = np.array([active_ind,
-                                 D_BH,
-                                 ad_lower_credible,
-                                 ad_upper_credible,
-                                 unad_lower_credible,
-                                 unad_upper_credible,
-                                 ad_mean,
-                                 unad_mean])
+        list_results = np.transpose( np.vstack((active_ind,
+                                     D_BH,
+                                     ad_lower_credible,
+                                     ad_upper_credible,
+                                     unad_lower_credible,
+                                     unad_upper_credible,
+                                     ad_mean,
+                                     unad_mean)))
 
-        with open(outputfile, "w") as output:
-            for val in range(p):
-                output.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(active_ind[val],
-                                                                       D_BH[val],
-                                                                       ad_lower_credible[val],
-                                                                       ad_upper_credible[val],
-                                                                       unad_lower_credible[val],
-                                                                       unad_upper_credible[val],
-                                                                       ad_mean[val],
-                                                                       unad_mean[val]))
-
-
+        np.savetxt(outputfile,list_results)
         return list_results
     else:
         sys.stderr.write("Lasso did not select any variables\n")
@@ -179,7 +168,7 @@ if __name__ == "__main__":
     X, y, true_beta, nonzero, noise_variance = gaussian_instance(n=10, p=10, s=5, sigma=1, rho=0, snr=5.)
     print(X)
     print(y)
-    result_file = "res_test_hierarchical_single.txt"
-    hierarchical_inference(outputfile=result_file, X=X, y=y, index=0, simes_level=0.01, pgenes = 0.8, selection_method ="single")
-    result_file = "res_test_hierarchical_double.txt"
-    hierarchical_inference(outputfile=result_file, X=X, y=y, index=0, simes_level=0.01, pgenes = 0.8, selection_method ="double")
+    result_file = "test_hierarchical_single.txt"
+    hierarchical_inference(result_file, X, y, 0, 0.01, 0.8, J=[], t_0=0, T_sign=1, selection_method ="single")
+    result_file = "test_hierarchical_double.txt"
+    hierarchical_inference(result_file, X, y, 0, 0.01, 0.8, J=[], t_0=0, T_sign=1, selection_method ="double")
