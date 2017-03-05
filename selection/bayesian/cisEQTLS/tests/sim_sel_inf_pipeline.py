@@ -8,6 +8,9 @@ import numpy as np
 from sim_ciseqtl import read_X, read_y, read_simes, read_signals, mkdir_p
 from hierarchical_high_dimentional import hierarchical_inference
 
+
+
+
 if __name__=="__main__":
     np.random.seed(0)
     parser = argparse.ArgumentParser()
