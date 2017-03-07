@@ -39,7 +39,10 @@ def evaluate_hierarchical_results(result, X, s, snr):
 
     false_discoveries = discoveries[s:].sum()
     FDR += false_discoveries / max(float(discoveries.sum()), 1.)
-    power += true_discoveries / float(s)
+    if s == 0:
+        power = 0
+    else:
+        power += true_discoveries / float(s)
 
     active_ind = np.array(result[:, 0], np.bool)
     nactive = active_ind.sum()
