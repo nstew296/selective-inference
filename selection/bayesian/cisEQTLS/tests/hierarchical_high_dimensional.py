@@ -106,7 +106,7 @@ def hierarchical_inference(X,           # input X data
     if t_0 == 0:
         threshold = normal.ppf(1. - simes_level / (2. * p)) * np.ones(1)
     else:
-        J_card = J.shape[0]
+        J_card = len(J)
         threshold = np.zeros(J_card + 1)
         threshold[:J_card] = normal.ppf(1. - (simes_level / (2. * p)) * (np.arange(J_card) + 1.))
         threshold[J_card] = normal.ppf(1. - (simes_level / (2. * p)) * t_0)
