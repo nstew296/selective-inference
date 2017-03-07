@@ -39,7 +39,7 @@ def do_evaluation(args):
 
         result_fname = os.path.join(trial_dir, "infs_"+sel_type, "sel_out_"+str(i)+".txt")
         if not os.path.isfile(result_fname):
-            sys.stderr.write("Family "+str(i)+" was selected by Simes, but second stage selection was not complete\n")
+            sys.stderr.write("Family "+str(i)+" was selected, but second stage selection was not complete\n")
             continue
         else:
             sys.stderr.write("Family "+str(i)+" was selected by Simes, and Lasso selected variables\n")
@@ -52,7 +52,7 @@ def do_evaluation(args):
             sys.stderr.write('Cannot open: '+X_fname+"\n")
         # adjusted_coverage, unadjusted_coverage, FDR, power = evaluate_hierarchical_results(result, X, s, snr)
         res_eval = evaluate_hierarchical_results(result, X, num_true_sig, snr)
-        print("{}\t{}\t{}\t{}".format(*res_eval))
+        print("{}, {}, {}, {}".format(*res_eval))
 
 def do_inference(args):
     sys.stderr.write("Running lasso selection and inference\n")
@@ -63,8 +63,17 @@ def do_inference(args):
     n_genes = int(args.ngenes)
 
     trial_dir = os.path.join(args.indir,"trial_"+str(s))
-    res_dir = os.path.join(trial_dir,"infs_"+sel_type)
-    mkdir_p(res_dir)
+
+    # folder to store inference results
+    inf_dir = os.path.join(trial_dir,"infs_"+sel_type)
+    mkdir_p(inf_dir)
+    sel_out_file = os.path.join(inf_dir,"sel_out_"+str(i)+".txt")
+
+    # folder to store no seleciton results 
+    nos_dir = os.path.join(trial_dir,"no_sel_"+sel_type)
+    mkdir_p(nos_dir)
+    no_sel_file = os.path.join(nos_dir,"no_sel_"+str(i)+".txt")
+
 
     X_f = os.path.join(args.indir,"X_data","X_"+str(i)+".txt")
     y_f = os.path.join(trial_dir,"y_data", "y_"+str(i)+".txt")
@@ -79,11 +88,11 @@ def do_inference(args):
         sys.stderr.write("Family "+str(i)+" was selected by Simes\n")
         X = read_X(X_f)
         y = read_y(y_f)
-        index = sel_res[1][i]
-        idx_order = sel_res[2][i]
-        sign = sel_res[3][i]
+        index = sel_res[1]
+        idx_order = sel_res[2]
+        sign = sel_res[3]
         simes_level = sel_res[4]
-        rej = sel_res[5][i]
+        rej = sel_res[5]
 
         n_sel = np.sum(np.array(sel_res[0]))
         n_samples, n_variables = X.shape
@@ -95,20 +104,22 @@ def do_inference(args):
         sys.stderr.write("Proportion of selected genes: "+str(pgenes)+"\n")
         sys.stderr.write("Uniform Sime's simes_level: "+str(simes_level)+"\n")
         sys.stderr.write("Other params: "+str(index)+", "+str(idx_order)+", "+str(sign)+"\n")
-        sys.stderr.write("Writing results to: "+res_dir+"\n")
         sys.stderr.write("Selection mode: "+sel_type+"\n")
         
-        list_results = hierarchical_inference(X, y, index, simes_level, pgenes, J=rej, t_0=idx_order, T_sign=sign, selection_method=sel_type)
+        list_results = hierarchical_inference(X, y, 
+                                              index, simes_level, pgenes, J=rej, t_0=idx_order, T_sign=sign, 
+                                              selection_method=sel_type,
+                                              just_selection=args.justsel)
         if list_results is None:
             sys.stderr.write("Result is None (likely Lasso did not select any variables)\n")
-            result_file = os.path.join(res_dir,"no_sel_"+str(i)+".txt")
-            np.savetxt(0)
+            sys.stderr.write("Saving file: "+no_sel_file+"\n") 
+            np.savetxt(no_sel_file, [0])
         else:
             if args.justsel: # do not do inference to save time
-                sys.stderr.write("No infrence is performed.\n")
+                sys.stderr.write("No inference is performed and no result file is saved.\n")
             else:
-                result_file = os.path.join(res_dir,"sel_out_"+str(i)+".txt")
-                np.savetxt(result_file,list_results)
+                sys.stderr.write("Saving file: "+sel_out_file+"\n") 
+                np.savetxt(sel_out_file,list_results)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="run hierarchical inference or evaluate its simulation results")

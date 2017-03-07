@@ -1,0 +1,501 @@
+Evaluating lasso selection and inference results
+Family 0 was not selected by Simes
+Family 1 was not selected by Simes
+Family 2 was selected by Simes, and Lasso selected variables
+Family 3 was selected by Simes, and Lasso selected variables
+Family 4 was not selected by Simes
+Family 5 was not selected by Simes
+Family 6 was not selected by Simes
+Family 7 was selected by Simes, and Lasso selected variables
+Family 8 was selected by Simes, and Lasso selected variables
+Family 9 was not selected by Simes
+Family 10 was selected, but second stage selection was not complete
+Family 11 was selected by Simes, and Lasso selected variables
+Family 12 was selected by Simes, and Lasso selected variables
+Family 13 was selected by Simes, and Lasso selected variables
+Family 14 was selected by Simes, and Lasso selected variables
+Family 15 was not selected by Simes
+Family 16 was not selected by Simes
+Family 17 was not selected by Simes
+Family 18 was not selected by Simes
+Family 19 was not selected by Simes
+Family 20 was not selected by Simes
+Family 21 was not selected by Simes
+Family 22 was not selected by Simes
+Family 23 was not selected by Simes
+Family 24 was selected by Simes, and Lasso selected variables
+Family 25 was selected by Simes, and Lasso selected variables
+Family 26 was selected, but second stage selection was not complete
+Family 27 was selected by Simes, and Lasso selected variables
+Family 28 was not selected by Simes
+Family 29 was selected by Simes, and Lasso selected variables
+Family 30 was not selected by Simes
+Family 31 was not selected by Simes
+Family 32 was selected by Simes, and Lasso selected variables
+Family 33 was selected, but second stage selection was not complete
+Family 34 was selected by Simes, and Lasso selected variables
+Family 35 was not selected by Simes
+Family 36 was not selected by Simes
+Family 37 was not selected by Simes
+Family 38 was selected by Simes, and Lasso selected variables
+Family 39 was not selected by Simes
+Family 40 was not selected by Simes
+Family 41 was not selected by Simes
+Family 42 was not selected by Simes
+Family 43 was not selected by Simes
+Family 44 was not selected by Simes
+Family 45 was selected by Simes, and Lasso selected variables
+Family 46 was not selected by Simes
+Family 47 was not selected by Simes
+Family 48 was selected by Simes, and Lasso selected variables
+Family 49 was not selected by Simes
+Family 50 was not selected by Simes
+Family 51 was not selected by Simes
+Family 52 was selected, but second stage selection was not complete
+Family 53 was not selected by Simes
+Family 54 was not selected by Simes
+Family 55 was not selected by Simes
+Family 56 was selected by Simes, and Lasso selected variables
+Family 57 was not selected by Simes
+Family 58 was selected, but second stage selection was not complete
+Family 59 was selected by Simes, and Lasso selected variables
+Family 60 was selected, but second stage selection was not complete
+Family 61 was selected by Simes, and Lasso selected variables
+Family 62 was selected by Simes, and Lasso selected variables
+Family 63 was selected by Simes, and Lasso selected variables
+Family 64 was not selected by Simes
+Family 65 was selected by Simes, and Lasso selected variables
+Family 66 was not selected by Simes
+Family 67 was not selected by Simes
+Family 68 was not selected by Simes
+Family 69 was selected, but second stage selection was not complete
+Family 70 was not selected by Simes
+Family 71 was selected, but second stage selection was not complete
+Family 72 was not selected by Simes
+Family 73 was not selected by Simes
+Family 74 was selected by Simes, and Lasso selected variables
+Family 75 was selected by Simes, and Lasso selected variables
+Family 76 was not selected by Simes
+Family 77 was not selected by Simes
+Family 78 was not selected by Simes
+Family 79 was not selected by Simes
+Family 80 was selected, but second stage selection was not complete
+Family 81 was not selected by Simes
+Family 82 was not selected by Simes
+Family 83 was selected by Simes, and Lasso selected variables
+Family 84 was not selected by Simes
+Family 85 was not selected by Simes
+Family 86 was not selected by Simes
+Family 87 was selected by Simes, and Lasso selected variables
+Family 88 was selected by Simes, and Lasso selected variables
+Family 89 was not selected by Simes
+Family 90 was not selected by Simes
+Family 91 was selected by Simes, and Lasso selected variables
+Family 92 was not selected by Simes
+Family 93 was not selected by Simes
+Family 94 was not selected by Simes
+Family 95 was not selected by Simes
+Family 96 was selected by Simes, and Lasso selected variables
+Family 97 was not selected by Simes
+Family 98 was not selected by Simes
+Family 99 was not selected by Simes
+Family 100 was selected by Simes, and Lasso selected variables
+Family 101 was selected by Simes, and Lasso selected variables
+Family 102 was not selected by Simes
+Family 103 was selected, but second stage selection was not complete
+Family 104 was not selected by Simes
+Family 105 was not selected by Simes
+Family 106 was selected by Simes, and Lasso selected variables
+Family 107 was not selected by Simes
+Family 108 was selected by Simes, and Lasso selected variables
+Family 109 was not selected by Simes
+Family 110 was not selected by Simes
+Family 111 was selected by Simes, and Lasso selected variables
+Family 112 was not selected by Simes
+Family 113 was selected by Simes, and Lasso selected variables
+Family 114 was not selected by Simes
+Family 115 was selected, but second stage selection was not complete
+Family 116 was not selected by Simes
+Family 117 was not selected by Simes
+Family 118 was not selected by Simes
+Family 119 was not selected by Simes
+Family 120 was not selected by Simes
+Family 121 was not selected by Simes
+Family 122 was not selected by Simes
+Family 123 was selected by Simes, and Lasso selected variables
+Family 124 was not selected by Simes
+Family 125 was not selected by Simes
+Family 126 was selected, but second stage selection was not complete
+Family 127 was not selected by Simes
+Family 128 was selected by Simes, and Lasso selected variables
+Family 129 was not selected by Simes
+Family 130 was not selected by Simes
+Family 131 was selected by Simes, and Lasso selected variables
+Family 132 was not selected by Simes
+Family 133 was selected by Simes, and Lasso selected variables
+Family 134 was selected by Simes, and Lasso selected variables
+Family 135 was selected by Simes, and Lasso selected variables
+Family 136 was not selected by Simes
+Family 137 was selected by Simes, and Lasso selected variables
+Family 138 was selected, but second stage selection was not complete
+Family 139 was selected by Simes, and Lasso selected variables
+Family 140 was selected by Simes, and Lasso selected variables
+Family 141 was selected by Simes, and Lasso selected variables
+Family 142 was not selected by Simes
+Family 143 was not selected by Simes
+Family 144 was not selected by Simes
+Family 145 was selected, but second stage selection was not complete
+Family 146 was not selected by Simes
+Family 147 was not selected by Simes
+Family 148 was selected by Simes, and Lasso selected variables
+Family 149 was selected, but second stage selection was not complete
+Family 150 was selected, but second stage selection was not complete
+Family 151 was not selected by Simes
+Family 152 was not selected by Simes
+Family 153 was not selected by Simes
+Family 154 was selected by Simes, and Lasso selected variables
+Family 155 was not selected by Simes
+Family 156 was not selected by Simes
+Family 157 was not selected by Simes
+Family 158 was selected, but second stage selection was not complete
+Family 159 was not selected by Simes
+Family 160 was selected by Simes, and Lasso selected variables
+Family 161 was not selected by Simes
+Family 162 was not selected by Simes
+Family 163 was selected by Simes, and Lasso selected variables
+Family 164 was selected by Simes, and Lasso selected variables
+Family 165 was not selected by Simes
+Family 166 was selected by Simes, and Lasso selected variables
+Family 167 was selected by Simes, and Lasso selected variables
+Family 168 was not selected by Simes
+Family 169 was selected by Simes, and Lasso selected variables
+Family 170 was selected by Simes, and Lasso selected variables
+Family 171 was not selected by Simes
+Family 172 was not selected by Simes
+Family 173 was not selected by Simes
+Family 174 was not selected by Simes
+Family 175 was not selected by Simes
+Family 176 was selected, but second stage selection was not complete
+Family 177 was not selected by Simes
+Family 178 was not selected by Simes
+Family 179 was not selected by Simes
+Family 180 was not selected by Simes
+Family 181 was not selected by Simes
+Family 182 was selected, but second stage selection was not complete
+Family 183 was selected by Simes, and Lasso selected variables
+Family 184 was not selected by Simes
+Family 185 was selected by Simes, and Lasso selected variables
+Family 186 was not selected by Simes
+Family 187 was not selected by Simes
+Family 188 was selected by Simes, and Lasso selected variables
+Family 189 was selected by Simes, and Lasso selected variables
+Family 190 was not selected by Simes
+Family 191 was not selected by Simes
+Family 192 was selected, but second stage selection was not complete
+Family 193 was not selected by Simes
+Family 194 was not selected by Simes
+Family 195 was not selected by Simes
+Family 196 was not selected by Simes
+Family 197 was selected by Simes, and Lasso selected variables
+Family 198 was not selected by Simes
+Family 199 was not selected by Simes
+Family 200 was not selected by Simes
+Family 201 was not selected by Simes
+Family 202 was selected, but second stage selection was not complete
+Family 203 was not selected by Simes
+Family 204 was not selected by Simes
+Family 205 was not selected by Simes
+Family 206 was not selected by Simes
+Family 207 was selected, but second stage selection was not complete
+Family 208 was selected, but second stage selection was not complete
+Family 209 was not selected by Simes
+Family 210 was not selected by Simes
+Family 211 was selected, but second stage selection was not complete
+Family 212 was not selected by Simes
+Family 213 was selected, but second stage selection was not complete
+Family 214 was selected, but second stage selection was not complete
+Family 215 was selected, but second stage selection was not complete
+Family 216 was selected, but second stage selection was not complete
+Family 217 was selected, but second stage selection was not complete
+Family 218 was selected, but second stage selection was not complete
+Family 219 was selected, but second stage selection was not complete
+Family 220 was not selected by Simes
+Family 221 was not selected by Simes
+Family 222 was not selected by Simes
+Family 223 was not selected by Simes
+Family 224 was selected, but second stage selection was not complete
+Family 225 was not selected by Simes
+Family 226 was selected, but second stage selection was not complete
+Family 227 was not selected by Simes
+Family 228 was not selected by Simes
+Family 229 was not selected by Simes
+Family 230 was not selected by Simes
+Family 231 was not selected by Simes
+Family 232 was not selected by Simes
+Family 233 was selected, but second stage selection was not complete
+Family 234 was not selected by Simes
+Family 235 was not selected by Simes
+Family 236 was selected, but second stage selection was not complete
+Family 237 was not selected by Simes
+Family 238 was not selected by Simes
+Family 239 was not selected by Simes
+Family 240 was not selected by Simes
+Family 241 was not selected by Simes
+Family 242 was selected, but second stage selection was not complete
+Family 243 was not selected by Simes
+Family 244 was not selected by Simes
+Family 245 was not selected by Simes
+Family 246 was selected, but second stage selection was not complete
+Family 247 was selected, but second stage selection was not complete
+Family 248 was selected, but second stage selection was not complete
+Family 249 was selected, but second stage selection was not complete
+Family 250 was selected, but second stage selection was not complete
+Family 251 was selected, but second stage selection was not complete
+Family 252 was selected, but second stage selection was not complete
+Family 253 was selected, but second stage selection was not complete
+Family 254 was not selected by Simes
+Family 255 was not selected by Simes
+Family 256 was not selected by Simes
+Family 257 was not selected by Simes
+Family 258 was not selected by Simes
+Family 259 was not selected by Simes
+Family 260 was not selected by Simes
+Family 261 was not selected by Simes
+Family 262 was selected, but second stage selection was not complete
+Family 263 was not selected by Simes
+Family 264 was selected, but second stage selection was not complete
+Family 265 was not selected by Simes
+Family 266 was selected, but second stage selection was not complete
+Family 267 was selected, but second stage selection was not complete
+Family 268 was not selected by Simes
+Family 269 was not selected by Simes
+Family 270 was selected, but second stage selection was not complete
+Family 271 was selected, but second stage selection was not complete
+Family 272 was selected, but second stage selection was not complete
+Family 273 was not selected by Simes
+Family 274 was not selected by Simes
+Family 275 was selected, but second stage selection was not complete
+Family 276 was not selected by Simes
+Family 277 was not selected by Simes
+Family 278 was not selected by Simes
+Family 279 was selected, but second stage selection was not complete
+Family 280 was not selected by Simes
+Family 281 was selected, but second stage selection was not complete
+Family 282 was selected, but second stage selection was not complete
+Family 283 was not selected by Simes
+Family 284 was not selected by Simes
+Family 285 was not selected by Simes
+Family 286 was not selected by Simes
+Family 287 was not selected by Simes
+Family 288 was not selected by Simes
+Family 289 was not selected by Simes
+Family 290 was not selected by Simes
+Family 291 was selected, but second stage selection was not complete
+Family 292 was not selected by Simes
+Family 293 was selected, but second stage selection was not complete
+Family 294 was selected, but second stage selection was not complete
+Family 295 was selected, but second stage selection was not complete
+Family 296 was selected, but second stage selection was not complete
+Family 297 was selected, but second stage selection was not complete
+Family 298 was selected, but second stage selection was not complete
+Family 299 was not selected by Simes
+Family 300 was selected, but second stage selection was not complete
+Family 301 was selected, but second stage selection was not complete
+Family 302 was not selected by Simes
+Family 303 was not selected by Simes
+Family 304 was selected, but second stage selection was not complete
+Family 305 was not selected by Simes
+Family 306 was not selected by Simes
+Family 307 was not selected by Simes
+Family 308 was not selected by Simes
+Family 309 was not selected by Simes
+Family 310 was not selected by Simes
+Family 311 was selected, but second stage selection was not complete
+Family 312 was not selected by Simes
+Family 313 was not selected by Simes
+Family 314 was not selected by Simes
+Family 315 was not selected by Simes
+Family 316 was not selected by Simes
+Family 317 was selected, but second stage selection was not complete
+Family 318 was not selected by Simes
+Family 319 was not selected by Simes
+Family 320 was not selected by Simes
+Family 321 was not selected by Simes
+Family 322 was selected, but second stage selection was not complete
+Family 323 was not selected by Simes
+Family 324 was selected, but second stage selection was not complete
+Family 325 was not selected by Simes
+Family 326 was not selected by Simes
+Family 327 was not selected by Simes
+Family 328 was selected, but second stage selection was not complete
+Family 329 was selected, but second stage selection was not complete
+Family 330 was selected, but second stage selection was not complete
+Family 331 was not selected by Simes
+Family 332 was not selected by Simes
+Family 333 was not selected by Simes
+Family 334 was selected, but second stage selection was not complete
+Family 335 was not selected by Simes
+Family 336 was not selected by Simes
+Family 337 was not selected by Simes
+Family 338 was not selected by Simes
+Family 339 was not selected by Simes
+Family 340 was not selected by Simes
+Family 341 was not selected by Simes
+Family 342 was selected, but second stage selection was not complete
+Family 343 was selected, but second stage selection was not complete
+Family 344 was selected, but second stage selection was not complete
+Family 345 was not selected by Simes
+Family 346 was not selected by Simes
+Family 347 was selected, but second stage selection was not complete
+Family 348 was selected, but second stage selection was not complete
+Family 349 was selected, but second stage selection was not complete
+Family 350 was selected, but second stage selection was not complete
+Family 351 was not selected by Simes
+Family 352 was selected, but second stage selection was not complete
+Family 353 was not selected by Simes
+Family 354 was not selected by Simes
+Family 355 was selected, but second stage selection was not complete
+Family 356 was not selected by Simes
+Family 357 was not selected by Simes
+Family 358 was not selected by Simes
+Family 359 was not selected by Simes
+Family 360 was selected, but second stage selection was not complete
+Family 361 was not selected by Simes
+Family 362 was not selected by Simes
+Family 363 was not selected by Simes
+Family 364 was not selected by Simes
+Family 365 was not selected by Simes
+Family 366 was not selected by Simes
+Family 367 was not selected by Simes
+Family 368 was not selected by Simes
+Family 369 was not selected by Simes
+Family 370 was not selected by Simes
+Family 371 was selected, but second stage selection was not complete
+Family 372 was selected, but second stage selection was not complete
+Family 373 was selected, but second stage selection was not complete
+Family 374 was not selected by Simes
+Family 375 was selected, but second stage selection was not complete
+Family 376 was not selected by Simes
+Family 377 was not selected by Simes
+Family 378 was not selected by Simes
+Family 379 was not selected by Simes
+Family 380 was not selected by Simes
+Family 381 was not selected by Simes
+Family 382 was not selected by Simes
+Family 383 was selected, but second stage selection was not complete
+Family 384 was not selected by Simes
+Family 385 was selected, but second stage selection was not complete
+Family 386 was not selected by Simes
+Family 387 was not selected by Simes
+Family 388 was selected, but second stage selection was not complete
+Family 389 was not selected by Simes
+Family 390 was not selected by Simes
+Family 391 was selected, but second stage selection was not complete
+Family 392 was not selected by Simes
+Family 393 was not selected by Simes
+Family 394 was not selected by Simes
+Family 395 was not selected by Simes
+Family 396 was not selected by Simes
+Family 397 was selected, but second stage selection was not complete
+Family 398 was selected, but second stage selection was not complete
+Family 399 was selected, but second stage selection was not complete
+Family 400 was not selected by Simes
+Family 401 was not selected by Simes
+Family 402 was selected, but second stage selection was not complete
+Family 403 was selected, but second stage selection was not complete
+Family 404 was not selected by Simes
+Family 405 was not selected by Simes
+Family 406 was not selected by Simes
+Family 407 was selected, but second stage selection was not complete
+Family 408 was not selected by Simes
+Family 409 was selected, but second stage selection was not complete
+Family 410 was selected, but second stage selection was not complete
+Family 411 was not selected by Simes
+Family 412 was selected, but second stage selection was not complete
+Family 413 was not selected by Simes
+Family 414 was selected, but second stage selection was not complete
+Family 415 was not selected by Simes
+Family 416 was not selected by Simes
+Family 417 was not selected by Simes
+Family 418 was not selected by Simes
+Family 419 was not selected by Simes
+Family 420 was not selected by Simes
+Family 421 was not selected by Simes
+Family 422 was not selected by Simes
+Family 423 was not selected by Simes
+Family 424 was selected, but second stage selection was not complete
+Family 425 was selected, but second stage selection was not complete
+Family 426 was not selected by Simes
+Family 427 was not selected by Simes
+Family 428 was not selected by Simes
+Family 429 was selected, but second stage selection was not complete
+Family 430 was not selected by Simes
+Family 431 was selected, but second stage selection was not complete
+Family 432 was not selected by Simes
+Family 433 was not selected by Simes
+Family 434 was not selected by Simes
+Family 435 was not selected by Simes
+Family 436 was not selected by Simes
+Family 437 was not selected by Simes
+Family 438 was not selected by Simes
+Family 439 was not selected by Simes
+Family 440 was not selected by Simes
+Family 441 was selected, but second stage selection was not complete
+Family 442 was selected, but second stage selection was not complete
+Family 443 was not selected by Simes
+Family 444 was not selected by Simes
+Family 445 was selected, but second stage selection was not complete
+Family 446 was selected, but second stage selection was not complete
+Family 447 was not selected by Simes
+Family 448 was not selected by Simes
+Family 449 was not selected by Simes
+Family 450 was selected, but second stage selection was not complete
+Family 451 was selected, but second stage selection was not complete
+Family 452 was selected, but second stage selection was not complete
+Family 453 was selected, but second stage selection was not complete
+Family 454 was selected, but second stage selection was not complete
+Family 455 was selected, but second stage selection was not complete
+Family 456 was selected, but second stage selection was not complete
+Family 457 was not selected by Simes
+Family 458 was not selected by Simes
+Family 459 was not selected by Simes
+Family 460 was not selected by Simes
+Family 461 was selected, but second stage selection was not complete
+Family 462 was selected, but second stage selection was not complete
+Family 463 was not selected by Simes
+Family 464 was not selected by Simes
+Family 465 was selected, but second stage selection was not complete
+Family 466 was not selected by Simes
+Family 467 was not selected by Simes
+Family 468 was not selected by Simes
+Family 469 was selected, but second stage selection was not complete
+Family 470 was selected, but second stage selection was not complete
+Family 471 was selected, but second stage selection was not complete
+Family 472 was not selected by Simes
+Family 473 was not selected by Simes
+Family 474 was not selected by Simes
+Family 475 was not selected by Simes
+Family 476 was not selected by Simes
+Family 477 was selected, but second stage selection was not complete
+Family 478 was not selected by Simes
+Family 479 was not selected by Simes
+Family 480 was selected, but second stage selection was not complete
+Family 481 was not selected by Simes
+Family 482 was not selected by Simes
+Family 483 was selected, but second stage selection was not complete
+Family 484 was not selected by Simes
+Family 485 was not selected by Simes
+Family 486 was selected, but second stage selection was not complete
+Family 487 was selected, but second stage selection was not complete
+Family 488 was selected, but second stage selection was not complete
+Family 489 was not selected by Simes
+Family 490 was selected, but second stage selection was not complete
+Family 491 was not selected by Simes
+Family 492 was selected, but second stage selection was not complete
+Family 493 was not selected by Simes
+Family 494 was not selected by Simes
+Family 495 was selected, but second stage selection was not complete
+Family 496 was not selected by Simes
+Family 497 was not selected by Simes
+Family 498 was selected, but second stage selection was not complete
+Family 499 was selected, but second stage selection was not complete
