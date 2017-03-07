@@ -220,6 +220,8 @@ if __name__ == "__main__":
     parser.add_argument('-k', '--nproc', default=1)
     parser.add_argument('-s', '--seed', default=0)
     parser.add_argument('-t', '--setting', default=0)
+    parser.add_argument('-b', '--begin', default=0)
+    parser.add_argument('-e', '--end', default=5000)
 
     args = parser.parse_args()
     
@@ -232,15 +234,21 @@ if __name__ == "__main__":
         trial_dir = os.path.join(args.outdir,"trial_"+str(s))
         sime_fname = os.path.join(trial_dir,"simes_result.txt")
         sig_fname = os.path.join(trial_dir, 'signals.txt')
+        begin = int(args.begin)
+        end = int(args.end)
 
-        selection = np.array(read_simes(sime_fname,full=True)[0])
-        true_sigs = np.array(read_signals(sig_fname)[0]) > 0 
+        print("Families: "+str(begin)+"-"+str(end))
+
+        selection = np.array(read_simes(sime_fname,full=True)[0])[begin:end]
+        true_sigs = (np.array(read_signals(sig_fname)[0]) > 0)[begin:end]
 
         tp = np.sum(selection * true_sigs)
         tn = np.sum(np.logical_not(selection) * np.logical_not(true_sigs))
         fn = np.sum((true_sigs - selection) > 0 )
         fp = np.sum((true_sigs - selection) < 0 )
         
+        print("Total discoveries: " + str(sum(selection)))
+        print("Total signals: " + str(sum(true_sigs)))
         print("True positives:  "+str(tp))
         print("True negative:   "+str(tn))
         print("False positives: "+str(fp))

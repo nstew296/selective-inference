@@ -1,0 +1,7 @@
+Families: 1250-2500
+Total discoveries: 1125
+Total signals: 1250
+True positives:  1125
+True negative:   0
+False positives: 0
+False negatives: 125
