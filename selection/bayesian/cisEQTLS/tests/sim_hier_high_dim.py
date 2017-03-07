@@ -68,16 +68,22 @@ def do_inference(args):
     inf_dir = os.path.join(trial_dir,"infs_"+sel_type)
     mkdir_p(inf_dir)
     sel_out_file = os.path.join(inf_dir,"sel_out_"+str(i)+".txt")
+    if os.path.exists(sel_out_file):
+        sys.stderr.write("Results exist:"+sel_out_file+"\n")
+        return
+
 
     # folder to store no seleciton results 
     nos_dir = os.path.join(trial_dir,"no_sel_"+sel_type)
     mkdir_p(nos_dir)
     no_sel_file = os.path.join(nos_dir,"no_sel_"+str(i)+".txt")
+    if os.path.exists(no_sel_file):
+        sys.stderr.write("Results exist:"+no_sel_file+"\n")
+        return
 
-
+    # load data and simes results
     X_f = os.path.join(args.indir,"X_data","X_"+str(i)+".txt")
     y_f = os.path.join(trial_dir,"y_data", "y_"+str(i)+".txt")
-    # sime_fname = os.path.join(trial_dir,"simes_result.txt")
     s_f = os.path.join(trial_dir,"tmp","s_"+str(i)+".txt")
     sel_res = read_simes(s_f)
     sel = sel_res[0]
@@ -120,6 +126,7 @@ def do_inference(args):
             else:
                 sys.stderr.write("Saving file: "+sel_out_file+"\n") 
                 np.savetxt(sel_out_file,list_results)
+    return
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="run hierarchical inference or evaluate its simulation results")
