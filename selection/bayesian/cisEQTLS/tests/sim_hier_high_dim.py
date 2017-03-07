@@ -6,112 +6,53 @@ import numpy as np
 
 # local import functions
 from sim_ciseqtl import read_X, read_y, read_simes, read_signals, mkdir_p
-from hierarchical_high_dimentional import hierarchical_inference
-
-def evaluate_hierarchical_results(result, X, s, snr):
-    """
-    evaluate the output for hierarhical with ground truth information
-    """
-    # Inputs:
-    #   result: np matrix of results (rows: genes, 
-    #           cols: [lasso_sel, ***, unadj_l, unadj_r, adj_l, adj_r, **, **]) 
-    #   X: np matrix of the data input
-    #   s: integer of value of the signal (the first s variables are signals)
-    #   snr: float of value of the snr 
-    # Outputs:
-    #   None
-
-    FDR = 0.
-    power = 0.
-
-    n, p = X.shape
-    true_beta = np.zeros(p)
-    true_beta[:s] = snr
-
-    discoveries = np.array(result[:, 1], np.bool)
-
-    if true_beta[0] > 0:
-
-        true_discoveries = discoveries[:s].sum()
-
-    else:
-        true_discoveries = 0
-
-    false_discoveries = discoveries[s:].sum()
-    FDR += false_discoveries / max(float(discoveries.sum()), 1.)
-    if s == 0:
-        power = 0
-    else:
-        power += true_discoveries / float(s)
-
-    active_ind = np.array(result[:, 0], np.bool)
-    nactive = active_ind.sum()
-
-    projection_active = X[:, active_ind].dot(np.linalg.inv(X[:, active_ind].T.dot(X[:, active_ind])))
-    true_val = projection_active.T.dot(X.dot(true_beta))
-
-    coverage_ad = np.zeros(true_val.shape[0])
-    coverage_unad = np.zeros(true_val.shape[0])
-
-    adjusted_intervals = np.zeros((2,nactive))
-    adjusted_intervals[0,:] = (result[:, 2])[active_ind]
-    adjusted_intervals[1,:] = (result[:, 3])[active_ind]
-
-    unadjusted_intervals = np.zeros((2, nactive))
-    unadjusted_intervals[0, :] = (result[:, 4])[active_ind]
-    unadjusted_intervals[1, :] = (result[:, 5])[active_ind]
-
-    for l in range(nactive):
-        if (adjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= adjusted_intervals[1, l]):
-            coverage_ad[l] += 1
-        if (unadjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= unadjusted_intervals[1, l]):
-            coverage_unad[l] += 1
-
-    adjusted_coverage = float(coverage_ad.sum() / nactive)
-    unadjusted_coverage = float(coverage_unad.sum() / nactive)
-
-    return adjusted_coverage, unadjusted_coverage, FDR, power
+from hierarchical_high_dimensional import hierarchical_inference, evaluate_hierarchical_results
 
 
 def do_evaluation(args):
-    # sys.stderr.write("Evaluating lasso selection and inference results\n")
+    sys.stderr.write("Evaluating lasso selection and inference results\n")
     s = int(args.seed)
-    i = int(args.geneid)
     sel_type = str(args.seltype)
+    idx_start = int(args.begin)
+    idx_end = int(args.end)
 
     trial_dir = os.path.join(args.indir,"trial_"+str(s))
 
-    X_fname = os.path.join(args.indir,"X_data","X_"+str(i)+".txt")
-    result_fname = os.path.join(trial_dir, "infs_"+sel_type, "sel_out_"+str(i)+".txt")
     sig_fname = os.path.join(trial_dir,"signals.txt")
-    sime_fname = os.path.join(trial_dir,"simes_result.txt")
-    sel_res = read_simes(sime_fname)
-    sel = sel_res[0][i]
-
-    if not sel: 
-        sys.stderr.write("Family "+str(i)+" was not selected by Simes\n")
-        return
-
-    if not os.path.isfile(result_fname):
-        sys.stderr.write("Family "+str(i)+" was selected by Simes, but second stage selection was not complete\n")
-        sys.exit(1)
-
+    simes_fname = os.path.join(trial_dir,"simes_result.txt") 
     try:
         true_sig, snr, _ = read_signals(sig_fname)
-        num_true_sig = true_sig[i]
     except OSError:
         sys.stderr.write('Cannot open: '+sig_fname+"\n")
     try:
-        X = read_X(X_fname)
+        simes_sel = read_simes(simes_fname, full=True) 
     except OSError:
-        sys.stderr.write('Cannot open: '+X_fname+"\n")
-    try: 
-        result = np.loadtxt(result_fname) 
-    except OSError:
-        sys.stderr.write('Cannot open: '+result_fname+"\n")
+        sys.stderr.write('Cannot open: '+simes_fname+"\n")
 
-    # adjusted_coverage, unadjusted_coverage, FDR, power = evaluate_hierarchical_results(result, X, s, snr)
-    print(evaluate_hierarchical_results(result, X, num_true_sig, snr))
+    
+    for i in xrange(idx_start,idx_end):
+        num_true_sig = true_sig[i]
+        sel = simes_sel[0][i]
+        if not sel: 
+            sys.stderr.write("Family "+str(i)+" was not selected by Simes\n")
+            continue
+
+        result_fname = os.path.join(trial_dir, "infs_"+sel_type, "sel_out_"+str(i)+".txt")
+        if not os.path.isfile(result_fname):
+            sys.stderr.write("Family "+str(i)+" was selected by Simes, but second stage selection was not complete\n")
+            continue
+        else:
+            sys.stderr.write("Family "+str(i)+" was selected by Simes, and Lasso selected variables\n")
+            result = np.loadtxt(result_fname) 
+
+        X_fname = os.path.join(args.indir,"X_data","X_"+str(i)+".txt")
+        try:
+            X = read_X(X_fname)
+        except OSError:
+            sys.stderr.write('Cannot open: '+X_fname+"\n")
+        # adjusted_coverage, unadjusted_coverage, FDR, power = evaluate_hierarchical_results(result, X, s, snr)
+        res_eval = evaluate_hierarchical_results(result, X, num_true_sig, snr)
+        print("{}\t{}\t{}\t{}".format(*res_eval))
 
 def do_inference(args):
     sys.stderr.write("Running lasso selection and inference\n")
@@ -127,14 +68,13 @@ def do_inference(args):
 
     X_f = os.path.join(args.indir,"X_data","X_"+str(i)+".txt")
     y_f = os.path.join(trial_dir,"y_data", "y_"+str(i)+".txt")
-    sime_fname = os.path.join(trial_dir,"simes_result.txt")
-
-    sel_res = read_simes(sime_fname)
-    sel = sel_res[0][i]
+    # sime_fname = os.path.join(trial_dir,"simes_result.txt")
+    s_f = os.path.join(trial_dir,"tmp","s_"+str(i)+".txt")
+    sel_res = read_simes(s_f)
+    sel = sel_res[0]
 
     if not sel: 
         sys.stderr.write("Family "+str(i)+" was not selected by Simes\n")
-
     else:
         sys.stderr.write("Family "+str(i)+" was selected by Simes\n")
         X = read_X(X_f)
@@ -159,8 +99,9 @@ def do_inference(args):
         sys.stderr.write("Selection mode: "+sel_type+"\n")
         
         result_file = os.path.join(res_dir,"sel_out_"+str(i)+".txt")
-        hierarchical_inference(result_file, X, y, index, simes_level, pgenes, 
-                J=rej, t_0=idx_order, T_sign=sign, selection_method=sel_type)
+        list_results = hierarchical_inference(result_file, X, y, index, simes_level, pgenes, 
+                            J=rej, t_0=idx_order, T_sign=sign, selection_method=sel_type)
+        np.savetxt(result_file,list_results)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="run hierarchical inference or evaluate its simulation results")
@@ -177,7 +118,9 @@ if __name__=="__main__":
     command_parser = subparsers.add_parser('evaluate', help='') 
     command_parser.add_argument('-d', '--indir', required=True)
     command_parser.add_argument('-s', '--seed', required=True)
-    command_parser.add_argument('-i', '--geneid', required=True)
+    # command_parser.add_argument('-i', '--geneid', required=True)
+    command_parser.add_argument('-b', '--begin', required=True)
+    command_parser.add_argument('-e', '--end', required=True)
     command_parser.add_argument('-t', '--seltype', required=True)
     command_parser.set_defaults(func=do_evaluation)
 

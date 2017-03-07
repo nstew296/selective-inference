@@ -74,16 +74,27 @@ def merge_simes(fname , file_paths):
             with open(fn, 'r') as g:
                 f.write(g.readline().strip()+"\n") 
 
-def read_simes(fname):
-    with open(fname, "r") as f:
-        results = [line.strip().split('\t') for line in f]
-
-    sel = [int(result[0]) for result in results]
-    idx_sigs = [int(result[1]) for result in results]
-    idx_orders = [int(result[2]) for result in results]
-    signs = [int(result[3]) for result in results]
-    threshold = float(results[0][4])
-    rej_idx = [map(int,map(float,result[5].split(','))) for result in results]
+def read_simes(fname, full=False):
+    
+    if full:
+        # read sumary file
+        with open(fname, "r") as f:
+            results = [line.strip().split('\t') for line in f]
+            sel = [int(result[0]) for result in results]
+            idx_sigs = [int(result[1]) for result in results]
+            idx_orders = [int(result[2]) for result in results]
+            signs = [int(result[3]) for result in results]
+            threshold = float(results[0][4])
+            rej_idx = [map(int,map(float,result[5].split(','))) for result in results]
+    else:
+        with open(fname, "r") as f:
+            result = f.readline().strip().split('\t')
+            sel = int(result[0])
+            idx_sigs = int(result[1]) 
+            idx_orders = int(result[2])
+            signs = int(result[3])
+            threshold = float(result[4])
+            rej_idx = map(int,map(float,result[5].split(','))) 
 
     return sel, idx_sigs, idx_orders, signs, threshold, rej_idx
     
@@ -222,7 +233,7 @@ if __name__ == "__main__":
         sime_fname = os.path.join(trial_dir,"simes_result.txt")
         sig_fname = os.path.join(trial_dir, 'signals.txt')
 
-        selection = np.array(read_simes(sime_fname)[0])
+        selection = np.array(read_simes(sime_fname,full=True)[0])
         true_sigs = np.array(read_signals(sig_fname)[0]) > 0 
 
         tp = np.sum(selection * true_sigs)
