@@ -6,7 +6,8 @@ MODE=single
 
 source /home/jjzhu/source_code/cis_eqtl_pipeline/.env/bin/activate 
 
-for GENE in {0..500}
+# for GENE in {0..500}
+for GENE in {3001..3500}
 do
     CMD="python sim_hier_high_dim.py evaluate -d $DIR -s $SEED -i $GENE -t $MODE"
     $CMD
