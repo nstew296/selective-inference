@@ -98,10 +98,17 @@ def do_inference(args):
         sys.stderr.write("Writing results to: "+res_dir+"\n")
         sys.stderr.write("Selection mode: "+sel_type+"\n")
         
-        result_file = os.path.join(res_dir,"sel_out_"+str(i)+".txt")
-        list_results = hierarchical_inference(result_file, X, y, index, simes_level, pgenes, 
-                            J=rej, t_0=idx_order, T_sign=sign, selection_method=sel_type)
-        np.savetxt(result_file,list_results)
+        list_results = hierarchical_inference(X, y, index, simes_level, pgenes, J=rej, t_0=idx_order, T_sign=sign, selection_method=sel_type)
+        if list_results is None:
+            sys.stderr.write("Result is None (likely Lasso did not select any variables)\n")
+            result_file = os.path.join(res_dir,"no_sel_"+str(i)+".txt")
+            np.savetxt(0)
+        else:
+            if args.justsel: # do not do inference to save time
+                sys.stderr.write("No infrence is performed.\n")
+            else:
+                result_file = os.path.join(res_dir,"sel_out_"+str(i)+".txt")
+                np.savetxt(result_file,list_results)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="run hierarchical inference or evaluate its simulation results")
@@ -113,6 +120,8 @@ if __name__=="__main__":
     command_parser.add_argument('-i', '--geneid', required=True)
     command_parser.add_argument('-g', '--ngenes', required=True)
     command_parser.add_argument('-t', '--seltype', required=True)
+    command_parser.add_argument('-j', '--justsel', action='store_true', default=False, help="If true, ignore inference and just do selection")
+
     command_parser.set_defaults(func=do_inference)
 
     command_parser = subparsers.add_parser('evaluate', help='') 

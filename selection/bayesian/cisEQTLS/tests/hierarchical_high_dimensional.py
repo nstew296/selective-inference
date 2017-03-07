@@ -89,18 +89,17 @@ def hierarchical_inference(X,           # input X data
                            y,           # input y data
                            index,       # index of the lead variable that passes simes TODO
                            simes_level, #simes level divided by number of genes
-                           pgenes,# proportion of egenes in total number of genes
-                           J,        # rejection list
-                           t_0, # order index of the lead variable that passes simes 
-                           T_sign, # the sign of the test statistic of the lead variable
+                           pgenes,      # proportion of egenes in total number of genes
+                           J,           # rejection list
+                           t_0,         # order index of the lead variable that passes simes 
+                           T_sign,      # the sign of the test statistic of the lead variable
                            seed_n = 19, # seed to run the procedure
-                           bh_level=0.1, # benjamini-hotchburg level to control the FDR
+                           bh_level=0.1,# benjamini-hotchburg level to control the FDR
                            selection_method = "single", # method selection
-                           lambda_method = "theoretical"):
-
+                           lambda_method = "theoretical",
+                           just_selection=False):
 
     np.random.seed(seed_n)
-
     n, p = X.shape
     T_sign = T_sign * np.ones(1)
 
@@ -116,10 +115,14 @@ def hierarchical_inference(X,           # input X data
 
     sel = selection(X, y, random_Z, method=lambda_method)
 
-   # terminate selection if lasso did not select any variables
+    # terminate selection if lasso did not select any variables
     if sel is None:
         sys.stderr.write("Lasso did not select any variables\n")
         return None
+
+    if just_selection:
+        sys.stderr.write("Warning: only returning selection; no inference will be returned\n")
+        return sel 
 
     lam, epsilon, active, betaE, cube, initial_soln = sel
     lagrange = lam * np.ones(p)
@@ -188,7 +191,6 @@ def hierarchical_inference(X,           # input X data
     active_ind = np.zeros(p)
     active_ind[active_set] = 1
 
-
     # compute intervals
     ad_lower_credible = np.zeros(p)
     ad_upper_credible = np.zeros(p)
@@ -234,10 +236,11 @@ def hierarchical_inference(X,           # input X data
 if __name__ == "__main__":
     np.random.seed(0)
     # s = 2
-    s = 0
+    s = 2
     snr = 5.0
     X, y, true_beta, nonzero, noise_variance = gaussian_instance(n=10, p=4, s=s, sigma=1, rho=0, snr=snr)
     for method in ("single", "double"):
         result = hierarchical_inference(X, y, 0, 0.01, 0.8, J=[], t_0=0, T_sign=1, selection_method = method)
         print(result)
         print(evaluate_hierarchical_results(result, X, s, snr))
+
