@@ -1,2 +1,4 @@
 *.pyc
 *.swp
+preliminary_results/*err
+preliminary_results/*out
