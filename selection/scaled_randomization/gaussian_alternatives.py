@@ -1,12 +1,13 @@
 import numpy as np
+from scipy.stats import norm as normal
 
-class logistic_intervals():
+class gaussian_intervals():
 
     def __init__(self,
                  X_bar_obs,
                  n,
                  threshold,
-                 scale=True,
+                 scale = True,
                  data_variance= 1.):
 
         self.X_bar_obs = X_bar_obs
@@ -21,23 +22,30 @@ class logistic_intervals():
 
         delta = 0.001
         if scale == True:
-            self.randomization_scale = np.power(n,-1./(6+delta))
+            mean_scale = np.power(n, 1./(3.+delta))
 
         else:
-            self.randomization_scale = 0.5
+            mean_scale = np.sqrt(n)
+
+        self.mean_scale = mean_scale
 
         weights = []
         for i in range(bar_X_grid.shape[0]):
-            weights.append(self.log_logistic_weights(bar_X_grid[i]))
+            weights.append(self.log_gaussian_weights(bar_X_grid[i]))
 
         self.weights = np.array(weights)
+        #print("weights", self.weights)
 
-    def log_logistic_weights(self, X_bar):
+    def log_gaussian_weights(self, X_bar):
 
-        x = np.true_divide(self.threshold - np.sqrt(self.n)* X_bar, self.randomization_scale)
-        G_bar = 1.-(1./(1.+ np.exp(-x)))
+        x = np.true_divide(self.threshold - np.sqrt(self.n)* X_bar, 0.5)
+        G_bar = 1. - normal.cdf(x)
+        #print(G_bar)
 
-        return np.log(G_bar)
+        if G_bar < 0.1**(20):
+            return -(x**2.)/2. -np.log(x)
+        else:
+            return np.log(G_bar)
 
     def area_normalized_density(self, mu):
 
@@ -54,7 +62,8 @@ class logistic_intervals():
 
     def confidence_intervals(self):
 
-        param_grid = np.linspace(-15./np.sqrt(self.n),10./np.sqrt(self.n), num= 500)
+        param_grid = np.linspace(-15./self.mean_scale, 10./self.mean_scale, num= 500)
+
         area = np.zeros(param_grid.shape[0])
 
         for k in range(param_grid.shape[0]):
@@ -66,17 +75,4 @@ class logistic_intervals():
             return np.nanmin(region), np.nanmax(region)
         else:
             return 0, 0
-
-
-
-
-
-
-
-
-
-
-
-
-
 
