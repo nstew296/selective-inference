@@ -10,8 +10,9 @@ from selection.randomized.M_estimator import M_estimator
 
 class M_estimator_map(M_estimator):
 
-    def __init__(self, loss, epsilon, penalty, randomization):
+    def __init__(self, loss, epsilon, penalty, randomization, randomization_scale = 1.):
         M_estimator.__init__(self, loss, epsilon, penalty, randomization)
+        self.randomization_scale = randomization_scale
 
     def solve_approx(self):
         self.solve()
@@ -253,7 +254,7 @@ class approximate_conditional_prob(rr.smooth_atom):
                                             rr.affine_transform(self.map.B_active, offset_active))
 
 
-        cube_obj = neg_log_cube_probability(self.q, self.inactive_lagrange, randomization_scale = 1.)
+        cube_obj = neg_log_cube_probability(self.q, self.inactive_lagrange, randomization_scale = self.map.randomization_scale)
 
         cube_loss = rr.affine_smooth(cube_obj, rr.affine_transform(self.map.B_inactive, offset_inactive))
 
@@ -327,7 +328,7 @@ class approximate_conditional_prob(rr.smooth_atom):
 
         return current, value
 
-class approximate_conditional_density_2stage(rr.smooth_atom):
+class approximate_conditional_density(rr.smooth_atom):
 
     def __init__(self, sel_alg,
                        coef=1.,
@@ -350,7 +351,7 @@ class approximate_conditional_density_2stage(rr.smooth_atom):
     def solve_approx(self):
 
         #defining the grid on which marginal conditional densities will be evaluated
-        self.grid_length = 301
+        self.grid_length = 241
 
         #print("observed values", self.target_observed)
         self.ind_obs = np.zeros(self.nactive, int)
@@ -361,7 +362,7 @@ class approximate_conditional_density_2stage(rr.smooth_atom):
         for j in range(self.nactive):
             obs = self.target_observed[j]
 
-            self.grid[j,:] = np.linspace(self.target_observed[j]-15., self.target_observed[j]+15.,num=self.grid_length)
+            self.grid[j,:] = np.linspace(self.target_observed[j]-12., self.target_observed[j]+12.,num=self.grid_length)
 
             self.norm[j] = self.target_cov[j,j]
             if obs < self.grid[j,0]:

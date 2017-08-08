@@ -4,7 +4,7 @@ import sys
 import numpy as np
 import regreg.api as rr
 from selection.tests.instance import gaussian_instance
-from selection.approx_ci.randomized_lasso import M_estimator_map, approximate_conditional_density_2stage
+from selection.approx_ci.randomized_lasso import M_estimator_map, approximate_conditional_density
 
 def test_approximate_inference(X,
                                y,
@@ -12,7 +12,8 @@ def test_approximate_inference(X,
                                sigma,
                                seed_n = 0,
                                lam_frac = 1.,
-                               loss='gaussian'):
+                               loss='gaussian',
+                               randomization_scale = 1.):
 
     from selection.api import randomization
 
@@ -28,8 +29,8 @@ def test_approximate_inference(X,
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    randomization = randomization.isotropic_gaussian((p,), scale=1.)
-    M_est = M_estimator_map(loss, epsilon, penalty, randomization)
+    randomization = randomization.isotropic_gaussian((p,), scale=randomization_scale)
+    M_est = M_estimator_map(loss, epsilon, penalty, randomization, randomization_scale = randomization_scale)
 
     M_est.solve_approx()
     active = M_est._overall
@@ -47,7 +48,7 @@ def test_approximate_inference(X,
 
         sys.stderr.write("True target to be covered" + str(true_vec) + "\n")
 
-        ci = approximate_conditional_density_2stage(M_est)
+        ci = approximate_conditional_density(M_est)
         ci.solve_approx()
 
         ci_sel = np.zeros((nactive, 2))
@@ -80,7 +81,7 @@ def test_approximate_inference(X,
                                        sel_risk)))
 
 
-X, y, beta, nonzero, sigma = gaussian_instance(n=200, p=500, s=10, rho=0., snr=3., sigma=1.)
+X, y, beta, nonzero, sigma = gaussian_instance(n=200, p=500, s=5, rho=0., snr=3., sigma=1.)
 true_mean = X.dot(beta)
 test = test_approximate_inference(X,
                                   y,
