@@ -1,6 +1,7 @@
 import numpy as np
 import functools
 from selection.randomized.M_estimator import M_estimator
+import selection.constraints.affine as AC
 
 class M_estimator_map(M_estimator):
 
@@ -38,6 +39,7 @@ class M_estimator_map(M_estimator):
         self.score_cov = (sigma**2.) * score_cov
 
         self.observed_score_state = self.observed_internal_state
+        self.constraints = AC.constraints(np.identity(self.nactive), np.zeros(self.nactive))
 
         if self.nactive>0:
             if target == "partial":
@@ -76,6 +78,7 @@ class M_estimator_map(M_estimator):
 
 def solve_UMVU(target_transform,
                opt_transform,
+               constraints,
                target_observed,
                feasible_point,
                target_cov,
@@ -134,6 +137,7 @@ def solve_UMVU(target_transform,
 
         soln, value, _ = solve_barrier_nonneg(param_lin.dot(target_observed) + param_offset,
                                               conditional_precision,
+                                              constraints,
                                               feasible_point=feasible_point,
                                               step=1,
                                               nstep=2000,
@@ -145,6 +149,7 @@ def solve_UMVU(target_transform,
         var_precision, inv_precision_target, cross_covariance, target_precision =  var_matrices
         _, _, hess = solve_barrier_nonneg(var_target_lin.dot(selective_MLE) + var_offset + mle_offset,
                                           var_precision,
+                                          constraints,
                                           feasible_point=None,
                                           step=1,
                                           nstep=2000)
@@ -164,19 +169,25 @@ def solve_UMVU(target_transform,
 
 def solve_barrier_nonneg(conjugate_arg,
                          precision,
+                         constraints,
                          feasible_point=None,
                          step=1,
                          nstep=1000,
                          tol=1.e-8):
 
-    scaling = np.sqrt(np.diag(precision))
+    con_linear = constraints.linear_part
+    con_offset = constraints.offset
+    scaling = np.sqrt(np.diag(con_linear.dot(precision).dot(con_linear.T)))
 
     if feasible_point is None:
         feasible_point = 1. / scaling
 
-    objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2. + np.log(1.+ 1./(u / scaling)).sum()
-    grad = lambda u: -conjugate_arg + precision.dot(u) + (1./(scaling + u) - 1./u)
-    barrier_hessian = lambda u: (-1./((scaling + u)**2.) + 1./(u**2.))
+    objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2. \
+                          + np.log(1.+ 1./((con_offset-con_linear.dot(u))/ scaling)).sum()
+    grad = lambda u: -conjugate_arg + precision.dot(u) -con_linear.T.dot(1./(scaling + con_offset-con_linear.dot(u)) -
+                                                                       1./(con_offset-con_linear.dot(u)))
+    barrier_hessian = lambda u: con_linear.T.dot(np.diag(-1./((scaling + con_offset-con_linear.dot(u))**2.)
+                                                 + 1./((con_offset-con_linear.dot(u))**2.))).dot(con_linear)
 
     current = feasible_point
     current_value = np.inf
@@ -190,7 +201,7 @@ def solve_barrier_nonneg(conjugate_arg,
         while True:
             count += 1
             proposal = current - step * newton_step
-            if np.all(proposal > 0):
+            if np.all(-con_offset+con_linear.dot(proposal) > 0):
                 break
             step *= 0.5
             if count >= 40:
@@ -219,27 +230,5 @@ def solve_barrier_nonneg(conjugate_arg,
         if itercount % 4 == 0:
             step *= 2
 
-    hess = np.linalg.inv(precision + np.diag(barrier_hessian(current)))
+    hess = np.linalg.inv(precision + barrier_hessian(current))
     return current, current_value, hess
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

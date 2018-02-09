@@ -10,8 +10,9 @@ import numpy as np, sys
 import regreg.api as rr
 from selection.randomized.api import randomization
 from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
-from scipy.stats import norm as ndist
-from selection.algorithms.debiased_lasso import _find_row_approx_inverse
+from selection.algorithms.lasso import lasso
+#from scipy.stats import norm as ndist
+#from selection.algorithms.debiased_lasso import _find_row_approx_inverse
 
 def glmnet_sigma(X, y):
     robjects.r('''
@@ -101,7 +102,7 @@ def relative_risk(est, truth, Sigma):
     return (est-truth).T.dot(Sigma).dot(est-truth)/truth.T.dot(Sigma).dot(truth)
 
 def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2,
-                         randomization_scale=np.sqrt(0.25), target="partial"):
+                     randomization_scale=np.sqrt(0.25), target="partial"):
 
     while True:
         X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
@@ -165,7 +166,9 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             err[k] = np.mean((y_val - X_val.dot(approx_MLE_est)) ** 2.)
 
         lam = lam_seq[np.argmin(err)]
-        print('lambda', lam)
+        print("lambda from tuned relaxed LASSO", lam_tuned)
+        print('lambda from randomized LASSO', lam)
+
         W = np.ones(p) * lam
         penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
         M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, target=target,
@@ -182,7 +185,6 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         false_positive_randomized = np.logical_and(active, ~true_signals).sum() / max(float(nactive), 1.)
         false_positive_nonrandomized = np.logical_and(active_nonrand, ~true_signals).sum() / max(float(nactive_nonrand),
                                                                                                  1.)
-
         true_set = np.asarray([u for u in range(p) if true_signals[u]])
         active_set = np.asarray([t for t in range(p) if active[t]])
         active_set_nonrand = np.asarray([q for q in range(p) if active_nonrand[q]])
@@ -221,6 +223,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         power_nonrand = 0.
 
         for k in range(nactive_nonrand):
+
             if ((np.sqrt(n)*rel_LASSO[k]/sigma_est) - (1.65 * unad_sd_nonrand[k])) <= true_target_nonrand[k] \
                     and ((np.sqrt(n)*rel_LASSO[k]/sigma_est) + (1.65 * unad_sd_nonrand[k])) >= true_target_nonrand[k]:
                 coverage_nonrand += 1
@@ -319,7 +322,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
 
 if __name__ == "__main__":
 
-    ndraw = 150
+    ndraw = 50
     bias = 0.
     risk_selMLE = 0.
     risk_relLASSO = 0.
@@ -345,7 +348,7 @@ if __name__ == "__main__":
     partial_risk_LASSO_nonrand = 0.
 
     for i in range(ndraw):
-        approx = inference_approx(n=200, p=1000, nval=200, rho=0.70, s=10, beta_type=2, snr=0.20, target="full")
+        approx = inference_approx(n=200, p=50, nval=200, rho=0.70, s=10, beta_type=2, snr=0.10, target="partial")
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
