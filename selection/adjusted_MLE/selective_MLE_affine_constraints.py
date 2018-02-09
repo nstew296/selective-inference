@@ -39,7 +39,7 @@ class M_estimator_map(M_estimator):
         self.score_cov = (sigma**2.) * score_cov
 
         self.observed_score_state = self.observed_internal_state
-        self.constraints = AC.constraints(np.identity(self.nactive), np.zeros(self.nactive))
+        self.constraints = AC.constraints(-np.identity(self.nactive), np.zeros(self.nactive))
 
         if self.nactive>0:
             if target == "partial":
@@ -201,7 +201,7 @@ def solve_barrier_nonneg(conjugate_arg,
         while True:
             count += 1
             proposal = current - step * newton_step
-            if np.all(-con_offset+con_linear.dot(proposal) > 0):
+            if np.all(con_offset-con_linear.dot(proposal) > 0):
                 break
             step *= 0.5
             if count >= 40:

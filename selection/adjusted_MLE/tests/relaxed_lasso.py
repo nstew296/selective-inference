@@ -9,7 +9,7 @@ import statsmodels.api as sm
 import numpy as np, sys
 import regreg.api as rr
 from selection.randomized.api import randomization
-from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
+from selection.adjusted_MLE.selective_MLE_affine_constraints import M_estimator_map, solve_UMVU
 from selection.algorithms.lasso import lasso
 #from scipy.stats import norm as ndist
 #from selection.algorithms.debiased_lasso import _find_row_approx_inverse
@@ -157,6 +157,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                 M_est.solve_map()
                 approx_MLE = solve_UMVU(M_est.target_transform,
                                         M_est.opt_transform,
+                                        M_est.constraints,
                                         M_est.target_observed,
                                         M_est.feasible_point,
                                         M_est.target_cov,
@@ -235,6 +236,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             M_est.solve_map()
             approx_MLE, var, mle_map, _, _, mle_transform = solve_UMVU(M_est.target_transform,
                                                                        M_est.opt_transform,
+                                                                       M_est.constraints,
                                                                        M_est.target_observed,
                                                                        M_est.feasible_point,
                                                                        M_est.target_cov,
@@ -294,8 +296,10 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
     partial_Sigma = (Sigma[:, active])[active,:]
     partial_Sigma_nonrand = (Sigma[:, active_nonrand])[active_nonrand,:]
 
+    padded_true_target = np.zeros(p)
+    padded_true_target[active] = true_target
     if True:
-        return (selective_MLE - target_par).sum() / float(nactive), \
+        return (selective_MLE - padded_true_target).sum() / float(nactive), \
                relative_risk(selective_MLE, target_par, Sigma), \
                relative_risk(relaxed_Lasso, target_par, Sigma), \
                relative_risk(ind_est, target_par, Sigma), \
@@ -348,7 +352,7 @@ if __name__ == "__main__":
     partial_risk_LASSO_nonrand = 0.
 
     for i in range(ndraw):
-        approx = inference_approx(n=200, p=50, nval=200, rho=0.70, s=10, beta_type=2, snr=0.10, target="partial")
+        approx = inference_approx(n=200, p=50, nval=200, rho=0.35, s=10, beta_type=2, snr=0.10, target="partial")
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
