@@ -230,62 +230,46 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         for w in range(nactive_nonrand):
             active_bool_nonrand[w] = (np.in1d(active_set_nonrand[w], true_set).sum() > 0)
 
+        LASSO_canonical = lasso.gaussian(X, y, np.asscalar(lam_tuned), sigma=sigma_est)
+        soln = LASSO_canonical.fit()
+        Con = LASSO_canonical.constraints
+        active_LASSO  = (soln != 0)
+        active_LASSO_signs = np.sign(soln[active_LASSO])
+
         if target == "partial":
             true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
             unad_sd =  np.sqrt(np.diag(np.linalg.inv(X[:, active].T.dot(X[:, active]))))
             true_target_nonrand = np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand])). \
                 dot(X[:, active_nonrand].T).dot(true_mean)
             unad_sd_nonrand = np.sqrt(np.diag(np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand]))))
+            true_target_LASSO = np.linalg.inv(X[:, active_LASSO].T.dot(X[:, active_LASSO])).\
+                dot(X[:, active_LASSO].T).dot(true_mean)
         elif target == "full":
             X_full_inv = np.linalg.pinv(X)
             true_target = X_full_inv[active].dot(true_mean)
             unad_sd = np.sqrt(np.diag(X_full_inv[active].dot(X_full_inv[active].T)))
             true_target_nonrand = X_full_inv[active_nonrand].dot(true_mean)
             unad_sd_nonrand = np.sqrt(np.diag(X_full_inv[active_nonrand].dot(X_full_inv[active_nonrand].T)))
+            true_target_LASSO = X_full_inv[active_LASSO].dot(true_mean)
+
         elif target == "debiased":
             X_full_inv = M.dot(X.T)
             true_target = X_full_inv[active].dot(true_mean)
             unad_sd = np.sqrt(np.diag(X_full_inv[active].dot(X_full_inv[active].T)))
             true_target_nonrand = X_full_inv[active_nonrand].dot(true_mean)
             unad_sd_nonrand = np.sqrt(np.diag(X_full_inv[active_nonrand].dot(X_full_inv[active_nonrand].T)))
+            true_target_LASSO = X_full_inv[active_LASSO].dot(true_mean)
 
         coverage_sel = 0.
         coverage_rand = 0.
         coverage_nonrand = 0.
         coverage_Lee = 0.
-
-        LASSO_canonical = lasso.gaussian(X, y, np.asscalar(lam_tuned), sigma=sigma_est)
-        soln = LASSO_canonical.fit()
-        Con = LASSO_canonical.constraints
-        active_LASSO_signs = np.sign(soln[soln != 0])
-
-        if Con is not None:
-            one_step = LASSO_canonical.onestep_estimator
-            for l in range(one_step.shape[0]):
-                eta = np.zeros_like(one_step)
-                eta[l] = active_LASSO_signs[l]
-                alpha = 0.1
-
-                if Con.linear_part.shape[0] > 0:  # there were some constraints
-                    L, Z, U, S = Con.bounds(eta, one_step)
-                    Lee_intervals = equal_tailed_interval(L, Z, U, S, alpha=alpha)
-                    Lee_intervals = sorted([Lee_intervals[0] * active_LASSO_signs[l],
-                                            Lee_intervals[1] * active_LASSO_signs[l]])
-
-                else:
-                    obs = (eta * one_step).sum()
-                    sd = np.sqrt((eta * Con.covariance.dot(eta)))
-                    Lee_intervals = (obs - ndist.ppf(1 - alpha / 2) * sd,
-                                     obs + ndist.ppf(1 - alpha / 2) * sd)
-
-                if (Lee_intervals[0] <= true_target_nonrand[l]) and (true_target_nonrand[l] <= Lee_intervals[1]):
-                    coverage_Lee += 1
-
-
+        power_Lee = 0.
 
         power_sel = 0.
         power_rand = 0.
         power_nonrand = 0.
+
 
         for k in range(nactive_nonrand):
 
@@ -296,7 +280,33 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                                                    or ((np.sqrt(n)*rel_LASSO[k]/sigma_est) + (1.65 * unad_sd_nonrand[k])) < 0.):
                 power_nonrand += 1
 
-        if nactive > 0:
+        if nactive > 0 and nactive_nonrand > 0:
+
+            if Con is not None:
+                one_step = LASSO_canonical.onestep_estimator
+                for l in range(one_step.shape[0]):
+                    eta = np.zeros_like(one_step)
+                    eta[l] = active_LASSO_signs[l]
+                    alpha = 0.1
+
+                    if Con.linear_part.shape[0] > 0:  # there were some constraints
+                        L, Z, U, S = Con.bounds(eta, one_step)
+                        Lee_intervals = equal_tailed_interval(L, Z, U, S, alpha=alpha)
+                        Lee_intervals = sorted([Lee_intervals[0] * active_LASSO_signs[l],
+                                                Lee_intervals[1] * active_LASSO_signs[l]])
+
+                    else:
+                        obs = (eta * one_step).sum()
+                        sd = np.sqrt((eta * Con.covariance.dot(eta)))
+                        Lee_intervals = (obs - ndist.ppf(1 - alpha / 2) * sd,
+                                         obs + ndist.ppf(1 - alpha / 2) * sd)
+
+                    if (Lee_intervals[0] <= true_target_LASSO[l]) and (true_target_LASSO[l] <= Lee_intervals[1]):
+                        coverage_Lee += 1
+
+                    if active_bool_nonrand[l] == True and (Lee_intervals[0] > 0. or Lee_intervals[1] < 0.):
+                        power_Lee += 1
+
             M_est.solve_map()
             approx_MLE, var, mle_map, _, _, mle_transform = solve_UMVU(M_est.target_transform,
                                                                        M_est.opt_transform,
@@ -375,11 +385,13 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                false_positive_randomized, \
                false_positive_nonrandomized, \
                coverage_sel / max(float(nactive), 1.), \
+               coverage_Lee / max(float(nactive_nonrand), 1.), \
                coverage_rand / max(float(nactive), 1.), \
                coverage_nonrand / max(float(nactive_nonrand), 1.), \
                power_sel / float(s), \
                power_rand / float(s), \
-               power_nonrand / float(s)
+               power_nonrand / float(s),\
+               power_Lee / float(s)
                # relative_risk(partial_selective_MLE, true_target, partial_Sigma), \
                # relative_risk(partial_relaxed_Lasso, true_target, partial_Sigma), \
                # relative_risk(partial_ind_est, true_target, partial_Sigma), \
@@ -403,11 +415,13 @@ if __name__ == "__main__":
     false_positive_randomized = 0.
     false_positive_nonrandomized = 0.
     coverage_sel = 0.
+    coverage_Lee = 0.
     coverage_rand = 0.
     coverage_nonrand = 0.
     power_sel = 0.
     power_rand = 0.
     power_nonrand = 0.
+    power_Lee = 0.
     # partial_risk_selMLE = 0.
     # partial_risk_relLASSO = 0.
     # partial_risk_indest = 0.
@@ -432,12 +446,14 @@ if __name__ == "__main__":
             false_positive_nonrandomized += approx[10]
 
             coverage_sel += approx[11]
-            coverage_rand += approx[12]
-            coverage_nonrand += approx[13]
+            coverage_Lee += approx[12]
+            coverage_rand += approx[13]
+            coverage_nonrand += approx[14]
 
-            power_sel += approx[14]
-            power_rand += approx[15]
-            power_nonrand += approx[16]
+            power_sel += approx[15]
+            power_rand += approx[16]
+            power_nonrand += approx[17]
+            power_Lee += approx[18]
 
             # partial_risk_selMLE += approx[17]
             # partial_risk_relLASSO += approx[18]
@@ -460,12 +476,14 @@ if __name__ == "__main__":
         # sys.stderr.write("overall_LASSO_norand_falsepositives" + str(false_positive_nonrandomized / float(i + 1)) + "\n"+"\n")
 
         sys.stderr.write("selective coverage" + str(coverage_sel / float(i + 1)) + "\n")
+        sys.stderr.write("Lee coverage" + str(coverage_Lee / float(i + 1)) + "\n")
         sys.stderr.write("randomized coverage" + str(coverage_rand / float(i + 1)) + "\n")
         sys.stderr.write("nonrandomized coverage" + str(coverage_nonrand / float(i + 1)) + "\n"+"\n")
 
         sys.stderr.write("selective power" + str(power_sel / float(i + 1)) + "\n")
         sys.stderr.write("randomized power" + str(power_rand / float(i + 1)) + "\n")
-        sys.stderr.write("nonrandomized power" + str(power_nonrand / float(i + 1)) + "\n"+"\n")
+        sys.stderr.write("nonrandomized power" + str(power_nonrand / float(i + 1)) + "\n")
+        sys.stderr.write("Lee power" + str(power_Lee / float(i + 1)) + "\n" + "\n")
 
         # sys.stderr.write("overall_partial_selrisk" + str(partial_risk_selMLE / float(i + 1)) + "\n")
         # sys.stderr.write("overall_partial_relLASSOrisk" + str(partial_risk_relLASSO / float(i + 1)) + "\n")
