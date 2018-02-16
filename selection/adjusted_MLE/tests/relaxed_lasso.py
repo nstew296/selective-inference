@@ -9,10 +9,43 @@ import statsmodels.api as sm
 import numpy as np, sys
 import regreg.api as rr
 from selection.randomized.api import randomization
-from selection.adjusted_MLE.selective_MLE_affine_constraints import M_estimator_map, solve_UMVU
+#from selection.adjusted_MLE.selective_MLE_affine_constraints import M_estimator_map, solve_UMVU
+from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
 from selection.algorithms.lasso import lasso
-#from scipy.stats import norm as ndist
+from scipy.stats import norm as ndist
+from scipy.optimize import bisect
 #from selection.algorithms.debiased_lasso import _find_row_approx_inverse
+
+def restricted_gaussian(Z, interval=[-5.,5.]):
+    L_restrict, U_restrict = interval
+    Z_restrict = max(min(Z, U_restrict), L_restrict)
+    return ((ndist.cdf(Z_restrict) - ndist.cdf(L_restrict)) /
+            (ndist.cdf(U_restrict) - ndist.cdf(L_restrict)))
+
+def pivot(L_constraint, Z, U_constraint, S, truth=0):
+    F = restricted_gaussian
+    if F((U_constraint - truth) / S) != F((L_constraint -  truth) / S):
+        v = ((F((Z-truth)/S) - F((L_constraint-truth)/S)) /
+             (F((U_constraint-truth)/S) - F((L_constraint-truth)/S)))
+    elif F((U_constraint - truth) / S) < 0.1:
+        v = 1
+    else:
+        v = 0
+    return v
+
+def equal_tailed_interval(L_constraint, Z, U_constraint, S, alpha=0.05):
+
+    lb = Z - 5 * S
+    ub = Z + 5 * S
+
+    def F(param):
+        return pivot(L_constraint, Z, U_constraint, S, truth=param)
+
+    FL = lambda x: (F(x) - (1 - 0.5 * alpha))
+    FU = lambda x: (F(x) - 0.5* alpha)
+    L_conf = bisect(FL, lb, ub)
+    U_conf = bisect(FU, lb, ub)
+    return np.array([L_conf, U_conf])
 
 def glmnet_sigma(X, y):
     robjects.r('''
@@ -148,7 +181,8 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             lam = lam_seq[k]
             W = np.ones(p) * lam
             penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
-            M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, target=target, randomization_scale=randomization_scale, sigma=1.)
+            M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M,
+                                    target=target, randomization_scale=randomization_scale, sigma=1.)
 
             active = M_est._overall
             nactive = active.sum()
@@ -157,7 +191,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                 M_est.solve_map()
                 approx_MLE = solve_UMVU(M_est.target_transform,
                                         M_est.opt_transform,
-                                        M_est.constraints,
+                                        #M_est.constraints,
                                         M_est.target_observed,
                                         M_est.feasible_point,
                                         M_est.target_cov,
@@ -167,8 +201,8 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             err[k] = np.mean((y_val - X_val.dot(approx_MLE_est)) ** 2.)
 
         lam = lam_seq[np.argmin(err)]
-        print("lambda from tuned relaxed LASSO", lam_tuned)
-        print('lambda from randomized LASSO', lam)
+        #print("lambda from tuned relaxed LASSO", lam_tuned)
+        #print('lambda from randomized LASSO', lam)
 
         W = np.ones(p) * lam
         penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
@@ -218,6 +252,36 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         coverage_sel = 0.
         coverage_rand = 0.
         coverage_nonrand = 0.
+        coverage_Lee = 0.
+
+        LASSO_canonical = lasso.gaussian(X, y, np.asscalar(lam_tuned), sigma=sigma_est)
+        soln = LASSO_canonical.fit()
+        Con = LASSO_canonical.constraints
+        active_LASSO_signs = np.sign(soln[soln != 0])
+
+        if Con is not None:
+            one_step = LASSO_canonical.onestep_estimator
+            for l in range(one_step.shape[0]):
+                eta = np.zeros_like(one_step)
+                eta[l] = active_LASSO_signs[l]
+                alpha = 0.1
+
+                if Con.linear_part.shape[0] > 0:  # there were some constraints
+                    L, Z, U, S = Con.bounds(eta, one_step)
+                    Lee_intervals = equal_tailed_interval(L, Z, U, S, alpha=alpha)
+                    Lee_intervals = sorted([Lee_intervals[0] * active_LASSO_signs[l],
+                                            Lee_intervals[1] * active_LASSO_signs[l]])
+
+                else:
+                    obs = (eta * one_step).sum()
+                    sd = np.sqrt((eta * Con.covariance.dot(eta)))
+                    Lee_intervals = (obs - ndist.ppf(1 - alpha / 2) * sd,
+                                     obs + ndist.ppf(1 - alpha / 2) * sd)
+
+                if (Lee_intervals[0] <= true_target_nonrand[l]) and (true_target_nonrand[l] <= Lee_intervals[1]):
+                    coverage_Lee += 1
+
+
 
         power_sel = 0.
         power_rand = 0.
@@ -236,7 +300,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             M_est.solve_map()
             approx_MLE, var, mle_map, _, _, mle_transform = solve_UMVU(M_est.target_transform,
                                                                        M_est.opt_transform,
-                                                                       M_est.constraints,
+                                                                       #M_est.constraints,
                                                                        M_est.target_observed,
                                                                        M_est.feasible_point,
                                                                        M_est.target_cov,
@@ -299,7 +363,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
     padded_true_target = np.zeros(p)
     padded_true_target[active] = true_target
     if True:
-        return (selective_MLE - padded_true_target).sum() / float(nactive), \
+        return (selective_MLE - padded_true_target).sum() / float(nactive),\
                relative_risk(selective_MLE, target_par, Sigma), \
                relative_risk(relaxed_Lasso, target_par, Sigma), \
                relative_risk(ind_est, target_par, Sigma), \
@@ -315,13 +379,13 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                coverage_nonrand / max(float(nactive_nonrand), 1.), \
                power_sel / float(s), \
                power_rand / float(s), \
-               power_nonrand / float(s), \
-               relative_risk(partial_selective_MLE, true_target, partial_Sigma), \
-               relative_risk(partial_relaxed_Lasso, true_target, partial_Sigma), \
-               relative_risk(partial_ind_est, true_target, partial_Sigma), \
-               relative_risk(partial_Lasso_est, true_target, partial_Sigma), \
-               relative_risk(np.sqrt(n) * rel_LASSO[active_nonrand], true_target_nonrand, partial_Sigma_nonrand), \
-               relative_risk(np.sqrt(n) * est_LASSO[active_nonrand], true_target_nonrand, partial_Sigma_nonrand)
+               power_nonrand / float(s)
+               # relative_risk(partial_selective_MLE, true_target, partial_Sigma), \
+               # relative_risk(partial_relaxed_Lasso, true_target, partial_Sigma), \
+               # relative_risk(partial_ind_est, true_target, partial_Sigma), \
+               # relative_risk(partial_Lasso_est, true_target, partial_Sigma), \
+               # relative_risk(np.sqrt(n) * rel_LASSO[active_nonrand], true_target_nonrand, partial_Sigma_nonrand), \
+               # relative_risk(np.sqrt(n) * est_LASSO[active_nonrand], true_target_nonrand, partial_Sigma_nonrand)
 
 
 if __name__ == "__main__":
@@ -344,12 +408,12 @@ if __name__ == "__main__":
     power_sel = 0.
     power_rand = 0.
     power_nonrand = 0.
-    partial_risk_selMLE = 0.
-    partial_risk_relLASSO = 0.
-    partial_risk_indest = 0.
-    partial_risk_LASSO = 0.
-    partial_risk_relLASSO_nonrand = 0.
-    partial_risk_LASSO_nonrand = 0.
+    # partial_risk_selMLE = 0.
+    # partial_risk_relLASSO = 0.
+    # partial_risk_indest = 0.
+    # partial_risk_LASSO = 0.
+    # partial_risk_relLASSO_nonrand = 0.
+    # partial_risk_LASSO_nonrand = 0.
 
     for i in range(ndraw):
         approx = inference_approx(n=200, p=50, nval=200, rho=0.35, s=10, beta_type=2, snr=0.10, target="partial")
@@ -375,12 +439,12 @@ if __name__ == "__main__":
             power_rand += approx[15]
             power_nonrand += approx[16]
 
-            partial_risk_selMLE += approx[17]
-            partial_risk_relLASSO += approx[18]
-            partial_risk_indest += approx[19]
-            partial_risk_LASSO += approx[20]
-            partial_risk_relLASSO_nonrand += approx[21]
-            partial_risk_LASSO_nonrand += approx[22]
+            # partial_risk_selMLE += approx[17]
+            # partial_risk_relLASSO += approx[18]
+            # partial_risk_indest += approx[19]
+            # partial_risk_LASSO += approx[20]
+            # partial_risk_relLASSO_nonrand += approx[21]
+            # partial_risk_LASSO_nonrand += approx[22]
 
         sys.stderr.write("overall_bias" + str(bias / float(i + 1)) + "\n")
         sys.stderr.write("overall_selrisk" + str(risk_selMLE / float(i + 1)) + "\n")
