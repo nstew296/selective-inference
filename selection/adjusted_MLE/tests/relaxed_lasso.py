@@ -134,7 +134,7 @@ def relative_risk(est, truth, Sigma):
 
     return (est-truth).T.dot(Sigma).dot(est-truth)/truth.T.dot(Sigma).dot(truth)
 
-def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2,
+def inference_approx(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.2,
                      randomization_scale=np.sqrt(0.25), target="partial"):
 
     while True:
@@ -144,6 +144,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         active_nonrand = (rel_LASSO != 0)
         nactive_nonrand = active_nonrand.sum()
 
+        _X = X
         X -= X.mean(0)[None, :]
         X /= (X.std(0)[None, :] * np.sqrt(n))
 
@@ -158,6 +159,14 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             sigma_est = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1.)
             print("sigma and sigma_est", sigma, sigma_est)
 
+        _y = y
+        y = y - y.mean()
+        y /= sigma_est
+        y_val = y_val - y_val.mean()
+        y_val /= sigma_est
+        true_mean -= true_mean.mean()
+        true_mean /= sigma_est
+
         if target == "debiased":
             # M = np.zeros((p, p))
             # for var in range(p):
@@ -165,12 +174,6 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             M = np.linalg.inv(Sigma)
         else:
             M = np.identity(p)
-
-        y = y - y.mean()
-        y /= sigma_est
-        y_val = y_val - y_val.mean()
-        y_val /= sigma_est
-        true_mean /= sigma_est
 
         loss = rr.glm.gaussian(X, y)
         epsilon = 1. / np.sqrt(n)
@@ -201,8 +204,8 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             err[k] = np.mean((y_val - X_val.dot(approx_MLE_est)) ** 2.)
 
         lam = lam_seq[np.argmin(err)]
-        #print("lambda from tuned relaxed LASSO", lam_tuned)
-        #print('lambda from randomized LASSO', lam)
+        sys.stderr.write("lambda from tuned relaxed LASSO" + str(lam_tuned) + "\n")
+        sys.stderr.write("lambda from randomized LASSO" + str(lam) + "\n")
 
         W = np.ones(p) * lam
         penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
@@ -211,8 +214,17 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         active = M_est._overall
         nactive = np.sum(active)
 
-        print("number of variables selected by randomized LASSO", nactive)
-        print("number of variables selected by tuned LASSO", (rel_LASSO != 0).sum())
+        LASSO_py = lasso.gaussian(_X, y, np.asscalar(lam_tuned), sigma=1.)
+        soln = LASSO_py.fit()
+        Con = LASSO_py.constraints
+        active_LASSO = (soln != 0)
+        nactive_LASSO = active_LASSO.sum()
+        active_LASSO_signs = np.sign(soln[active_LASSO])
+
+        sys.stderr.write("number of variables selected by randomized LASSO" + str(nactive) + "\n")
+        sys.stderr.write("number of variables selected by tuned LASSO" + str(nactive_nonrand) + "\n")
+        sys.stderr.write("number of variables selected by tuned LASSO py" + str(nactive_LASSO) + "\n")
+
         true_signals = np.zeros(p, np.bool)
         true_signals[beta != 0] = 1
         screened_randomized = np.logical_and(active, true_signals).sum() / float(s)
@@ -230,11 +242,10 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         for w in range(nactive_nonrand):
             active_bool_nonrand[w] = (np.in1d(active_set_nonrand[w], true_set).sum() > 0)
 
-        LASSO_canonical = lasso.gaussian(X, y, np.asscalar(lam_tuned), sigma=1.)
-        soln = LASSO_canonical.fit()
-        Con = LASSO_canonical.constraints
-        active_LASSO  = (soln != 0)
-        active_LASSO_signs = np.sign(soln[active_LASSO])
+        active_set_LASSO = np.asarray([q for q in range(p) if active_LASSO[q]])
+        active_bool_LASSO = np.zeros(nactive_LASSO, np.bool)
+        for z in range(nactive_LASSO):
+            active_bool_LASSO[z] = (np.in1d(active_set_LASSO[z], true_set).sum() > 0)
 
         if target == "partial":
             true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
@@ -251,7 +262,6 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             true_target_nonrand = X_full_inv[active_nonrand].dot(true_mean)
             unad_sd_nonrand = np.sqrt(np.diag(X_full_inv[active_nonrand].dot(X_full_inv[active_nonrand].T)))
             true_target_LASSO = X_full_inv[active_LASSO].dot(true_mean)
-
         elif target == "debiased":
             X_full_inv = M.dot(X.T)
             true_target = X_full_inv[active].dot(true_mean)
@@ -287,7 +297,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         if nactive > 0 and nactive_nonrand > 0:
 
             if Con is not None:
-                one_step = LASSO_canonical.onestep_estimator
+                one_step = LASSO_py.onestep_estimator
                 for l in range(one_step.shape[0]):
                     eta = np.zeros_like(one_step)
                     eta[l] = active_LASSO_signs[l]
@@ -308,7 +318,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                     if (Lee_intervals[0] <= true_target_LASSO[l]) and (true_target_LASSO[l] <= Lee_intervals[1]):
                         coverage_Lee += 1
 
-                    if active_bool_nonrand[l] == True and (Lee_intervals[0] > 0. or Lee_intervals[1] < 0.):
+                    if active_bool_LASSO[l] == True and (Lee_intervals[0] > 0. or Lee_intervals[1] < 0.):
                         power_Lee += 1
 
                     length_Lee += (Lee_intervals[1]- Lee_intervals[0])
