@@ -214,12 +214,41 @@ def inference_approx(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.2
         active = M_est._overall
         nactive = np.sum(active)
 
-        LASSO_py = lasso.gaussian(_X, y, np.asscalar(lam_tuned), sigma=1.)
+        LASSO_py = lasso.gaussian(X, y, np.asscalar(lam_tuned), sigma=1.)
         soln = LASSO_py.fit()
         Con = LASSO_py.constraints
         active_LASSO = (soln != 0)
         nactive_LASSO = active_LASSO.sum()
         active_LASSO_signs = np.sign(soln[active_LASSO])
+
+        if target == "partial":
+            true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
+            unad_sd =  np.sqrt(np.diag(np.linalg.inv(X[:, active].T.dot(X[:, active]))))
+            true_target_nonrand = np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand])). \
+                dot(X[:, active_nonrand].T).dot(true_mean)
+            unad_sd_nonrand = np.sqrt(np.diag(np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand]))))
+            true_target_LASSO = np.linalg.inv(X[:, active_LASSO].T.dot(X[:, active_LASSO])).\
+                dot(X[:, active_LASSO].T).dot(true_mean)
+        elif target == "full":
+            X_full_inv = np.linalg.pinv(X)
+            true_target = X_full_inv[active].dot(true_mean)
+            unad_sd = np.sqrt(np.diag(X_full_inv[active].dot(X_full_inv[active].T)))
+            true_target_nonrand = X_full_inv[active_nonrand].dot(true_mean)
+            unad_sd_nonrand = np.sqrt(np.diag(X_full_inv[active_nonrand].dot(X_full_inv[active_nonrand].T)))
+            true_target_LASSO = X_full_inv[active_LASSO].dot(true_mean)
+        elif target == "debiased":
+            X_full_inv = M.dot(X.T)
+            true_target = X_full_inv[active].dot(true_mean)
+            unad_sd = np.sqrt(np.diag(X_full_inv[active].dot(X_full_inv[active].T)))
+            true_target_nonrand = X_full_inv[active_nonrand].dot(true_mean)
+            unad_sd_nonrand = np.sqrt(np.diag(X_full_inv[active_nonrand].dot(X_full_inv[active_nonrand].T)))
+            true_target_LASSO = X_full_inv[active_LASSO].dot(true_mean)
+
+        #print("shape", direction_of_interest.shape, direction_of_interest[:,0].shape, Con.dim)
+        Lee = LASSO_py.summary('twosided', compute_intervals=True)
+        Lee_lc = np.asarray(Lee['lower_confidence'])
+        Lee_uc = np.asarray(Lee['upper_confidence'])
+        print("Lee intervals", Lee_lc, Lee_uc)
 
         sys.stderr.write("number of variables selected by randomized LASSO" + str(nactive) + "\n")
         sys.stderr.write("number of variables selected by tuned LASSO" + str(nactive_nonrand) + "\n")
@@ -247,29 +276,6 @@ def inference_approx(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.2
         for z in range(nactive_LASSO):
             active_bool_LASSO[z] = (np.in1d(active_set_LASSO[z], true_set).sum() > 0)
 
-        if target == "partial":
-            true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
-            unad_sd =  np.sqrt(np.diag(np.linalg.inv(X[:, active].T.dot(X[:, active]))))
-            true_target_nonrand = np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand])). \
-                dot(X[:, active_nonrand].T).dot(true_mean)
-            unad_sd_nonrand = np.sqrt(np.diag(np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand]))))
-            true_target_LASSO = np.linalg.inv(X[:, active_LASSO].T.dot(X[:, active_LASSO])).\
-                dot(X[:, active_LASSO].T).dot(true_mean)
-        elif target == "full":
-            X_full_inv = np.linalg.pinv(X)
-            true_target = X_full_inv[active].dot(true_mean)
-            unad_sd = np.sqrt(np.diag(X_full_inv[active].dot(X_full_inv[active].T)))
-            true_target_nonrand = X_full_inv[active_nonrand].dot(true_mean)
-            unad_sd_nonrand = np.sqrt(np.diag(X_full_inv[active_nonrand].dot(X_full_inv[active_nonrand].T)))
-            true_target_LASSO = X_full_inv[active_LASSO].dot(true_mean)
-        elif target == "debiased":
-            X_full_inv = M.dot(X.T)
-            true_target = X_full_inv[active].dot(true_mean)
-            unad_sd = np.sqrt(np.diag(X_full_inv[active].dot(X_full_inv[active].T)))
-            true_target_nonrand = X_full_inv[active_nonrand].dot(true_mean)
-            unad_sd_nonrand = np.sqrt(np.diag(X_full_inv[active_nonrand].dot(X_full_inv[active_nonrand].T)))
-            true_target_LASSO = X_full_inv[active_LASSO].dot(true_mean)
-
         coverage_sel = 0.
         coverage_rand = 0.
         coverage_nonrand = 0.
@@ -294,34 +300,15 @@ def inference_approx(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.2
                                                    or ((np.sqrt(n)*rel_LASSO[k]/sigma_est) + (1.65 * unad_sd_nonrand[k])) < 0.):
                 power_nonrand += 1
 
-        if nactive > 0 and nactive_nonrand > 0:
+        if nactive > 0 and nactive_LASSO > 0:
 
-            if Con is not None:
-                one_step = LASSO_py.onestep_estimator
-                for l in range(one_step.shape[0]):
-                    eta = np.zeros_like(one_step)
-                    eta[l] = active_LASSO_signs[l]
-                    alpha = 0.1
+            for l in range(nactive_LASSO):
+                if (Lee_lc[l] <= true_target_LASSO[l]) and (true_target_LASSO[l] <= Lee_uc[l]):
+                    coverage_Lee += 1
+                length_Lee += (Lee_uc[l] - Lee_lc[l])
 
-                    if Con.linear_part.shape[0] > 0:  # there were some constraints
-                        L, Z, U, S = Con.bounds(eta, one_step)
-                        Lee_intervals = equal_tailed_interval(L, Z, U, S, alpha=alpha)
-                        Lee_intervals = sorted([Lee_intervals[0] * active_LASSO_signs[l],
-                                                Lee_intervals[1] * active_LASSO_signs[l]])
-
-                    else:
-                        obs = (eta * one_step).sum()
-                        sd = np.sqrt((eta * Con.covariance.dot(eta)))
-                        Lee_intervals = (obs - ndist.ppf(1 - alpha / 2) * sd,
-                                         obs + ndist.ppf(1 - alpha / 2) * sd)
-
-                    if (Lee_intervals[0] <= true_target_LASSO[l]) and (true_target_LASSO[l] <= Lee_intervals[1]):
-                        coverage_Lee += 1
-
-                    if active_bool_LASSO[l] == True and (Lee_intervals[0] > 0. or Lee_intervals[1] < 0.):
-                        power_Lee += 1
-
-                    length_Lee += (Lee_intervals[1]- Lee_intervals[0])
+                if active_bool_LASSO[l] == True and (Lee_lc[l] > 0. or Lee_uc[l] < 0.):
+                    power_Lee += 1
 
             M_est.solve_map()
             approx_MLE, var, mle_map, _, _, mle_transform = solve_UMVU(M_est.target_transform,
