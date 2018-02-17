@@ -230,7 +230,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         for w in range(nactive_nonrand):
             active_bool_nonrand[w] = (np.in1d(active_set_nonrand[w], true_set).sum() > 0)
 
-        LASSO_canonical = lasso.gaussian(X, y, np.asscalar(lam_tuned), sigma=sigma_est)
+        LASSO_canonical = lasso.gaussian(X, y, np.asscalar(lam_tuned), sigma=1.)
         soln = LASSO_canonical.fit()
         Con = LASSO_canonical.constraints
         active_LASSO  = (soln != 0)
@@ -265,11 +265,15 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         coverage_nonrand = 0.
         coverage_Lee = 0.
         power_Lee = 0.
+        length_Lee = 0.
 
         power_sel = 0.
         power_rand = 0.
         power_nonrand = 0.
 
+        length_sel = 0.
+        length_rand = 0.
+        length_nonrand = 0.
 
         for k in range(nactive_nonrand):
 
@@ -307,6 +311,8 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                     if active_bool_nonrand[l] == True and (Lee_intervals[0] > 0. or Lee_intervals[1] < 0.):
                         power_Lee += 1
 
+                    length_Lee += (Lee_intervals[1]- Lee_intervals[0])
+
             M_est.solve_map()
             approx_MLE, var, mle_map, _, _, mle_transform = solve_UMVU(M_est.target_transform,
                                                                        M_est.opt_transform,
@@ -338,7 +344,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                 if (M_est.target_observed[j] - (1.65 * unad_sd[j])) <= true_target[j] and (
                             M_est.target_observed[j] + (1.65 * unad_sd[j])) >= true_target[j]:
                     coverage_rand += 1
-                print("randomized intervals", sigma_est* (M_est.target_observed[j] - (1.65 * unad_sd[j])),
+                print("randomized intervals", sigma_est*(M_est.target_observed[j] - (1.65 * unad_sd[j])),
                       sigma_est* (M_est.target_observed[j] + (1.65 * unad_sd[j])))
 
                 if active_bool[j] == True and ((M_est.target_observed[j] - (1.65 * unad_sd[j])) > 0. or (
