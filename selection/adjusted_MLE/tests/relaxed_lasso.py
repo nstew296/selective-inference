@@ -388,7 +388,7 @@ def inference_approx(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.2
                false_positive_randomized, \
                false_positive_nonrandomized, \
                coverage_sel / max(float(nactive), 1.), \
-               coverage_Lee / max(float(nactive_nonrand), 1.), \
+               coverage_Lee / max(float(nactive_LASSO), 1.), \
                coverage_rand / max(float(nactive), 1.), \
                coverage_nonrand / max(float(nactive_nonrand), 1.), \
                power_sel / float(s), \
