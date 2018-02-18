@@ -5,9 +5,6 @@ import regreg.api as rr
 from selection.randomized.api import randomization
 from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
 from selection.algorithms.lasso import lasso
-from scipy.stats import norm as ndist
-from scipy.optimize import bisect
-
 from rpy2 import robjects
 
 import rpy2.robjects.numpy2ri
