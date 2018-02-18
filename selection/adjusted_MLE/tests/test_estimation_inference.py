@@ -426,7 +426,7 @@ if __name__ == "__main__":
                                     length_rand = approx[21],
                                     length_nonrand = approx[22])
 
-        df_master = df_master.append(metrics, ignore_index=True)
+            df_master = df_master.append(metrics, ignore_index=True)
 
         sys.stderr.write("overall_bias" + str(bias / float(i + 1)) + "\n")
         sys.stderr.write("overall_selrisk" + str(risk_selMLE / float(i + 1)) + "\n")
