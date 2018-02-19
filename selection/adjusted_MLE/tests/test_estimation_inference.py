@@ -49,6 +49,7 @@ def tuned_lasso(X, y, X_val,y_val):
         muhat.val.lasso = as.matrix(predict(LASSO, X.val))
         err.val.rellasso = colMeans((muhat.val.rellasso - Y.val)^2)
         err.val.lasso = colMeans((muhat.val.lasso - Y.val)^2)
+        print(err.val.rellasso)
         opt_lam = ceiling(which.min(err.val.rellasso)/10)
         lambda.tuned = lam.seq[opt_lam]
         return(list(beta.hat.rellasso = beta.hat.rellasso[,which.min(err.val.rellasso)],
@@ -102,12 +103,12 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
             sigma_est = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1.)
             print("sigma and sigma_est", sigma, sigma_est)
 
+        _y = y
         y = y - y.mean()
         y /= sigma_est
         y_val = y_val - y_val.mean()
         y_val /= sigma_est
 
-        true_mean -= true_mean.mean()
         true_mean /= sigma_est
 
         if target == "debiased":
@@ -344,7 +345,7 @@ if __name__ == "__main__":
 
     df_master = pd.DataFrame()
 
-    ndraw = 50
+    ndraw = 1
     bias = 0.
     risk_selMLE = 0.
     risk_relLASSO = 0.
@@ -371,7 +372,7 @@ if __name__ == "__main__":
 
     for i in range(ndraw):
         approx = comparison_risk_inference(n=200, p=50, nval=200, rho=0.35, s=10,
-                                           beta_type=2, snr=0.10, target="partial")
+                                           beta_type=2, snr=0.05, target="full")
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
