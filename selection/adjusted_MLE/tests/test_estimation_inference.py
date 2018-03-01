@@ -49,7 +49,7 @@ def tuned_lasso(X, y, X_val,y_val):
         muhat.val.lasso = as.matrix(predict(LASSO, X.val))
         err.val.rellasso = colMeans((muhat.val.rellasso - Y.val)^2)
         err.val.lasso = colMeans((muhat.val.lasso - Y.val)^2)
-        print(err.val.rellasso)
+        #print(err.val.rellasso)
         opt_lam = ceiling(which.min(err.val.rellasso)/10)
         lambda.tuned = lam.seq[opt_lam]
         return(list(beta.hat.rellasso = beta.hat.rellasso[,which.min(err.val.rellasso)],
@@ -345,7 +345,7 @@ if __name__ == "__main__":
 
     df_master = pd.DataFrame()
 
-    ndraw = 1
+    ndraw = 10
     bias = 0.
     risk_selMLE = 0.
     risk_relLASSO = 0.
@@ -372,7 +372,7 @@ if __name__ == "__main__":
 
     for i in range(ndraw):
         approx = comparison_risk_inference(n=200, p=50, nval=200, rho=0.35, s=10,
-                                           beta_type=2, snr=0.05, target="full")
+                                           beta_type=2, snr=0.20, target="full")
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
