@@ -345,7 +345,7 @@ if __name__ == "__main__":
 
     df_master = pd.DataFrame()
 
-    ndraw = 10
+    ndraw = 50
     bias = 0.
     risk_selMLE = 0.
     risk_relLASSO = 0.
@@ -371,8 +371,8 @@ if __name__ == "__main__":
     length_nonrand = 0.
 
     for i in range(ndraw):
-        approx = comparison_risk_inference(n=200, p=50, nval=200, rho=0.35, s=10,
-                                           beta_type=2, snr=0.20, target="full")
+        approx = comparison_risk_inference(n=200, p=1000, nval=200, rho=0.35, s=20,
+                                           beta_type=2, snr=0.30, target="partial")
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
