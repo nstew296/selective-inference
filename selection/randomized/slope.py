@@ -83,7 +83,7 @@ class slope(highdim):
         if self._initial_omega is None:
             self._initial_omega = self.randomizer.sample()
 
-        quad = rr.identity_quadratic(self.ridge_term, 0, -self._initial_omega, 0)
+        quad = rr.identity_quadratic(0., 0., -self._initial_omega, 0)
         problem = rr.simple_problem(self.loglike, self.penalty)
         self.initial_soln = problem.solve(quad, **solve_args)
 
@@ -185,6 +185,10 @@ class slope(highdim):
                                      b_scaling,
                                      mean=cond_mean,
                                      covariance=cond_cov)
+
+            print("check if correct",
+                  np.allclose(self.observed_score_state + opt_offset + opt_linear.dot(initial_scalings),
+                              self._initial_omega, rtol=1e-05, atol=1e-08))
 
             self.sampler = affine_gaussian_sampler(affine_con,
                                                    self.observed_opt_state,
