@@ -161,7 +161,7 @@ def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rh
 #     X_clustered = X[:, indices].dot(signs_cluster)
 #     print("start indices of clusters", indices, cur_indx_array, signs_cluster.shape, X_clustered.shape)
 
-def test_randomized_slope(n=500, p=100, signal_fac=2.2, s=5, sigma=1., rho=0.35, randomizer_scale= np.sqrt(0.25),
+def test_randomized_slope(n=500, p=100, signal_fac=1.7, s=10, sigma=1., rho=0.35, randomizer_scale= np.sqrt(0.25),
                           target = "full", use_MLE=True):
 
     while True:
@@ -198,7 +198,7 @@ def test_randomized_slope(n=500, p=100, signal_fac=2.2, s=5, sigma=1., rho=0.35,
 
         signs = conv.fit()
         nonzero = signs != 0
-        print("dimensions", n, p, nonzero.sum())
+        print("dimensions", n, p, nonzero.sum(), active_SLOPE_r.sum(), r_E)
         if nonzero.sum() > 0 and active_SLOPE_r.sum()>0:
             if target == "selected":
                 beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
@@ -221,6 +221,72 @@ def test_randomized_slope(n=500, p=100, signal_fac=2.2, s=5, sigma=1., rho=0.35,
     if True:
         #print(beta_target)
         return pval[beta_target == 0], pval[beta_target != 0], coverage, intervals, unad_coverage
+
+# def sim_xy(n, p, nval, rho=0, s=5, beta_type=2, snr=1):
+#     robjects.r('''
+#     source('~/best-subset/bestsubset/R/sim.R')
+#     ''')
+#
+#     r_simulate = robjects.globalenv['sim.xy']
+#     sim = r_simulate(n, p, nval, rho, s, beta_type, snr)
+#     X = np.array(sim.rx2('x'))
+#     y = np.array(sim.rx2('y'))
+#     X_val = np.array(sim.rx2('xval'))
+#     y_val = np.array(sim.rx2('yval'))
+#     Sigma = np.array(sim.rx2('Sigma'))
+#     beta = np.array(sim.rx2('beta'))
+#     sigma = np.array(sim.rx2('sigma'))
+#
+#     return X, y, X_val, y_val, Sigma, beta, sigma
+#
+#
+# def test_randomized_slope(n=500, p=100, signal_fac=1.1, s=10, sigma=1., rho=0.35, randomizer_scale= np.sqrt(0.25),
+#                           target = "full", use_MLE=True):
+#
+#     while True:
+#         X, Y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=n, rho=rho, s=s, beta_type=1, snr=0.20)
+#
+#         sigma_ = np.sqrt(np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p))
+#         r_beta, r_E, r_lambda_seq, r_sigma = test_slope_R(X,
+#                                                           Y,
+#                                                           W=None,
+#                                                           normalize=True,
+#                                                           choice_weights="gaussian", #put gaussian
+#                                                           sigma=sigma_)
+#         r_E = r_E-1
+#         active_SLOPE_r = np.zeros(p, np.bool)
+#         active_SLOPE_r[r_E] = 1
+#
+#         conv = slope.gaussian(X,
+#                               Y,
+#                               np.sqrt(n) * r_sigma * r_lambda_seq,
+#                               randomizer_scale= np.sqrt(n) * randomizer_scale * sigma_)
+#
+#         signs = conv.fit()
+#         nonzero = signs != 0
+#         print("dimensions", n, p, nonzero.sum(), active_SLOPE_r.sum())
+#         if nonzero.sum() > 0 and active_SLOPE_r.sum()>0:
+#             if target == "selected":
+#                 beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
+#                 beta_target_nonrand = np.linalg.pinv(X[:, active_SLOPE_r]).dot(X.dot(beta))
+#             else:
+#                 beta_target = beta[nonzero]
+#                 beta_target_nonrand = beta[active_SLOPE_r]
+#             if use_MLE:
+#                 estimate, _, _, pval, intervals, _ = conv.selective_MLE(target=target, dispersion=sigma_)
+#                 post_SLOPE_OLS = np.linalg.pinv(X[:, active_SLOPE_r]).dot(Y)
+#                 unad_sd = sigma_ * np.sqrt(np.diag((np.linalg.inv(X[:, active_SLOPE_r].T.dot(X[:, active_SLOPE_r])))))
+#                 unad_intervals = np.vstack([post_SLOPE_OLS - 1.65 * unad_sd,
+#                                             post_SLOPE_OLS + 1.65 * unad_sd]).T
+#             else:
+#                 _, pval, intervals = conv.summary(target="selected", dispersion=sigma_, compute_intervals=True)
+#             coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
+#             unad_coverage = (beta_target_nonrand > unad_intervals[:, 0]) * (beta_target_nonrand < unad_intervals[:, 1])
+#             break
+#
+#     if True:
+#         print(beta_target, unad_intervals)
+#         return pval[beta_target == 0], pval[beta_target != 0], coverage, intervals, unad_coverage
 
 def main(nsim=100):
 
