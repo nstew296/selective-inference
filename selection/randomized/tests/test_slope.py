@@ -25,8 +25,10 @@ def test_slope_R(X, Y, W=None, normalize=True, choice_weights="gaussian", sigma=
       if(is.na(sigma)){
       sigma=NULL} else{
       sigma = as.matrix(sigma)[1,1]}
+
       if(is.na(fdr)){
       fdr = 0.1 }
+
       if(normalize=="TRUE"){
        normalize = TRUE} else{
        normalize = FALSE}
@@ -164,8 +166,8 @@ def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rh
 #     X_clustered = X[:, indices].dot(signs_cluster)
 #     print("start indices of clusters", indices, cur_indx_array, signs_cluster.shape, X_clustered.shape)
 
-def test_randomized_slope(n=500, p=100, signal_fac=1.2, s=5, sigma=1., rho=0.35, randomizer_scale=np.sqrt(0.25),
-                          target="full", use_MLE=True):
+def test_randomized_slope(n=500, p=100, signal_fac=1.5, s=5, sigma=1., rho=0.35, randomizer_scale=np.sqrt(0.25),
+                          target="selected", use_MLE=True):
     while True:
         inst = gaussian_instance
         signal = np.sqrt(signal_fac * 2. * np.log(p))
@@ -178,14 +180,19 @@ def test_randomized_slope(n=500, p=100, signal_fac=1.2, s=5, sigma=1., rho=0.35,
                           sigma=sigma,
                           random_signs=True)[:3]
 
-        sigma_ = np.sqrt(np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p))
+        if n>p:
+            sigma_ = np.sqrt(np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p))
+        else:
+            sigma_ = np.std(Y)
+
         r_beta, r_E, r_lambda_seq, r_sigma = test_slope_R(X,
                                                           Y,
-                                                          W=None,
-                                                          normalize=True,
-                                                          choice_weights="gaussian",  # put gaussian
-                                                          sigma=sigma_)
+                                                          W = None,
+                                                          normalize = True,
+                                                          choice_weights = "gaussian",  # put gaussian
+                                                          sigma = sigma_)
 
+        print("unique values in lambda seq",  np.unique(r_lambda_seq).shape[0])
         conv = slope.gaussian(X,
                               Y,
                               r_sigma * r_lambda_seq,
@@ -201,6 +208,7 @@ def test_randomized_slope(n=500, p=100, signal_fac=1.2, s=5, sigma=1., rho=0.35,
                 beta_target = beta[nonzero]
             if use_MLE:
                 estimate, _, _, pval, intervals, _ = conv.selective_MLE(target=target, dispersion=sigma_)
+                bias = estimate-beta_target
             else:
                 _, pval, intervals = conv.summary(target="selected", dispersion=sigma_, compute_intervals=True)
             coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
@@ -208,19 +216,20 @@ def test_randomized_slope(n=500, p=100, signal_fac=1.2, s=5, sigma=1., rho=0.35,
 
     if True:
         # print(beta_target)
-        return pval[beta_target == 0], pval[beta_target != 0], coverage, intervals
+        return pval[beta_target == 0], pval[beta_target != 0], coverage, intervals, bias
 
 
 def main(nsim=100):
-    P0, PA, cover, length_int = [], [], [], []
+    P0, PA, cover, length_int, bias = [], [], [], [], []
 
     for i in range(nsim):
-        p0, pA, cover_, intervals = test_randomized_slope()
+        p0, pA, cover_, intervals, bias_ = test_randomized_slope()
 
         cover.extend(cover_)
+        bias.extend(bias_)
         P0.extend(p0)
         PA.extend(pA)
-        print('coverage', np.mean(cover))
+        print('coverage and bias', np.mean(cover), np.mean(bias))
 
         # if i % 3 == 0 and i > 0:
         #     U = np.linspace(0, 1, 101)
