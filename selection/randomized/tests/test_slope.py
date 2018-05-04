@@ -166,8 +166,8 @@ def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rh
 #     X_clustered = X[:, indices].dot(signs_cluster)
 #     print("start indices of clusters", indices, cur_indx_array, signs_cluster.shape, X_clustered.shape)
 
-def test_randomized_slope(n=500, p=100, signal_fac=1.5, s=5, sigma=1., rho=0.35, randomizer_scale=np.sqrt(0.25),
-                          target="selected", use_MLE=True):
+def test_randomized_slope(n=500, p=100, signal_fac=1.5, s=10, sigma=3., rho=0.35, randomizer_scale=np.sqrt(0.25),
+                          target="full", use_MLE=True):
     while True:
         inst = gaussian_instance
         signal = np.sqrt(signal_fac * 2. * np.log(p))
@@ -184,6 +184,10 @@ def test_randomized_slope(n=500, p=100, signal_fac=1.5, s=5, sigma=1., rho=0.35,
             sigma_ = np.sqrt(np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p))
         else:
             sigma_ = np.std(Y)
+
+        Y /= sigma_
+        beta /= sigma_
+        sigma_ = 1.
 
         r_beta, r_E, r_lambda_seq, r_sigma = test_slope_R(X,
                                                           Y,

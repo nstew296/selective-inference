@@ -85,8 +85,6 @@ def inference_slope(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.20
         X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho,
                                                         s=s, beta_type=beta_type, snr=snr)
         true_mean = X.dot(beta)
-        X /= (X.std(0)[None, :] * np.sqrt(n))
-        print("scale", np.mean((X ** 2).sum(0)))
 
         if full_dispersion:
             dispersion = np.linalg.norm(y - X.dot(np.linalg.pinv(X).dot(y))) ** 2 / (n - p)
@@ -95,6 +93,10 @@ def inference_slope(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.20
 
         sigma_ = np.sqrt(dispersion)
         print("estimated and true sigma", sigma, sigma_)
+        y /= sigma_
+        beta /= sigma_
+        true_mean /= sigma_
+        sigma_ = 1.
 
         r_beta, r_E, r_lambda_seq, r_sigma = test_slope_R(X,
                                                           y,
@@ -102,11 +104,11 @@ def inference_slope(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.20
                                                           normalize=True,
                                                           choice_weights="gaussian",
                                                           sigma=sigma_)
-        #print("beta", r_beta)
+        
         conv = slope.gaussian(X,
                               y,
-                              slope_weights= sigma_ * r_lambda_seq,
-                              randomizer_scale= randomizer_scale * sigma_)
+                              slope_weights= np.sqrt(n) * sigma_ * r_lambda_seq,
+                              randomizer_scale= np.sqrt(n)* randomizer_scale * sigma_)
 
         signs = conv.fit()
         nonzero = signs != 0
@@ -115,10 +117,9 @@ def inference_slope(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.20
             if target == "selected":
                 beta_target =  np.linalg.pinv(X[:, nonzero]).dot(true_mean)
             elif target == "full":
-                beta_target = np.sqrt(n)* beta[nonzero]
+                beta_target = beta[nonzero]
 
             estimate, _, _, pval, intervals, _ = conv.selective_MLE(target=target, dispersion=sigma_)
-            print("estimate", beta_target, intervals)
             coverage = np.mean((beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1]))
             break
 
@@ -131,7 +132,7 @@ def main():
     output_overall = np.zeros(2)
 
     target = "selected"
-    n, p, rho, s, beta_type, snr = 500, 100, 0., 5, 1, 0.71
+    n, p, rho, s, beta_type, snr = 500, 100, 0., 5, 1, 0.15
 
     for i in range(ndraw):
         output = inference_slope(n=n, p=p, nval=n, rho=rho, s=s, beta_type=beta_type, snr=snr,
