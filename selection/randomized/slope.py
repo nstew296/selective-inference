@@ -83,7 +83,7 @@ class slope(lasso):
         if self._initial_omega is None:
             self._initial_omega = self.randomizer.sample()
 
-        quad = rr.identity_quadratic(0., 0., -self._initial_omega, 0)
+        quad = rr.identity_quadratic(self.ridge_term, 0., -self._initial_omega, 0)
         problem = rr.simple_problem(self.loglike, self.penalty)
         self.initial_soln = problem.solve(quad, **solve_args)
 

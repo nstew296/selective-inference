@@ -166,8 +166,8 @@ def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rh
 #     X_clustered = X[:, indices].dot(signs_cluster)
 #     print("start indices of clusters", indices, cur_indx_array, signs_cluster.shape, X_clustered.shape)
 
-def test_randomized_slope(n=500, p=100, signal_fac=1.5, s=10, sigma=3., rho=0.35, randomizer_scale=np.sqrt(0.25),
-                          target="full", use_MLE=True):
+def test_randomized_slope(n=500, p=100, signal_fac=1.5, s=10, sigma=3., rho=0., randomizer_scale=np.sqrt(0.25),
+                          target="full", use_MLE=False):
     while True:
         inst = gaussian_instance
         signal = np.sqrt(signal_fac * 2. * np.log(p))
@@ -185,22 +185,22 @@ def test_randomized_slope(n=500, p=100, signal_fac=1.5, s=10, sigma=3., rho=0.35
         else:
             sigma_ = np.std(Y)
 
-        Y /= sigma_
-        beta /= sigma_
-        sigma_ = 1.
+        # Y /= sigma_
+        # beta /= sigma_
+        # sigma_ = 1.
 
         r_beta, r_E, r_lambda_seq, r_sigma = test_slope_R(X,
                                                           Y,
                                                           W = None,
                                                           normalize = True,
-                                                          choice_weights = "gaussian",  # put gaussian
+                                                          choice_weights = "bhq",  # put gaussian
                                                           sigma = sigma_)
 
         print("unique values in lambda seq",  np.unique(r_lambda_seq).shape[0])
         conv = slope.gaussian(X,
                               Y,
                               r_sigma * r_lambda_seq,
-                              randomizer_scale=randomizer_scale * sigma_)
+                              randomizer_scale = randomizer_scale * sigma_)
 
         signs = conv.fit()
         nonzero = signs != 0
@@ -216,6 +216,7 @@ def test_randomized_slope(n=500, p=100, signal_fac=1.5, s=10, sigma=3., rho=0.35
             else:
                 _, pval, intervals = conv.summary(target="selected", dispersion=sigma_, compute_intervals=True)
             coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
+            bias = np.zeros(pval.shape[0])
             break
 
     if True:

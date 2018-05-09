@@ -37,7 +37,7 @@ def test_full_targets(n=2000, p=200, signal_fac=0.5, s=5, sigma=3, rho=0.4, rand
     conv = const(X, 
                  Y, 
                  W, 
-                 randomizer_scale=randomizer_scale * sigma_)
+                 randomizer_scale = randomizer_scale * sigma_)
     
     signs = conv.fit()
     nonzero = signs != 0
