@@ -43,7 +43,7 @@ def randomized_inference(randomizer_scale = np.sqrt(0.25), target = "full", full
     y = np.load("/Users/snigdhapanigrahi/Documents/Research/Effect_modification/response.npy")
 
     n, p = X.shape
-    print("size of regression", n, p)
+    #print("size of regression", n, p)
     X -= X.mean(0)[None, :]
     X /= (X.std(0)[None, :] * np.sqrt(n / (n - 1.)))
     y = y - y.mean()
