@@ -92,12 +92,12 @@ def test_selected_targets(n=2000, p=200, signal_fac=1., s=5, sigma=3, rho=0.4, r
     coverage = (beta_target > intervals[:,0]) * (beta_target < intervals[:,1])
     return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
 
-def main(nsim=500, full=False):
+def main(nsim=500, full=True):
 
     P0, PA, cover, length_int = [], [], [], []
     from statsmodels.distributions import ECDF
 
-    n, p, s = 500, 100, 10
+    n, p, s = 200, 1000, 10
 
     for i in range(nsim):
         if full:
