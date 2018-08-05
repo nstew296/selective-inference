@@ -469,7 +469,6 @@ class affine_gaussian_sampler(optimization_sampler):
            How many samples to discard?
 
         '''
-
         return sample_from_constraints(self.affine_con,
                                        self.initial_point,
                                        ndraw=ndraw,
