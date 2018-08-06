@@ -1451,7 +1451,7 @@ class highdim(lasso):
                 features=None,
                 parameter=None,
                 level=0.9,
-                ndraw=10000,
+                ndraw=50000,
                 burnin=2000,
                 compute_intervals=False,
                 dispersion=None):
