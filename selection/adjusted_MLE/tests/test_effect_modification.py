@@ -129,9 +129,9 @@ def randomized_inference(X, y, randomizer_scale = np.sqrt(0.50), target = "full"
                       intervals[:, 0],
                       intervals[:, 1])).T
 
-def main(inpath, outpath = None, use_R = False, randomizer_scale= np.sqrt(0.50), target = "selected", tuning = "theory"):
+def main(inpath, outpath = None, randomizer_scale= np.sqrt(0.50), target = "selected", tuning = "theory"):
 
-    if use_R== True:
+    if inpath is None:
         y, X = generate_data()
     else:
         X = np.load(os.path.join(inpath, "predictors.npy"))
