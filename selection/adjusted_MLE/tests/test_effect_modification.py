@@ -75,7 +75,9 @@ def glmnet_lasso(X, y, lambda_val):
     estimate_1se = np.array(lambda_R(r_X, r_y, r_lam).rx2('estimate.1se'))
     return estimate, lam_min, lam_1se, estimate_min, estimate_1se
 
-def randomized_inference(X, y, randomizer_scale = np.sqrt(0.50), target = "full", tuning = "theory", dispersion = None):
+def randomized_inference(X, y, ini_perturb, randomizer_scale = np.sqrt(0.50),
+                         target = "full", tuning = "theory", dispersion = None,
+                         level=0.90):
 
     n, p = X.shape
     X -= X.mean(0)[None, :]
@@ -107,10 +109,9 @@ def randomized_inference(X, y, randomizer_scale = np.sqrt(0.50), target = "full"
                                         y,
                                         n * lam * np.ones(p),
                                         randomizer_scale= np.sqrt(n) * randomizer_scale * sigma_)
-    signs = randomized_lasso.fit(solve_args={'tol': 1.e-5, 'min_its': 100})
-    ini_perturb = randomized_lasso._initial_omega
+    signs = randomized_lasso.fit(solve_args={'tol': 1.e-5, 'min_its': 100}, perturb=ini_perturb)
     nonzero = signs != 0
-    active_set_rand = np.asarray([t for t in range(p) if nonzero[t]])
+    active_set_rand = np.asarray([t for t in range(p) if nonzero[t]]) + 1
 
     ###comparison of active sets by both randomized and non-randomized LASSO
     sys.stderr.write(str(active_LASSO.sum()) + " active variables selected by non-randomized LASSO " + str(active_set) + "\n" + "\n")
@@ -119,17 +120,19 @@ def randomized_inference(X, y, randomizer_scale = np.sqrt(0.50), target = "full"
     estimate, _, _, _, _, _ = randomized_lasso.selective_MLE(target=target,
                                                              dispersion=dispersion)
 
-    _, pval, intervals = randomized_lasso.summary(target=target, dispersion=sigma_, compute_intervals=True, level=0.90, ndraw=100000)
+    _, pval, intervals = randomized_lasso.summary(target=target, dispersion=sigma_,
+                                                  compute_intervals=True, level=level, ndraw=100000)
     sys.stderr.write("theoretical lambda: pvals based on sampler " + str(pval) + "\n" + "\n")
     sys.stderr.write("theoretical lambda: intervals based on sampler " + str(intervals.T) + "\n" + "\n")
 
-    return np.vstack((active_set_rand.astype(int),
+    return np.vstack((active_set_rand,
                       estimate,
                       pval,
                       intervals[:, 0],
-                      intervals[:, 1])).T
+                      intervals[:, 1],
+                      np.ones(nonzero.sum())*level)).T
 
-def main(inpath, outpath = None, randomizer_scale= np.sqrt(0.50), target = "selected", tuning = "theory"):
+def main(inpath, outpath = None, randomizer_scale= np.sqrt(0.50), target = "selected", tuning = "theory", level=0.90):
 
     if inpath is None:
         y, X = generate_data()
@@ -143,20 +146,20 @@ def main(inpath, outpath = None, randomizer_scale= np.sqrt(0.50), target = "sele
     dispersion = np.linalg.norm(y - X.dot(np.linalg.pinv(X).dot(y))) ** 2. / (n - p)
     sigma_ = np.sqrt(dispersion)
     ini_perturb = randomization.isotropic_gaussian((p,), np.sqrt(n) * randomizer_scale * sigma_).sample()
-    output = randomized_inference(X, y, randomizer_scale=randomizer_scale, target= target, tuning = tuning,
-                                  dispersion=dispersion)
+    output = randomized_inference(X, y, ini_perturb, randomizer_scale=randomizer_scale, target= target, tuning = tuning,
+                                  dispersion=dispersion, level=level)
 
-    output_df = pd.DataFrame(data=output[:,1:],columns=['sel-MLE', 'pval', 'lower_ci', 'upper_ci'])
+    output_df = pd.DataFrame(data=output[:,1:],columns=['sel-MLE', 'pval', 'lower_ci', 'upper_ci', 'level'])
     output_df['active-vars'] = (output[:,0]).astype(int)
 
     if outpath is None:
         outpath = os.path.dirname(__file__)
 
-    outfile_html = os.path.join(outpath, "selective_inference_" + str(tuning) + ".html")
-    outfile_csv = os.path.join(outpath, "selective_inference_" + str(tuning) +".csv")
+    outfile_html = os.path.join(outpath, "selective_inference_" + str(level) + "_"+ str(tuning) + ".html")
+    outfile_csv = os.path.join(outpath, "selective_inference_" + str(level) +  "_" + str(tuning) +".csv")
     output_df.to_csv(outfile_csv, index=False)
     output_df.to_html(outfile_html)
 
 main(inpath = '/Users/snigdhapanigrahi/Documents/Research/Effect_modification/',
-     outpath= '/Users/snigdhapanigrahi/Documents/Research/Effect_modification/')
+     outpath= '/Users/snigdhapanigrahi/Documents/Research/Effect_modification/Results/')
 
