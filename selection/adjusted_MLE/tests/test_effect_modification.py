@@ -4,7 +4,6 @@ from rpy2 import robjects
 import rpy2.robjects.numpy2ri
 rpy2.robjects.numpy2ri.activate()
 
-import selection.randomized.lasso as L; reload(L)
 from selection.randomized.lasso import highdim
 from selection.randomized.randomization import randomization
 import pandas as pd
