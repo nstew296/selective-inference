@@ -47,7 +47,7 @@ def generate_data():
 
 def glmnet_lasso(X, y, lambda_val):
     robjects.r('''
-                library('glmnet')
+                library('glmnet', lib.loc = "/Users/snigdhapanigrahi/anaconda/lib/R/library/")
                 glmnet_LASSO = function(X,y,lambda){
                 y = as.matrix(y)
                 X = as.matrix(X)
@@ -101,7 +101,7 @@ def randomized_inference(X, y, ini_perturb, randomizer_scale = np.sqrt(0.50),
 
     sys.stderr.write("lam in randomized LASSO " + str(lam) + "\n" + "\n")
     active_LASSO = (glm_LASSO != 0)
-    active_set = np.asarray([z for z in range(p) if active_LASSO[z]])
+    active_set = np.asarray([z for z in range(p) if active_LASSO[z]]) + 1
 
     ###running randomized LASSO at lam
     randomized_lasso = highdim.gaussian(X,
@@ -136,11 +136,12 @@ def main(inpath, outpath = None, randomizer_scale= np.sqrt(0.50), target = "sele
     if inpath is None:
         y, X = generate_data()
     else:
-        X = np.load(os.path.join(inpath, "predictors.npy"))
+        X = np.load(os.path.join(inpath, "predictors_interactions.npy"))
         y = np.load(os.path.join(inpath, "response.npy"))
 
     np.random.seed(0)
     n, p = X.shape
+    print("shape", p)
 
     dispersion = np.linalg.norm(y - X.dot(np.linalg.pinv(X).dot(y))) ** 2. / (n - p)
     sigma_ = np.sqrt(dispersion)
@@ -160,5 +161,5 @@ def main(inpath, outpath = None, randomizer_scale= np.sqrt(0.50), target = "sele
     output_df.to_html(outfile_html)
 
 main(inpath = '/Users/snigdhapanigrahi/Documents/Research/Effect_modification/',
-     outpath= '/Users/snigdhapanigrahi/Documents/Research/Effect_modification/Results/')
+     outpath= '/Users/snigdhapanigrahi/Documents/Research/Effect_modification/Results/quadratic_terms/')
 
