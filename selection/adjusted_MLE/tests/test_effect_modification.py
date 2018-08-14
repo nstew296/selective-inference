@@ -131,12 +131,12 @@ def randomized_inference(X, y, ini_perturb, randomizer_scale = np.sqrt(0.50),
                       intervals[:, 1],
                       np.ones(nonzero.sum())*level)).T
 
-def main(inpath, outpath = None, randomizer_scale= np.sqrt(0.50), target = "selected", tuning = "theory", level=0.90):
+def main(inpath, outpath = None, randomizer_scale= np.sqrt(0.50), target = "full", tuning = "lambda.1se", level=0.90):
 
     if inpath is None:
         y, X = generate_data()
     else:
-        X = np.load(os.path.join(inpath, "predictors_interactions.npy"))
+        X = np.load(os.path.join(inpath, "predictors_cubic.npy"))
         y = np.load(os.path.join(inpath, "response.npy"))
 
     np.random.seed(0)
