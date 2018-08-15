@@ -17,7 +17,8 @@ def glmnet_lasso(X, y):
                 fit.cv = cv.glmnet(X, y, standardize=TRUE, intercept=FALSE, thresh=1.e-10)
                 estimate = coef(fit.cv, s='lambda.1se', exact=TRUE, x=X, y=y)[-1]
                 estimate.min = coef(fit.cv, s='lambda.min', exact=TRUE, x=X, y=y)[-1]
-                return(list(estimate = estimate, estimate.min = estimate.min, lam.min = fit.cv$lambda.min, lam.1se = fit.cv$lambda.1se))
+                return(list(estimate = estimate, estimate.min = estimate.min,
+                            lam.min = fit.cv$lambda.min, lam.1se = fit.cv$lambda.1se))
                 }''')
 
     lambda_R = robjects.globalenv['glmnet_LASSO']
@@ -30,7 +31,7 @@ def glmnet_lasso(X, y):
     lam_1se = np.asscalar(np.array(lambda_R(r_X, r_y).rx2('lam.1se')))
     return estimate, estimate_min, lam_min, lam_1se
 
-def naive_coverage(inpath='/Users/snigdhapanigrahi/Documents/Research/Prediction_argo/', alpha = 0.10):
+def naive_coverage(inpath, alpha = 0.10):
 
     X = np.load(os.path.join(inpath, "predictors.npy"))
     y = np.load(os.path.join(inpath, "response.npy"))
@@ -46,7 +47,6 @@ def naive_coverage(inpath='/Users/snigdhapanigrahi/Documents/Research/Prediction
         mean_effect = Y_train.mean()
         col_means_X = X_train.mean(0)[None, :]
         X_train -= X_train.mean(0)[None, :]
-        X_train /= (X_train.std(0)[None, :] * np.sqrt(n / (n - 1.)))
         Y_train = Y_train - Y_train.mean()
         Y_train = Y_train.reshape((Y_train.shape[0],))
 
@@ -54,7 +54,7 @@ def naive_coverage(inpath='/Users/snigdhapanigrahi/Documents/Research/Prediction
         X_test = X[(104+i),:] - col_means_X
         print("shapes", Y_train.shape, X_train.shape, Y_test.shape, X_test.shape)
 
-        sigma_ = np.std(Y_train) / np.sqrt(2.)
+        sigma_ = np.std(Y_train)/np.sqrt(2.)
         print("sigma", sigma_)
 
         _, glm_LASSO, lam_min, _ = glmnet_lasso(X_train, Y_train)
@@ -66,9 +66,9 @@ def naive_coverage(inpath='/Users/snigdhapanigrahi/Documents/Research/Prediction
         unad_est = np.zeros(p)
         post_LASSO_OLS = np.linalg.pinv(X_train[:, active_LASSO]).dot(Y_train)
         unad_est[active_LASSO] = post_LASSO_OLS
-        unad_sd_vector = np.sqrt((sigma_ ** 2) * (n* np.diag(X_test[:, active_LASSO]
-                                                             .dot(np.linalg.inv(X[:, active_LASSO].T.dot(X[:, active_LASSO])))
-                                                             .dot(X_test[:, active_LASSO].T)) + 1.))
+        unad_sd_vector = np.sqrt((sigma_ ** 2) * (np.diag(X_test[:, active_LASSO]
+                                                          .dot(np.linalg.inv(X[:, active_LASSO].T.dot(X[:, active_LASSO])))
+                                                          .dot(X_test[:, active_LASSO].T)) + 1.))
         quantile = ndist.ppf(1 - alpha / 2.)
         unad_prediction_intervals = np.vstack([X_test.dot(unad_est) - quantile * unad_sd_vector,
                                                X_test.dot(unad_est) + quantile * unad_sd_vector]).T
@@ -77,6 +77,6 @@ def naive_coverage(inpath='/Users/snigdhapanigrahi/Documents/Research/Prediction
         print("Y test", Y_test)
         cov_unadjusted += np.mean((Y_test > unad_prediction_intervals[:, 0]) * (Y_test < unad_prediction_intervals[:, 1]))
         print("coverage so far", np.mean((Y_test > unad_prediction_intervals[:, 0]) * (Y_test < unad_prediction_intervals[:, 1]))
-              , cov_unadjusted/(i+1))
+              ,cov_unadjusted/(i+1))
 
-naive_coverage()
+naive_coverage(inpath='/Users/snigdhapanigrahi/Documents/Research/Prediction_argo/', alpha = 0.10)
