@@ -49,4 +49,4 @@ def output_file(n=200, p=500, rho=0.35, s=5, beta_type=1, snr_values=np.array([0
     df_risk.to_csv(outfile_risk_csv, index=False)
     df_risk.to_html(outfile_risk_html)
 
-output_file(outpath = "/Users/psnigdha/adjusted_MLE/Risks_high/Modified_estimate/")
+output_file(outpath = "/Users/psnigdha/adjusted_MLE/Risks_high/Naive_estimate/")

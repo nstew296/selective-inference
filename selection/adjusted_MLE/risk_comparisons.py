@@ -86,26 +86,24 @@ def risk_comparison(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=1, snr=0.20
             _sigma_ = np.std(y)
         lam_theory = _sigma_ * 1. * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
         glm_LASSO_theory, glm_LASSO_1se, glm_LASSO_min, lam_min, lam_1se = glmnet_lasso(X, y, lam_theory / float(n))
+        sigma_ = _sigma_
 
-        if full_dispersion is False:
-            dispersion = None
-            active_min = (glm_LASSO_min!=0)
-            if active_min.sum()>0:
-                sigma_ = np.sqrt(np.linalg.norm(y - X[:,active_min].dot(np.linalg.pinv(X[:,active_min]).dot(y))) ** 2
-                                 / (n - active_min.sum()))
-            else:
-                sigma_ = _sigma_
+        # if full_dispersion is False:
+        #     dispersion = None
+        #     active_min = (glm_LASSO_min!=0)
+        #     if active_min.sum()>0:
+        #         sigma_ = np.sqrt(np.linalg.norm(y - X[:,active_min].dot(np.linalg.pinv(X[:,active_min]).dot(y))) ** 2
+        #                          / (n - active_min.sum()))
+        #     else:
+        #         sigma_ = _sigma_
 
         print("true and estimated sigma", sigma, _sigma_, sigma_)
 
         if tuning_nonrand == "lambda.min":
-            lam_LASSO = lam_min
             glm_LASSO = glm_LASSO_min
         elif tuning_nonrand == "lambda.1se":
-            lam_LASSO = lam_1se
             glm_LASSO = glm_LASSO_1se
         else:
-            lam_LASSO = lam_theory / float(n)
             glm_LASSO = glm_LASSO_theory
         active_LASSO = (glm_LASSO != 0)
         rel_LASSO = np.zeros(p)
