@@ -6,7 +6,6 @@ rpy2.robjects.numpy2ri.activate()
 
 from scipy.stats import norm as ndist
 from scipy.stats import pearsonr
-
 from selection.randomized.lasso import highdim
 
 def glmnet_lasso(X, y):
@@ -40,9 +39,10 @@ def naive_coverage(inpath, alpha = 0.10):
     ntrain = (y.shape[0]-105)+1
 
     cov_unadjusted = 0.
-    cov_adjusted =0.
-    for i in range(ntrain):
-        indx = np.arange(104) + i
+    cov_adjusted = 0.
+    for i in range(33):
+
+        indx = np.arange(104) + (i+79+(4*52))
         Y_train = y[indx]
         X_train = X[indx, :]
         n, p = X_train.shape
@@ -53,8 +53,8 @@ def naive_coverage(inpath, alpha = 0.10):
         Y_train = Y_train - Y_train.mean()
         Y_train = Y_train.reshape((Y_train.shape[0],))
 
-        Y_test = y[(104+i+1)] - mean_effect
-        X_test = X[(104+i+1),:] - col_means_X
+        Y_test = y[(104+i+79+(4*52))] - mean_effect
+        X_test = X[(104+i+79+(4*52)),:] - col_means_X
         print("shapes", Y_train.shape, X_train.shape, Y_test.shape, X_test.shape)
 
         _, glm_LASSO, lam_min, lam_1se = glmnet_lasso(X_train, Y_train)
