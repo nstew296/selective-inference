@@ -106,7 +106,6 @@ class lasso(object):
         -------
         soln : np.float
              Solution to lasso.
-
         Notes
         -----
         If `self` already has an attribute `lasso_solution`
@@ -378,7 +377,6 @@ class lasso(object):
         Returns
         -------
         L : `selection.algorithms.lasso.lasso`
-
         Notes
         -----
         If not None, `covariance_estimator` should
@@ -438,7 +436,6 @@ class lasso(object):
         Returns
         -------
         L : `selection.algorithms.lasso.lasso`
-
         Notes
         -----
         If not None, `covariance_estimator` should
@@ -493,7 +490,6 @@ class lasso(object):
         Returns
         -------
         L : `selection.algorithms.lasso.lasso`
-
         Notes
         -----
         If not None, `covariance_estimator` should
@@ -544,7 +540,6 @@ class lasso(object):
         Returns
         -------
         L : `selection.algorithms.lasso.lasso`
-
         Notes
         -----
         If not None, `covariance_estimator` should
@@ -604,7 +599,6 @@ class lasso(object):
         Returns
         -------
         L : `selection.algorithms.lasso.lasso`
-
         Notes
         -----
         Unlike other variants of LASSO, this
@@ -656,13 +650,8 @@ class lasso(object):
                 if group1.sum():
                     upper_bound = min(upper_bound, np.min(ratio[group1]))  # necessarily these will have RHS > 0
 
-<<<<<<< HEAD
-                group2 = (LHS <= 0) * (
-                RHS <= 0)  # we can ignore the other possibility since this gives a lower bound of 0
-=======
-                group2 = ((LHS <= 0) * 
+                group2 = ((LHS <= 0) *
                           (RHS <= 0))  # we can ignore the other possibility since this gives a lower bound of 0
->>>>>>> 512a039f03f82e0dfd17bbca1d80b3e30dac9478
                 lower_bound = 0
                 if group2.sum():
                     lower_bound = max(lower_bound, np.max(ratio[group2]))
@@ -747,9 +736,7 @@ def nominal_intervals(lasso_obj, level=0.95):
 def glm_sandwich_estimator(loss, B=1000):
     """
     Bootstrap estimator of covariance of
-
     .. math::
-
         (\bar{\beta}_E, X_{-E}^T(y-X_E\bar{\beta}_E)
     the OLS estimator of population regression
     coefficients and inactive correlation with the
@@ -804,9 +791,7 @@ def glm_sandwich_estimator(loss, B=1000):
 def glm_parametric_estimator(loglike, dispersion=None):
     """
     Parametric estimator of covariance of
-
     .. math::
-
         (\bar{\beta}_E, X_{-E}^T(y-\nabla \ell(X_E\bar{\beta}_E))
     the OLS estimator of population regression
     coefficients and inactive correlation with the
@@ -1166,14 +1151,9 @@ class data_carving(lasso):
 
         return pval
 
-<<<<<<< HEAD
-
-class data_splitting(data_carving):
-=======
 
 class data_splitting(data_carving):
 
->>>>>>> 512a039f03f82e0dfd17bbca1d80b3e30dac9478
     def fit(self, solve_args={'tol': 1.e-12, 'min_its': 500}, use_full_cov=True):
 
         lasso.fit(self, solve_args=solve_args)
@@ -1265,7 +1245,6 @@ def _data_carving_deprec(X, y,
         Compute selective intervals?
     UMPU : bool (optional)
         Perform the UMPU test?
-
     Returns
     -------
     results : [(variable, pvalue, interval)
@@ -1279,7 +1258,7 @@ def _data_carving_deprec(X, y,
     """
 
     n, p = X.shape
-    first_stage, stage_one, stage_two = split_model(X, 
+    first_stage, stage_one, stage_two = split_model(X,
                                                     y,
                                                     sigma=sigma,
                                                     lam_frac=lam_frac,
@@ -1498,12 +1477,8 @@ def _data_carving_deprec(X, y,
                        intervals), L
 
 
-<<<<<<< HEAD
-def split_model(X, y,
-=======
-def split_model(X, 
+def split_model(X,
                 y,
->>>>>>> 512a039f03f82e0dfd17bbca1d80b3e30dac9478
                 sigma=1,
                 lam_frac=1.,
                 split_frac=0.9,
@@ -1566,7 +1541,6 @@ def additive_noise(X,
                    compute_intervals=True,
                    burnin=2000):
     """
-
     Additive noise LASSO.
     Parameters
     ----------
@@ -1590,7 +1564,6 @@ def additive_noise(X,
         Defaults to 2000.
     compute_intervals : bool (optional)
         Compute selective intervals?
-
     Returns
     -------
     results : [(variable, pvalue, interval)
@@ -1828,7 +1801,6 @@ class lasso_full(lasso):
         -------
         soln : np.float
              Solution to lasso.
-
         Notes
         -----
         If `self` already has an attribute `lasso_solution`
@@ -1949,18 +1921,13 @@ class lasso_full(lasso):
 
             for j in range(len(active_set)):
                 idx = self.active[j]
-<<<<<<< HEAD
-                lower, upper = _truncation_interval(Qbeta_bar, (X, W), QiE[j, j], idx, beta_barE[j],
-                                                    self.feature_weights, wide=True)
-=======
-                lower, upper = _truncation_interval(Qbeta_bar, 
-                                                    (X, W), 
-                                                    QiE[j, j], 
-                                                    idx, 
+                lower, upper = _truncation_interval(Qbeta_bar,
+                                                    (X, W),
+                                                    QiE[j, j],
+                                                    idx,
                                                     beta_barE[j],
-                                                    self.feature_weights, 
+                                                    self.feature_weights,
                                                     wide=True)
->>>>>>> 512a039f03f82e0dfd17bbca1d80b3e30dac9478
                 sd = sqrt_dispersion * np.sqrt(QiE[j, j])
                 tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd)
                 pvalue = tg.cdf(beta_barE[j])
@@ -2034,7 +2001,6 @@ class lasso_full(lasso):
         Returns
         -------
         L : `selection.algorithms.lasso.lasso`
-
         Notes
         -----
         If not None, `covariance_estimator` should
@@ -2093,7 +2059,6 @@ class lasso_full(lasso):
         Returns
         -------
         L : `selection.algorithms.lasso.lasso`
-
         Notes
         -----
         If not None, `covariance_estimator` should
@@ -2143,7 +2108,6 @@ class lasso_full(lasso):
         Returns
         -------
         L : `selection.algorithms.lasso.lasso`
-
         Notes
         -----
         If not None, `covariance_estimator` should
@@ -2221,7 +2185,6 @@ class lasso_full_modelQ(lasso):
         -------
         soln : np.float
              Solution to lasso.
-
         Notes
         -----
         If `self` already has an attribute `lasso_solution`
@@ -2246,14 +2209,9 @@ class lasso_full_modelQ(lasso):
 
             # Needed for finding truncation intervals
 
-<<<<<<< HEAD
-            G = self._loss.smooth_objective(lasso_solution, 'grad') + self._linear_term.objective(lasso_solution,
-                                                                                                  'grad')
-=======
-            G = (self._loss.smooth_objective(lasso_solution, 'grad') + 
+            G = (self._loss.smooth_objective(lasso_solution, 'grad') +
                  self._linear_term.objective(lasso_solution, 'grad'))
 
->>>>>>> 512a039f03f82e0dfd17bbca1d80b3e30dac9478
             self._Qbeta_bar = self.Q.dot(lasso_solution) - G
 
             Q = self.Q
@@ -2306,18 +2264,13 @@ class lasso_full_modelQ(lasso):
 
             for j in range(len(active_set)):
                 idx = self.active[j]
-<<<<<<< HEAD
-                lower, upper = _truncation_interval(Qbeta_bar, self.Q, QiE[j, j], idx, beta_barE[j],
-                                                    self.feature_weights, wide=False)
-=======
-                lower, upper = _truncation_interval(Qbeta_bar, 
-                                                    self.Q, 
-                                                    QiE[j, j], 
-                                                    idx, 
+                lower, upper = _truncation_interval(Qbeta_bar,
+                                                    self.Q,
+                                                    QiE[j, j],
+                                                    idx,
                                                     beta_barE[j],
-                                                    self.feature_weights, 
+                                                    self.feature_weights,
                                                     wide=False)
->>>>>>> 512a039f03f82e0dfd17bbca1d80b3e30dac9478
 
                 sd = sqrt_dispersion * np.sqrt(QiE[j, j])
                 tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd)
@@ -2344,4 +2297,3 @@ class lasso_full_modelQ(lasso):
                                                                 np.array(result).T)]))
             df['variable'] = df['variable'].astype(int)
             return df
-
