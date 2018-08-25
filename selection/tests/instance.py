@@ -59,6 +59,8 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
     signal : float or (float, float)
         Sizes for the coefficients. If a tuple -- then coefficients
         are equally spaced between these values using np.linspace.
+        Note: the size of signal is for a "normalized" design, where np.diag(X.T.dot(X)) == np.ones(p).
+        If scale=False, this signal is divided by np.sqrt(n), otherwise it is unchanged.
 
     random_signs : bool
         If true, assign random signs to coefficients.
@@ -94,8 +96,7 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
 
     if center:
         X -= X.mean(0)[None, :]
-    if scale:
-        X /= (X.std(0)[None,:] * np.sqrt(n))
+
     beta = np.zeros(p) 
     signal = np.atleast_1d(signal)
     if signal.shape == (1,):
@@ -105,6 +106,11 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
     if random_signs:
         beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
     np.random.shuffle(beta)
+    beta /= np.sqrt(n)
+
+    if scale:
+        X /= (X.std(0)[None,:] * np.sqrt(n))
+        beta *= np.sqrt(n)
 
     active = np.zeros(p, np.bool)
     active[beta != 0] = True
@@ -149,6 +155,8 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
     signal : float or (float, float)
         Sizes for the coefficients. If a tuple -- then coefficients
         are equally spaced between these values using np.linspace.
+        Note: the size of signal is for a "normalized" design, where np.diag(X.T.dot(X)) == np.ones(p).
+        If scale=False, this signal is divided by np.sqrt(n), otherwise it is unchanged.
 
     random_signs : bool
         If true, assign random signs to coefficients.
@@ -175,9 +183,7 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
 
     if center:
         X -= X.mean(0)[None,:]
-    if scale:
-        X /= X.std(0)[None,:]
-    X /= np.sqrt(n)
+
     beta = np.zeros(p) 
     signal = np.atleast_1d(signal)
     if signal.shape == (1,):
@@ -187,6 +193,11 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
     if random_signs:
         beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
     np.random.shuffle(beta)
+    beta /= np.sqrt(n)
+
+    if scale:
+        X /= (X.std(0)[None,:] * np.sqrt(n))
+        beta /= np.sqrt(n)
 
     active = np.zeros(p, np.bool)
     active[beta != 0] = True
@@ -225,6 +236,8 @@ def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
     signal : float or (float, float)
         Sizes for the coefficients. If a tuple -- then coefficients
         are equally spaced between these values using np.linspace.
+        Note: the size of signal is for a "normalized" design, where np.diag(X.T.dot(X)) == np.ones(p).
+        If scale=False, this signal is divided by np.sqrt(n), otherwise it is unchanged.
 
     random_signs : bool
         If true, assign random signs to coefficients.
@@ -251,9 +264,7 @@ def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
 
     if center:
         X -= X.mean(0)[None,:]
-    if scale:
-        X /= X.std(0)[None,:]
-    X /= np.sqrt(n)
+
     beta = np.zeros(p) 
     signal = np.atleast_1d(signal)
     if signal.shape == (1,):
@@ -263,6 +274,11 @@ def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
     if random_signs:
         beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
     np.random.shuffle(beta)
+    beta /= np.sqrt(n)
+
+    if scale:
+        X /= (X.std(0)[None,:] * np.sqrt(n))
+        beta /= np.sqrt(n)
 
     active = np.zeros(p, np.bool)
     active[beta != 0] = True
