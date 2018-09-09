@@ -13,30 +13,40 @@ def generate_data():
                 library('grf')
                 generate_X_y = function(inpath="/Users/snigdhapanigrahi/Documents/Research/Effect_modification/synthetic_data.csv")
                 {
-                   data <- read.csv()
+                   library(data.table)
+                   data <- fread("/Users/snigdhapanigrahi/Documents/Research/Effect_modification/synthetic_data.csv")
                    data$C1 <- factor(data$C1)
                    data$C2 <- factor(data$C2)
                    data$C3 <- factor(data$C3)
                    data$XC <- factor(data$XC)
-                   print("here")
 
                    y <- data$Y
                    t <- data$Z
                    x <- model.matrix(~ ., data[, -c(1:3)])[, -1]
-                   x <- scale(x, scale = FALSE)
-                   set.seed("20180511")
-                   mu.y <- regression_forest(x, y, tune.parameters = TRUE)
-                   mu.t <- regression_forest(x, t, tune.parameters = TRUE)
-                   print("here")
-                   y.tilde <- y - predict(mu.y)$predictions
-                   t.tilde <- t - predict(mu.t, x)$predictions
+                   x <- scale(x, scale = FALSE) # center the regressors
+
+                   library(grf)
+                   set.seed("20180906")
+                   s <- sample(1:nrow(data), nrow(data)/2)
+                   mu.y1 <- regression_forest(x[s, ], y[s], tune.parameters = TRUE)
+                   mu.y2 <- regression_forest(x[-s, ], y[-s], tune.parameters = TRUE)
+                   mu.t1 <- regression_forest(x[s, ], t[s], tune.parameters = TRUE)
+                   mu.t2 <- regression_forest(x[-s, ], t[-s], tune.parameters = TRUE)
+
+                   y.tilde <- y
+                   y.tilde[s] <- y[s] - predict(mu.y2, x[s, ])$predictions
+                   y.tilde[-s] <- y[-s] - predict(mu.y1, x[-s, ])$predictions
+
+                   t.tilde <- t
+                   t.tilde[s] <- t[s] - predict(mu.t2, x[s, ])$predictions
+                   t.tilde[-s] <- t[-s] - predict(mu.t1, x[-s, ])$predictions
 
                    x.tilde <- x
                    x.tilde <- x.tilde[, apply(x.tilde, 2, sd) > 0]
                    x.tilde <- x.tilde[, !duplicated(t(x.tilde))]
-                   x.tilde <- scale(x.tilde, scale = FALSE) * as.vector(t.tilde)
-                   print("here")
-
+                   x.tilde <- scale(x.tilde, scale = FALSE) * as.vector(t.tilde) ## make the mean of x.tilde zero
+                   y.tilde <- lm(y.tilde ~ t.tilde)$residuals
+                   
                    return(list(y=y.tilde, X=x.tilde))
                    }''')
 
@@ -76,7 +86,7 @@ def glmnet_lasso(X, y, lambda_val):
 
 def randomized_inference(X, y, ini_perturb, randomizer_scale = np.sqrt(0.50),
                          target = "full", tuning = "theory", dispersion = None,
-                         level=0.90):
+                         level=0.95):
 
     n, p = X.shape
     X -= X.mean(0)[None, :]
@@ -120,23 +130,26 @@ def randomized_inference(X, y, ini_perturb, randomizer_scale = np.sqrt(0.50),
                                                              dispersion=dispersion)
 
     _, pval, intervals = randomized_lasso.summary(target=target, dispersion=sigma_,
-                                                  compute_intervals=True, level=level, ndraw=100000)
+                                                  compute_intervals=True,
+                                                  level=level,
+                                                  ndraw=500000)
     sys.stderr.write("theoretical lambda: pvals based on sampler " + str(pval) + "\n" + "\n")
     sys.stderr.write("theoretical lambda: intervals based on sampler " + str(intervals.T) + "\n" + "\n")
 
+    rescale = (X.std(0)[nonzero] * np.sqrt(n / (n - 1.)))
     return np.vstack((active_set_rand,
-                      estimate,
+                      estimate*rescale,
                       pval,
-                      intervals[:, 0],
-                      intervals[:, 1],
+                      intervals[:, 0]*rescale,
+                      intervals[:, 1]*rescale,
                       np.ones(nonzero.sum())*level)).T
 
-def main(inpath, outpath = None, randomizer_scale= np.sqrt(0.50), target = "full", tuning = "lambda.1se", level=0.90):
+def main(inpath, outpath = None, randomizer_scale= np.sqrt(0.50), target = "selected", tuning = "theory", level=0.95):
 
     if inpath is None:
         y, X = generate_data()
     else:
-        X = np.load(os.path.join(inpath, "predictors_cubic.npy"))
+        X = np.load(os.path.join(inpath, "predictors.npy"))
         y = np.load(os.path.join(inpath, "response.npy"))
 
     np.random.seed(0)
@@ -161,5 +174,5 @@ def main(inpath, outpath = None, randomizer_scale= np.sqrt(0.50), target = "full
     output_df.to_html(outfile_html)
 
 main(inpath = '/Users/snigdhapanigrahi/Documents/Research/Effect_modification/',
-     outpath= '/Users/snigdhapanigrahi/Documents/Research/Effect_modification/Results/quadratic_terms/')
+     outpath= '/Users/snigdhapanigrahi/Documents/Research/Effect_modification/Results_new/')
 
