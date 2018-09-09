@@ -46,7 +46,7 @@ def generate_data():
                    x.tilde <- x.tilde[, !duplicated(t(x.tilde))]
                    x.tilde <- scale(x.tilde, scale = FALSE) * as.vector(t.tilde) ## make the mean of x.tilde zero
                    y.tilde <- lm(y.tilde ~ t.tilde)$residuals
-                   
+
                    return(list(y=y.tilde, X=x.tilde))
                    }''')
 
@@ -90,6 +90,7 @@ def randomized_inference(X, y, ini_perturb, randomizer_scale = np.sqrt(0.50),
 
     n, p = X.shape
     X -= X.mean(0)[None, :]
+    scale = X.std(0)* np.sqrt(n / (n - 1.))
     X /= (X.std(0)[None, :] * np.sqrt(n / (n - 1.)))
     y = y - y.mean()
     y= y.reshape((y.shape[0], ))
@@ -136,7 +137,7 @@ def randomized_inference(X, y, ini_perturb, randomizer_scale = np.sqrt(0.50),
     sys.stderr.write("theoretical lambda: pvals based on sampler " + str(pval) + "\n" + "\n")
     sys.stderr.write("theoretical lambda: intervals based on sampler " + str(intervals.T) + "\n" + "\n")
 
-    rescale = (X.std(0)[nonzero] * np.sqrt(n / (n - 1.)))
+    rescale = 1./scale[nonzero]
     return np.vstack((active_set_rand,
                       estimate*rescale,
                       pval,
