@@ -145,7 +145,7 @@ def randomized_inference(X, y, ini_perturb, randomizer_scale = np.sqrt(0.50),
                       intervals[:, 1]*rescale,
                       np.ones(nonzero.sum())*level)).T
 
-def main(inpath, outpath = None, randomizer_scale= np.sqrt(0.50), target = "selected", tuning = "theory", level=0.95):
+def main(inpath, outpath = None, randomizer_scale= np.sqrt(0.50), target = "full", tuning = "theory", level=0.95):
 
     if inpath is None:
         y, X = generate_data()

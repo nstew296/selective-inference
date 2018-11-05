@@ -639,7 +639,6 @@ class optimization_intervals(object):
             return 1 - pivot
 
     def confidence_interval(self, linear_func, level=0.90, how_many_sd=20):
-
         sample_stat = self._normal_sample.dot(linear_func)
         observed_stat = self.observed.dot(linear_func)
         
