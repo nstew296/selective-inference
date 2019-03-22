@@ -115,10 +115,10 @@ def main(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10, beta_type=1, snr=0.
     #plt.show()
     print("spread ", np.std(np.asarray(carved_est)))
     stats.probplot(np.asarray(carved_est), dist="norm", plot=pylab)
-    #plt.savefig('/Users/psnigdha/Research/Carving_causal_inference/Results/qqplot_mle.png')
-    #pylab.show()
+    plt.savefig('/Users/psnigdha/Research/Carving_causal_inference/Results/qqplot_mle.png')
+    pylab.show()
 
-main(nsim=200, B=10)
+main(nsim=500, B=10)
 
 
 
