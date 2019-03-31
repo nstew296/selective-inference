@@ -727,7 +727,8 @@ class carved_lasso(gaussian_query):
                  feature_weights,
                  ridge_term,
                  perturb_split,
-                 randomization_cov):
+                 randomization_cov,
+                 sel_idx):
         r"""
         Create a new post-selection object for the LASSO problem
 
@@ -763,6 +764,8 @@ class carved_lasso(gaussian_query):
         self.penalty = rr.weighted_l1norm(self.feature_weights, lagrange=1.)
         self.perturb_split = perturb_split
         self.randomization_cov = randomization_cov
+
+        self.indicator = ~sel_idx
 
     def fit(self,
             solve_args={'tol': 1.e-12, 'min_its': 50}):
@@ -948,5 +951,6 @@ class carved_lasso(gaussian_query):
                             np.asarray(feature_weights) / sigma ** 2,
                             ridge_term,
                             perturb_split,
-                            n*randomization_cov)
+                            n*randomization_cov,
+                            sel_idx)
 

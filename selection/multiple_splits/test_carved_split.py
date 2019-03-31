@@ -95,7 +95,7 @@ def create_output_file_carved(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10
     if outpath is None:
         outpath = os.path.dirname(__file__)
 
-    outfile_mse_html = os.path.join(outpath, "dims_" + str(n) + "_" + str(p) + "_msebias_betatype" + str(beta_type) + "_rho_" + str(rho) + ".html")
+    outfile_mse_html = os.path.join(outpath, "dims_" + str(n) + "_" + str(p) + "carve_msebias_mixednormal_betatype" + str(beta_type) + "_rho_" + str(rho) + ".html")
     df_mse.to_html(outfile_mse_html)
 
 create_output_file_carved(outpath='/Users/psnigdha/Research/Carving_causal_inference/Results/')
@@ -135,7 +135,7 @@ def split(X, y, sigma, split_fraction=0.67, tuning="theory"):
         rel_LASSO = np.linalg.pinv(X_inf[:, active_LASSO]).dot(y_inf)
         return rel_LASSO[0]
 
-def create_output_file_split(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10, beta_type=1, snr=0.20, randomizer_scale=0.5,
+def create_output_file_split(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10, beta_type=1, snr=0.20,
                              nsim=50, B_values=np.array([1, 10, 25, 100]), outpath="None"):
 
     df_mse = pd.DataFrame()
@@ -175,7 +175,7 @@ def create_output_file_split(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10,
     if outpath is None:
         outpath = os.path.dirname(__file__)
 
-    outfile_mse_html = os.path.join(outpath, "dims_" + str(n) + "_" + str(p) + "_msebias_betatype" + str(beta_type) + "_rho_" + str(rho) + ".html")
+    outfile_mse_html = os.path.join(outpath, "dims_" + str(n) + "_" + str(p) + "_msebias_mixednormal_betatype" + str(beta_type) + "_rho_" + str(rho) + ".html")
     df_mse.to_html(outfile_mse_html)
 
 #create_output_file_split(outpath='/Users/psnigdha/Research/Carving_causal_inference/Results/')
