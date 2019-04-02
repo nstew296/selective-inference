@@ -1783,7 +1783,7 @@ def selective_MLE(observed_target,
                   logdens_linear,
                   linear_part,
                   offset,
-                  solve_args={'tol':1.e-12},
+                  solve_args={'tol':1.e-15},
                   level= 0.9):
                   #useC=False):
     """
@@ -1839,7 +1839,8 @@ def selective_MLE(observed_target,
     intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
                            final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
 
-    return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, ind_unbiased_estimator
+    return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, ind_unbiased_estimator, \
+           target_lin.T.dot(prec_opt.dot(cond_mean - soln)), L.dot(target_lin) - L.dot(hess.dot(L.T))
 
 def twostage_selective_MLE(observed_target,
                            cov_target,
@@ -2043,7 +2044,6 @@ def _selective_MLE(observed_target,
     quantile = ndist.ppf(1 - alpha / 2.)
     intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
                            final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
-
     return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, ind_unbiased_estimator
 
 def selective_MLE_grid(observed_target,
