@@ -56,7 +56,7 @@ def test_lasso_estimate(X, y, sigma, beta, randomizer_scale = 1.):
 
             #print("check shape ", np.linalg.pinv(X[:, nonzero])[0,:].shape)
             return np.asscalar(mle_comp), np.asscalar(var_comp), np.asscalar(observed_target_uni),\
-                   np.asscalar(cov_target_uni), (sigma) *np.linalg.pinv(X[:, nonzero])[0,:], np.asscalar(beta_target[0])
+                   np.asscalar(cov_target_uni), (sigma) * np.linalg.pinv(X[:, nonzero])[0,:], np.asscalar(beta_target[0])
 
 def test_sum(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10, beta_type=1, snr=0.20, randomizer_scale=1., nsim=100):
 
@@ -99,4 +99,4 @@ def test_sum(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10, beta_type=1, sn
     plt.plot(grid, grid, 'k--')
     plt.show()
 
-test_sum(nsim=500)
+test_sum(nsim=1200)

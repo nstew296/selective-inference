@@ -27,10 +27,10 @@ def glmnet_lasso(X, y, lambda_val):
                 glmnet_LASSO = function(X,y, lambda){
                 y = as.matrix(y)
                 X = as.matrix(X)
-                lam = as.matrix(lambda)[1,1]
+                lam = as.vector(lambda)
                 n = nrow(X)
 
-                fit = glmnet(X, y, standardize=TRUE, intercept=FALSE, thresh=1.e-10)
+                fit = glmnet(X, y, standardize=TRUE, intercept=FALSE, thresh=1.e-10, lambda = lam)
                 estimate = coef(fit, s=lam, exact=TRUE, x=X, y=y)[-1]
                 return(list(estimate = estimate))
                 }''')
@@ -39,7 +39,7 @@ def glmnet_lasso(X, y, lambda_val):
     n, p = X.shape
     r_X = robjects.r.matrix(X, nrow=n, ncol=p)
     r_y = robjects.r.matrix(y, nrow=n, ncol=1)
-    r_lam = robjects.r.matrix(lambda_val, nrow=1, ncol=1)
+    r_lam = robjects.r.matrix(lambda_val, nrow=p, ncol=1)
 
     estimate = np.array(lambda_R(r_X, r_y, r_lam).rx2('estimate'))
     return estimate
@@ -86,3 +86,29 @@ def glmnet_lasso_cvmin(X, y):
     estimate_min = np.array(lambda_R(r_X, r_y).rx2('estimate.min'))
     lam_min = np.asscalar(np.array(lambda_R(r_X, r_y).rx2('lam.min')))
     return estimate_min, lam_min
+
+def glmnet_lasso_cv(X, y):
+    robjects.r('''
+                library(glmnet)
+                glmnet_LASSO = function(X,y){
+                y = as.matrix(y)
+                X = as.matrix(X)
+                n = nrow(X)
+                fit.cv = cv.glmnet(X, y, standardize=TRUE, intercept=FALSE, thresh=1.e-10)
+                estimate.1se = coef(fit.cv, s='lambda.1se', exact=TRUE, x=X, y=y)[-1]
+                estimate.min = coef(fit.cv, s='lambda.min', exact=TRUE, x=X, y=y)[-1]
+                return(list(estimate.1se = estimate.1se, lam.1se = fit.cv$lambda.1se, 
+                            estimate.min = estimate.min, lam.min= fit.cv$lambda.min))
+                }''')
+
+    lambda_R = robjects.globalenv['glmnet_LASSO']
+    n, p = X.shape
+    r_X = robjects.r.matrix(X, nrow=n, ncol=p)
+    r_y = robjects.r.matrix(y, nrow=n, ncol=1)
+
+    estimate_1se = np.array(lambda_R(r_X, r_y).rx2('estimate.1se'))
+    lam_1se = np.asscalar(np.array(lambda_R(r_X, r_y).rx2('lam.1se')))
+    estimate_min = np.array(lambda_R(r_X, r_y).rx2('estimate.min'))
+    lam_min = np.asscalar(np.array(lambda_R(r_X, r_y).rx2('lam.min')))
+
+    return estimate_1se, lam_1se, estimate_min, lam_min
