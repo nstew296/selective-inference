@@ -1,15 +1,9 @@
 from __future__ import division, print_function
-import numpy as np, os
+import numpy as np
 
 from selection.randomized.lasso import lasso, selected_targets, full_targets, debiased_targets
-import seaborn as sns
-import pylab
-import matplotlib.pyplot as plt
-import scipy.stats as stats
 from selection.multiple_splits.utils import sim_xy, glmnet_lasso_cv1se, glmnet_lasso_cvmin, glmnet_lasso
 
-from statsmodels.distributions.empirical_distribution import ECDF
-from scipy.stats import norm as ndist
 
 def test_lasso_estimate(X, y, sigma, beta, randomizer_scale = 1.):
 
@@ -55,12 +49,15 @@ def test_lasso_estimate(X, y, sigma, beta, randomizer_scale = 1.):
                                                                                   alternatives)
 
             return np.asscalar(mle_comp), np.asscalar(var_comp), np.asscalar(observed_target_uni),\
-                   np.asscalar(cov_target_uni), (sigma) * np.linalg.pinv(X[:, nonzero])[0,:], np.asscalar(beta_target[0])
+                   np.asscalar(cov_target_uni), (sigma) * np.linalg.pinv(X[:, nonzero])[0,:], estimate,\
+                   np.asscalar(beta_target[0])
 
-def test_sum(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10, beta_type=1, snr=0.20, randomizer_scale=1., nsim=100):
+def test_mse(n=200, p=1000, nval=200, alpha= 2., rho=0.35, s=10, beta_type=0, snr=0.20, randomizer_scale=1., nsim=100, B=10):
 
-    _pivot = []
-    cov = 0.
+    mse_marginal = 0.
+    mse_full = 0.
+    bias_marginal = 0.
+    bias_full = 0.
     for i in range(nsim):
         X, y, _, _, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, alpha=alpha, rho=rho, s=s, beta_type=beta_type,
                                                 snr=snr)
@@ -68,34 +65,32 @@ def test_sum(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10, beta_type=1, sn
         X /= (X.std(0)[None, :] * np.sqrt(n / (n - 1.)))
         y = y - y.mean()
 
-        mle_comp_1, var_comp_1, ls_1, ls_var_1, ls_covar_1, target_1 = test_lasso_estimate(X, y, sigma, beta, randomizer_scale)
-        mle_comp_2, var_comp_2, ls_2, ls_var_2, ls_covar_2, target_2 = test_lasso_estimate(X, y, sigma, beta, randomizer_scale)
+        mle_comp = np.zeros(B)
+        ls_comp = np.zeros(B)
+        Sigma_full_0 = np.zeros((B,B))
+        mle_marginal = np.zeros(B)
+        covar = np.zeros((n, B))
+        for j in range(B):
+            mle_comp[j], _, ls_comp[j], Sigma_full_0[j,j], covar[:,j], mle_marginal[j], _ = test_lasso_estimate(X, y, sigma, beta, randomizer_scale)
+        #print("check ", mle_comp, ls_comp)
+        for k in range(B-1):
+            l = k + 1
+            for m in range(B-k-1):
+                (Sigma_full_0[k, :])[l] = (covar[:,k]).T.dot(covar[:,l])
+                l += 1
 
-        Sigma = np.diag(np.asarray([ls_var_1, ls_var_2]))
-        Sigma[0, 1] = ls_covar_1.T.dot(ls_covar_2)
-        Sigma[1, 0] = Sigma[0, 1]
-        mle = np.array((ls_1, ls_2)) + Sigma.dot(np.array((mle_comp_1, mle_comp_2)))
-        inv_info = Sigma + Sigma.dot(np.diag(np.array((var_comp_1, var_comp_2)))).dot(Sigma)
+        Sigma_full = Sigma_full_0 + Sigma_full_0.T - np.diag(Sigma_full_0.diagonal())
 
-        pooled_est = (mle[0]+mle[1])/2.
-        pooled_sd = np.sqrt(inv_info[0,0]+ inv_info[1,1]+ 2*inv_info[0,1])/2.
-        pooled_mean = (target_1 + target_2)/2.
-        lc_pooled = pooled_est - 1.65*pooled_sd
-        uc_pooled = pooled_est + 1.65*pooled_sd
-        cov += (lc_pooled< pooled_mean)*(pooled_mean <uc_pooled)
-        _pivot.append((pooled_est - pooled_mean)/pooled_sd)
+        mle_full = ls_comp + Sigma_full.dot(mle_comp)
+        mse_full += (np.mean(mle_full)-alpha)**2.
 
-        #lc = mle[1] - 1.65 * np.sqrt(inv_info[1,1])
-        #uc = mle[1] + 1.65 * np.sqrt(inv_info[1,1])
-        #cov += (lc< target_2)*(target_2 <uc)
-        print("coverage so  far ", i+1, cov/float(i+1))
-        #_pivot.append((mle[0]-target_1)/np.sqrt(inv_info[0,0]))
+        mse_marginal += (np.mean(mle_marginal) - alpha) ** 2.
 
-    plt.clf()
-    ecdf_MLE = ECDF(ndist.cdf(np.asarray(_pivot)))
-    grid = np.linspace(0, 1, 101)
-    plt.plot(grid, ecdf_MLE(grid), c='blue', marker='^')
-    plt.plot(grid, grid, 'k--')
-    plt.show()
+        bias_full += (np.mean(mle_full)-alpha)
+        bias_marginal += (np.mean(mle_marginal) - alpha)
+        print("bias so far ", bias_full / float(i + 1.), bias_marginal / float(i + 1.))
+        print("mse so far ", mse_full / float(i + 1.), mse_marginal / float(i + 1.))
 
-#test_sum(nsim=1200)
+    print("var in target so far ", (mse_full/nsim- ((bias_full/nsim)**2.)), (mse_marginal/nsim- ((bias_marginal/nsim)**2.)))
+
+test_mse(randomizer_scale=1., nsim=100, B=5)

@@ -6,7 +6,7 @@ rpy2.robjects.numpy2ri.activate()
 def sim_xy(n, p, nval, alpha =3., rho=0, s=5, beta_type=2, snr=1):
     robjects.r('''
     source('~/Research/Carving_causal_inference/simulation.R')
-    sim_xy = sim.regression
+    sim_xy = sim.regression.mixednormal
     ''')
 
     r_simulate = robjects.globalenv['sim_xy']

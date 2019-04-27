@@ -58,8 +58,8 @@ def test_lasso_estimate(X, y, sigma, beta, lam, randomizer_scale = 1.):
                    np.asscalar(cov_target_uni), (sigma) * np.linalg.pinv(X[:, nonzero])[0,:], np.asscalar(beta_target[0])
 
 
-def test_bias(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10, beta_type=1, snr=1.0, randomizer_scale=1., split_fraction=0.67,
-              nsim=100, B=100):
+def test_mse(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10, beta_type=1, snr=1.0, randomizer_scale=1., split_fraction=0.67,
+             nsim=100, B=100):
 
     bias_tar_randomized = 0.
     bias_tar_split = 0.
@@ -71,7 +71,6 @@ def test_bias(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10, beta_type=1, s
     for i in range(nsim):
         X, y, _, _, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, alpha=alpha, rho=rho, s=s, beta_type=beta_type,
                                                 snr=snr)
-        true_mean = X.dot(beta)
         X -= X.mean(0)[None, :]
         X /= (X.std(0)[None, :] * np.sqrt(n / (n - 1.)))
         y = y - y.mean()
@@ -138,7 +137,6 @@ def test_bias(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10, beta_type=1, s
         bias_randomized += (np.mean(sel_mle) - alpha)
         mse_randomized += ((np.mean(sel_mle) - alpha) ** 2)
 
-
         avg_target_split = np.mean(alpha_target_split)
         bias_tar_split += (avg_target_split-alpha)
         bias_split += (np.mean(est_split) - alpha)
@@ -154,6 +152,68 @@ def test_bias(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10, beta_type=1, s
     mse_randomized/=float(nsim)
     bias_split/=float(nsim)
     mse_split/=float(nsim)
-    return bias_tar_randomized, bias_tar_split
+    return np.vstack((bias_tar_randomized,
+                      bias_tar_split,
+                      bias_randomized,
+                      bias_split,
+                      mse_randomized,
+                      mse_split))
 
-test_bias(n=200, p=1000, nval=200, alpha= 2., rho=0.35, s=10, beta_type=0, snr=0.71, randomizer_scale=1., split_fraction=0.67, nsim=200, B=18)
+#test_mse(n=200, p=1000, nval=200, alpha= 2., rho=0.35, s=10, beta_type=0, snr=0.71, randomizer_scale=1., split_fraction=0.67, nsim=200, B=18)
+
+def output_file(n=200, p=1000, nval=200, alpha= 2., rho=0.35, s=10, beta_type=0, snr=0.71,
+                randomizer_scale=1., split_fraction=0.67, nsim=200, Bval=np.array([1,2,3,5,10,20,25]),
+                outpath= None):
+
+    df_mse = pd.DataFrame()
+    for B_agg in Bval:
+        output = test_mse(n=n,
+                          p=p,
+                          nval=nval,
+                          alpha=alpha,
+                          rho=rho,
+                          s=s,
+                          beta_type= beta_type,
+                          snr=snr,
+                          randomizer_scale=randomizer_scale,
+                          split_fraction=split_fraction,
+                          nsim=nsim,
+                          B=B_agg)
+
+        df_mse_B = pd.DataFrame(data=output.reshape((1, 6)),
+                                columns=['bias_tar_randomized', 'bias_tar_split',
+                                         'bias_randomized', 'bias_split',
+                                         'mse_randomized', 'mse_split'])
+
+        df_mse = df_mse.append(df_mse_B, ignore_index=True)
+
+    df_mse['n'] = n
+    df_mse['p'] = p
+    df_mse['s'] = s
+    df_mse['rho'] = rho
+    df_mse['beta-type'] = beta_type
+    df_mse['snr'] = snr
+    df_mse['B'] = pd.Series(np.asarray(Bval))
+    print("check final ", df_mse)
+
+    if outpath is None:
+        outpath = os.path.dirname(__file__)
+
+    outfile_inf_html = os.path.join(outpath, "dims_" + str(n) + "_" + str(p) + "_mse_compare_mN_" + str(beta_type) +  "_rho_" + str(rho) + ".html")
+    outfile_inf_csv = os.path.join(outpath,"dims_" + str(n) + "_" + str(p) + "_mse_compare_mN_" + str(beta_type) + "_rho_" + str(rho) + ".csv")
+
+    df_mse.to_csv(outfile_inf_csv, index=False)
+    df_mse.to_html(outfile_inf_html)
+
+output_file(n=200, p=1000, nval=200, alpha= 2., rho=0.35, s=10, beta_type=0, snr=0.71,
+            randomizer_scale=1., split_fraction=0.67,
+            nsim=200, Bval=np.array([1, 2, 3, 5, 10, 20, 25, 50, 100]),
+            outpath= None)
+
+
+
+
+
+
+
+
