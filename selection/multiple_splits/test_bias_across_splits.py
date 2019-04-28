@@ -199,15 +199,17 @@ def output_file(n=200, p=1000, nval=200, alpha= 2., rho=0.35, s=10, beta_type=0,
     if outpath is None:
         outpath = os.path.dirname(__file__)
 
-    outfile_inf_html = os.path.join(outpath, "dims_" + str(n) + "_" + str(p) + "_mse_compare_mN_" + str(beta_type) +  "_rho_" + str(rho) + ".html")
-    outfile_inf_csv = os.path.join(outpath,"dims_" + str(n) + "_" + str(p) + "_mse_compare_mN_" + str(beta_type) + "_rho_" + str(rho) + ".csv")
+    outfile_inf_html = os.path.join(outpath, "dims_" + str(n) + "_" + str(p) + "_mse_compare_N_" + str(beta_type) +  "_rho_" + str(rho) + ".html")
+    outfile_inf_csv = os.path.join(outpath,"dims_" + str(n) + "_" + str(p) + "_mse_compare_N_" + str(beta_type) + "_rho_" + str(rho) + ".csv")
 
     df_mse.to_csv(outfile_inf_csv, index=False)
     df_mse.to_html(outfile_inf_html)
 
 output_file(n=200, p=1000, nval=200, alpha= 2., rho=0.35, s=10, beta_type=0, snr=0.71,
-            randomizer_scale=1., split_fraction=0.67,
-            nsim=200, Bval=np.array([1, 2, 3, 5, 10, 20, 25, 50, 100]),
+            randomizer_scale=1.,
+            split_fraction=0.67,
+            nsim=200,
+            Bval=np.array([1, 2, 3, 5, 10, 20, 25, 50, 100]),
             outpath= None)
 
 
