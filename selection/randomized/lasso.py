@@ -209,6 +209,9 @@ class lasso(gaussian_query):
                           opt_linear,
                           opt_offset)
 
+        self.A_scaling = A_scaling
+        self.b_scaling = b_scaling
+
         return active_signs
 
     def _solve_randomized_problem(self, 

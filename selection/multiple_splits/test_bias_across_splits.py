@@ -3,14 +3,7 @@ import numpy as np, os
 import pandas as pd
 
 from selection.randomized.lasso import lasso, selected_targets, full_targets, debiased_targets
-import seaborn as sns
-import pylab
-import matplotlib.pyplot as plt
-import scipy.stats as stats
 from selection.multiple_splits.utils import sim_xy, glmnet_lasso_cv1se, glmnet_lasso_cvmin, glmnet_lasso, glmnet_lasso_cv
-
-from statsmodels.distributions.empirical_distribution import ECDF
-from scipy.stats import norm as ndist
 from selection.algorithms.lasso import lasso_full
 
 def test_lasso_estimate(X, y, sigma, beta, lam, randomizer_scale = 1.):

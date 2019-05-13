@@ -1,8 +1,7 @@
 from __future__ import division, print_function
-import numpy as np, os
+import numpy as np
 
 from selection.randomized.lasso import lasso, selected_targets, full_targets, debiased_targets
-import seaborn as sns
 import pylab
 import matplotlib.pyplot as plt
 import scipy.stats as stats
