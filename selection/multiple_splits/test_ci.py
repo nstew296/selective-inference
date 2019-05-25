@@ -42,7 +42,7 @@ def boot_mle(boot_target,
     return boot_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(cond_mean_boot - soln)))
 
 
-def test_ci(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10, beta_type=0, snr=1.0, randomizer_scale=1., B=5, nboot = 5000):
+def test_ci(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10, beta_type=0, snr=1.0, randomizer_scale=1., B=5, nboot = 10000):
 
     X, y, _, _, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, alpha=alpha, rho=rho, s=s, beta_type=beta_type,
                                             snr=snr)
@@ -117,7 +117,6 @@ def test_ci(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10, beta_type=0, snr
         for k in range(B):
             boot_vector = (X[boot_indices, :][:, nonzero_list[k]]).T.dot(resid[:, k][boot_indices])
             target_boot = np.linalg.inv(X[:, nonzero_list[k]].T.dot(X[:, nonzero_list[k]])).dot(boot_vector) + observed_target_list[k]
-            #boot_observed_target = target_boot[0].reshape((1,))
 
             full_boot_mle = boot_mle(target_boot,
                                      observed_target_list[k],
@@ -144,7 +143,7 @@ def test_ci(n=200, p=1000, nval=200, alpha= 2., rho=0.70, s=10, beta_type=0, snr
 
     return intervals
 
-def check(n=200, p=1000, nval=200, alpha= 2., rho=0.35, s=10, beta_type=0, snr=0.71, randomizer_scale=1., nsim =200):
+def check(n=200, p=500, nval=200, alpha= 2., rho=0.35, s=10, beta_type=0, snr=0.71, randomizer_scale=1., nsim =200):
 
     coverage = 0.
     for niter in range(nsim):
