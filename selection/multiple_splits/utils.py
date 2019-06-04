@@ -3,14 +3,14 @@ from rpy2 import robjects
 import rpy2.robjects.numpy2ri
 rpy2.robjects.numpy2ri.activate()
 
-def sim_xy(n, p, nval, alpha =3., rho=0, s=5, beta_type=2, snr=1):
+def sim_xy(n, p, nval, alpha =3., rho=0, s=5, beta_type=2, snr=1, seedn=0):
     robjects.r('''
     source('~/Research/Carving_causal_inference/simulation.R')
     sim_xy = sim.regression
     ''')
 
     r_simulate = robjects.globalenv['sim_xy']
-    sim = r_simulate(n, p, nval, alpha, rho, s, beta_type, snr)
+    sim = r_simulate(n, p, nval, alpha, rho, s, beta_type, snr, seedn)
     X = np.array(sim.rx2('x'))
     y = np.array(sim.rx2('y'))
     X_val = np.array(sim.rx2('xval'))
@@ -18,8 +18,9 @@ def sim_xy(n, p, nval, alpha =3., rho=0, s=5, beta_type=2, snr=1):
     Sigma = np.array(sim.rx2('Sigma'))
     beta = np.array(sim.rx2('beta'))
     sigma = np.array(sim.rx2('sigma'))
+    seedn = np.array(sim.rx2('seedn'))
 
-    return X, y, X_val, y_val, Sigma, beta, sigma
+    return X, y, X_val, y_val, Sigma, beta, sigma, seedn
 
 def glmnet_lasso(X, y, lambda_val):
     robjects.r('''
