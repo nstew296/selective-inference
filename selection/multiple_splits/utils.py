@@ -10,7 +10,7 @@ def sim_xy(n, p, nval, alpha =3., rho=0, s=5, beta_type=2, snr=1, seedn=0):
     ''')
 
     r_simulate = robjects.globalenv['sim_xy']
-    sim = r_simulate(n, p, nval, alpha, rho, s, beta_type, snr, seedn)
+    sim = r_simulate(n, p, nval, seedn, alpha, rho, s, beta_type, snr)
     X = np.array(sim.rx2('x'))
     y = np.array(sim.rx2('y'))
     X_val = np.array(sim.rx2('xval'))
