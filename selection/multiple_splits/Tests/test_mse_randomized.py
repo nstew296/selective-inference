@@ -173,12 +173,13 @@ def test_mse_theory(n=200, p=1000, nval=200, alpha=2., rho=0.70, s=10, beta_type
                                                    snr=snr)
         X -= X.mean(0)[None, :]
         y = y - y.mean()
+        scaling = X.std(0)[None, :] * np.sqrt(n / (n - 1.))
 
-        X /= (X.std(0)[None, :] * np.sqrt(n / (n - 1.)))
+        X /= scaling
         dispersion = None
         sigma_ = np.std(y)
 
-        lam = np.ones(p - 1) * sigma_ * 0.80 * np.mean(np.fabs(np.dot(X[:, 1:].T, np.random.standard_normal((n, 2000)))).max(0))
+        lam = np.ones(p - 1) * sigma_ * 0.70 * np.mean(np.fabs(np.dot(X[:, 1:].T, np.random.standard_normal((n, 2000)))).max(0))
 
         alpha_target_randomized = np.zeros(B)
         sel_mle = np.zeros(B)
@@ -225,7 +226,7 @@ def test_mse_theory(n=200, p=1000, nval=200, alpha=2., rho=0.70, s=10, beta_type
             y_sel = y[sel_idx]
             X_sel = X[sel_idx, :]
 
-            lam_split = np.ones(p - 1) * sigma_ * 0.80 * np.mean(np.fabs(np.dot(X_sel[:, 1:].T, np.random.standard_normal((subsample_size, 2000)))).max(0))
+            lam_split = np.ones(p - 1) * sigma_ * 0.70 * np.mean(np.fabs(np.dot(X_sel[:, 1:].T, np.random.standard_normal((subsample_size, 2000)))).max(0))
             lasso_split = lasso_full.gaussian(X_sel, y_sel, np.append(0.001, lam_split))
             lasso_soln = lasso_split.fit()
             active_LASSO = (lasso_soln != 0)
@@ -239,6 +240,7 @@ def test_mse_theory(n=200, p=1000, nval=200, alpha=2., rho=0.70, s=10, beta_type
         sel_mle = sel_mle[sel_mle != 0]
 
         avg_target_randomized = np.mean(alpha_target_randomized)
+
         bias_tar_randomized += (avg_target_randomized - alpha)
         bias_randomized += (np.mean(sel_mle) - alpha)
         mse_randomized += ((np.mean(sel_mle) - alpha) ** 2)
