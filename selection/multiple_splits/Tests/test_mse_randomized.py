@@ -162,10 +162,17 @@ def test_mse_theory(n=200, p=1000, nval=200, alpha=2., rho=0.70, s=10, beta_type
     mse_randomized = 0.
     fourth_moment_randomized = 0.
 
+    bias_randomized_debiased = 0.
+    mse_randomized_debiased = 0.
+    fourth_moment_randomized_debiased = 0.
+
     bias_tar_split = 0.
     bias_split = 0.
     mse_split = 0.
     fourth_moment_split = 0.
+
+    overall_bias = []
+    overall_bias_selective = []
 
     for i in range(nsim):
 
@@ -177,12 +184,13 @@ def test_mse_theory(n=200, p=1000, nval=200, alpha=2., rho=0.70, s=10, beta_type
 
         X /= scaling
         dispersion = None
-        sigma_ = np.std(y)
+        sigma_ = np.std(y)/np.sqrt(2.)
 
-        lam = np.ones(p - 1) * sigma_ * 0.70 * np.mean(np.fabs(np.dot(X[:, 1:].T, np.random.standard_normal((n, 2000)))).max(0))
+        lam = np.ones(p - 1) * sigma_ * 1. * np.mean(np.fabs(np.dot(X[:, 1:].T, np.random.standard_normal((n, 2000)))).max(0))
 
         alpha_target_randomized = np.zeros(B)
         sel_mle = np.zeros(B)
+        sel_mle_debiased = np.zeros(B)
 
         alpha_target_split = np.zeros(B)
         est_split = np.zeros(B)
@@ -190,10 +198,12 @@ def test_mse_theory(n=200, p=1000, nval=200, alpha=2., rho=0.70, s=10, beta_type
         for j in range(B):
             lasso_sol = lasso.gaussian(X,
                                        y,
-                                       feature_weights=np.append(0.001, lam),
+                                       feature_weights=np.append(0.00001, lam),
                                        randomizer_scale=np.sqrt(n) * randomizer_scale * sigma_)
             signs = lasso_sol.fit()
             nonzero = signs != 0
+            print("selected ", nonzero.sum(), nonzero[0])
+            select = np.asarray([r for r in range(p) if nonzero[r]])
 
             if nonzero[0] == 1:
                 alpha_target_randomized[j] = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))[0]
@@ -215,6 +225,30 @@ def test_mse_theory(n=200, p=1000, nval=200, alpha=2., rho=0.70, s=10, beta_type
                                                                    alternatives)
 
                 sel_mle[j] = mle
+
+                (debiased_observed_target,
+                 debiased_cov_target,
+                 debiased_cov_target_score,
+                 alternatives) = debiased_targets(lasso_sol.loglike,
+                                                  lasso_sol._W,
+                                                  nonzero,
+                                                  penalty=lasso_sol.penalty,
+                                                  dispersion=dispersion)
+
+                debiased_mle, var_mle, _, _, _, _, _, _ = lasso_sol.selective_MLE(debiased_observed_target,
+                                                                                  debiased_cov_target,
+                                                                                  debiased_cov_target_score,
+                                                                                  alternatives)
+
+                #print("check ", debiased_observed_target[0], debiased_mle[0], mle)
+
+                sel_mle_debiased[j] = debiased_mle[0]
+                
+                overall_bias.append(debiased_mle[0]-alpha)
+                overall_bias_selective.append(mle - alpha)
+                #overall_bias.append(debiased_mle[1] - beta[select[1]])
+                #overall_bias.extend(debiased_mle[1:] - beta[select[1:]])
+
 
             subsample_size = int(split_fraction * n)
             sel_idx = np.zeros(n, np.bool)
@@ -238,6 +272,7 @@ def test_mse_theory(n=200, p=1000, nval=200, alpha=2., rho=0.70, s=10, beta_type
 
         alpha_target_randomized = alpha_target_randomized[alpha_target_randomized != 0]
         sel_mle = sel_mle[sel_mle != 0]
+        sel_mle_debiased = sel_mle_debiased[sel_mle_debiased!=0]
 
         avg_target_randomized = np.mean(alpha_target_randomized)
 
@@ -245,6 +280,10 @@ def test_mse_theory(n=200, p=1000, nval=200, alpha=2., rho=0.70, s=10, beta_type
         bias_randomized += (np.mean(sel_mle) - alpha)
         mse_randomized += ((np.mean(sel_mle) - alpha) ** 2)
         fourth_moment_randomized += ((np.mean(sel_mle) - alpha) ** 4)
+
+        bias_randomized_debiased += (np.mean(sel_mle_debiased) - scaling[0,0]*alpha)
+        mse_randomized_debiased += ((np.mean(sel_mle_debiased) - scaling[0,0]*alpha) ** 2)
+        fourth_moment_randomized_debiased += ((np.mean(sel_mle_debiased) - scaling[0,0]*alpha) ** 4)
 
         alpha_target_split = alpha_target_split[alpha_target_split != 0]
         est_split = est_split[est_split != 0]
@@ -257,9 +296,15 @@ def test_mse_theory(n=200, p=1000, nval=200, alpha=2., rho=0.70, s=10, beta_type
 
         print("iteration completed ", i+1, B)
         print("theoretical sigma ", sigma, sigma_, (sigma ** 2) / (n * Sigma[0, 0]))
+        print("bias so far ", bias_randomized/(i+1.), bias_randomized_debiased/(i+1.))
+        print("check bias overall ", (np.mean(np.asarray(overall_bias))), (np.mean(np.asarray(overall_bias_selective))))
 
     stderr_bias_randomized = np.sqrt(mse_randomized/float(nsim **2))
     stderr_mse_randomized = np.sqrt((fourth_moment_randomized - ((mse_randomized/float(nsim))**2.))/ float(nsim ** 2))
+
+    stderr_bias_debiased = np.sqrt(mse_randomized_debiased / float(nsim ** 2))
+    stderr_mse_debiased = np.sqrt(
+        (fourth_moment_randomized_debiased - ((mse_randomized_debiased / float(nsim)) ** 2.)) / float(nsim ** 2))
 
     stderr_bias_split = np.sqrt(mse_split / float(nsim ** 2))
     stderr_mse_split = np.sqrt((fourth_moment_split - ((mse_split / float(nsim)) ** 2.)) / float(nsim ** 2))
@@ -272,19 +317,27 @@ def test_mse_theory(n=200, p=1000, nval=200, alpha=2., rho=0.70, s=10, beta_type
     bias_split /= float(nsim)
     mse_split /= float(nsim)
 
+    bias_randomized_debiased /= float(nsim)
+    mse_randomized_debiased /= float(nsim)
+
+
     return np.vstack((bias_tar_randomized,
                       bias_tar_split,
                       bias_randomized,
+                      bias_randomized_debiased,
                       bias_split,
                       mse_randomized,
+                      mse_randomized_debiased,
                       mse_split,
                       stderr_bias_randomized,
+                      stderr_bias_debiased,
                       stderr_bias_split,
                       stderr_mse_randomized,
+                      stderr_mse_debiased,
                       stderr_mse_split,
                       (sigma ** 2) / (n * Sigma[0, 0])))
 
-def output_file(n=200, p=1000, nval=200, alpha= 2., rho=0.35, s=10, beta_type=0, snr=0.71,
+def output_file(n=200, p=1000, nval=200, alpha= 2., rho=0.35, s=10, beta_type=0, snr=0.55,
                 randomizer_scale=1., split_fraction=0.67, nsim=10, Bval=np.array([1,2,3,5,10,20,25]),
                 outpath= None):
 
@@ -303,12 +356,12 @@ def output_file(n=200, p=1000, nval=200, alpha= 2., rho=0.35, s=10, beta_type=0,
                                  nsim=nsim,
                                  B=B_agg)
 
-        df_mse_B = pd.DataFrame(data=output.reshape((1, 11)),
+        df_mse_B = pd.DataFrame(data=output.reshape((1, 15)),
                                 columns=['bias_tar_randomized', 'bias_tar_split',
-                                         'bias_randomized', 'bias_split',
-                                         'mse_randomized', 'mse_split',
-                                         'std_bias_randomized', 'std_bias_split',
-                                         'std_mse_randomized', 'std_mse_split',
+                                         'bias_randomized', 'bias_debiased', 'bias_split',
+                                         'mse_randomized', 'mse_debiased', 'mse_split',
+                                         'std_bias_randomized','std_bias_debiased', 'std_bias_split',
+                                         'std_mse_randomized', 'std_mse_debiased', 'std_mse_split',
                                          'theoretical_val'])
 
         df_mse = df_mse.append(df_mse_B, ignore_index=True)
@@ -331,10 +384,10 @@ def output_file(n=200, p=1000, nval=200, alpha= 2., rho=0.35, s=10, beta_type=0,
     df_mse.to_csv(outfile_inf_csv, index=False)
     df_mse.to_html(outfile_inf_html)
 
-output_file(n=100, p=500, nval=100, alpha= 3., rho=0.35, s=5, beta_type=1, snr=2.07,
+output_file(n=100, p=500, nval=100, alpha= 1., rho=0.35, s=5, beta_type=1, snr=0.55,
             randomizer_scale=1.,
             split_fraction=0.67,
-            nsim= 500,
+            nsim= 1000,
             Bval= np.array([1, 2, 3, 5]),
             outpath= None)
 

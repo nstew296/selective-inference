@@ -202,8 +202,6 @@ class lasso(gaussian_query):
         A_scaling = -np.identity(self.num_opt_var)
         b_scaling = np.zeros(self.num_opt_var)
 
-        #print("check", A_scaling.dot(self.observed_opt_state) - b_scaling <= 0)
-
         self._set_sampler(A_scaling,
                           b_scaling,
                           opt_linear,
@@ -288,6 +286,7 @@ class lasso(gaussian_query):
         mean_diag = np.mean((X ** 2).sum(0))
         if ridge_term is None:
             ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
+        #print("ridge term", ridge_term)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))

@@ -5,15 +5,16 @@ from selection.randomized.lasso import lasso, full_targets, selected_targets, de
 from selection.tests.instance import gaussian_instance
 import matplotlib.pyplot as plt
 import scipy.stats as stats
-import pylab
+import pylab, seaborn as sns
+import matplotlib.pyplot as plt
 
 def test_full_targets(n=200, 
                       p=1000, 
-                      signal_fac=0.5, 
+                      signal_fac=2.,
                       s=5,
                       sigma=3.,
                       rho=0.20,
-                      randomizer_scale=0.5,
+                      randomizer_scale=1.,
                       full_dispersion=False):
     """
     Compare to R randomized lasso
@@ -21,7 +22,7 @@ def test_full_targets(n=200,
 
     inst, const = gaussian_instance, lasso.gaussian
     while True:
-        signal = np.sqrt(signal_fac * 2 * np.log(p))
+        signal = np.sqrt(signal_fac * 2. * np.log(p))
         X, Y, beta = inst(n=n,
                           p=p,
                           signal=signal,
@@ -73,24 +74,37 @@ def test_full_targets(n=200,
                                                   penalty=conv.penalty,
                                                   dispersion=dispersion)
 
-            estimate, _, _, pval, intervals, _ = conv.selective_MLE(observed_target,
-                                                                    cov_target,
-                                                                    cov_target_score,
-                                                                    alternatives)
+                (sel_observed_target,
+                 sel_cov_target,
+                 sel_cov_target_score,
+                 sel_alternatives) = selected_targets(conv.loglike,
+                                                  conv._W,
+                                                  nonzero,
+                                                  dispersion=dispersion)
 
-            print("estimate, intervals", estimate, intervals)
+            estimate, _, _, pval, intervals, _, _, _ = conv.selective_MLE(observed_target,
+                                                                          cov_target,
+                                                                          cov_target_score,
+                                                                          alternatives)
+
+            sel_estimate, _, _, _, _, _, _, _ = conv.selective_MLE(sel_observed_target,
+                                                                   sel_cov_target,
+                                                                   sel_cov_target_score,
+                                                                   sel_alternatives)
+
+            #print("estimate, intervals", estimate, intervals)
 
             coverage = (beta[nonzero] > intervals[:, 0]) * (beta[nonzero] < intervals[:, 1])
-            return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals, (estimate-beta[nonzero])
+            return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals, (estimate-beta[nonzero]), sel_estimate-beta[nonzero]
 
 
 def test_selected_targets(n=2000, 
                           p=200, 
-                          signal_fac=1., 
+                          signal_fac=0.6,
                           s=5, 
-                          sigma=3, 
-                          rho=0.40,
-                          randomizer_scale=1,
+                          sigma=3.,
+                          rho=0.20,
+                          randomizer_scale=1.,
                           full_dispersion=True):
     """
     Compare to R randomized lasso
@@ -139,22 +153,23 @@ def test_selected_targets(n=2000,
                                               nonzero, 
                                               dispersion=dispersion)
 
-            estimate, _, _, pval, intervals, _ = conv.selective_MLE(observed_target,
-                                                                    cov_target,
-                                                                    cov_target_score,
-                                                                    alternatives)
+            estimate, _, _, pval, intervals, _, _, _ = conv.selective_MLE(observed_target,
+                                                                          cov_target,
+                                                                          cov_target_score,
+                                                                          alternatives)
 
             beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
 
             coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
-            return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals, (estimate-beta_target)
+            print("check ", beta[nonzero])
+            return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals, (estimate-beta_target), (estimate-beta[nonzero])
 
 
 def main(nsim=500, full=False):
-    P0, PA, cover, length_int, nn = [], [], [], [], []
+    P0, PA, cover, length_int, nn, _nn_ = [], [], [], [], [], []
     from statsmodels.distributions import ECDF
 
-    n, p, s = 200, 500, 5
+    n, p, s = 100, 500, 10
 
     for i in range(nsim):
         if full:
@@ -162,24 +177,29 @@ def main(nsim=500, full=False):
                 full_dispersion = True
             else:
                 full_dispersion = False
-            p0, pA, cover_, intervals, nn_ = test_full_targets(n=n, p=p, s=s, full_dispersion=full_dispersion)
+            p0, pA, cover_, intervals, nn_, _nn = test_full_targets(n=n, p=p, s=s, full_dispersion=full_dispersion)
             avg_length = intervals[:, 1] - intervals[:, 0]
         else:
-            full_dispersion = True
-            p0, pA, cover_, intervals, nn_ = test_selected_targets(n=n, p=p, s=s,
+            full_dispersion = False
+            p0, pA, cover_, intervals, nn_, _nn = test_selected_targets(n=n, p=p, s=s,
                                                               full_dispersion=full_dispersion)
             avg_length = intervals[:, 1] - intervals[:, 0]
 
         nn.extend(nn_)
+        _nn_.extend(_nn)
         cover.extend(cover_)
         P0.extend(p0)
         PA.extend(pA)
-        print(
-            np.array(PA) < 0.1, np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.1), np.mean(np.array(PA) < 0.1), np.mean(cover),
-            np.mean(avg_length), 'null pvalue + power + length')
+        print(nn_)
+        #print(np.mean(np.asarray(nn_)), np.mean(cover), np.mean(avg_length), 'null pvalue + power + length')
+            #np.array(PA) < 0.1, np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.1), np.mean(np.array(PA) < 0.1),
+
 
     print("coverage", np.mean(cover))
-    stats.probplot(np.asarray(nn), dist="norm", plot=pylab)
-    pylab.show()
+    print("bias ", np.mean(np.asarray(nn)), np.mean(np.asarray(_nn_)))
+    #stats.probplot(np.asarray(nn), dist="norm", plot=pylab)
+    # pylab.show()
+    #sns.distplot(np.asarray(nn))
+    #plt.show()
 
-main(nsim=300, full=True)
+main(nsim=1000, full=False)

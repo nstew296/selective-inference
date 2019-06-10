@@ -13,15 +13,15 @@ def debiasing_matrix(X,
                      linesearch=True,  # do a linesearch?
                      scaling_factor=1.5,  # multiplicative factor for linesearch
                      max_active=None,  # how big can active set get?
-                     max_try=10,  # how many steps in linesearch?
+                     max_try=200,  # how many steps in linesearch?
                      warn_kkt=False,  # warn if KKT does not seem to be satisfied?
-                     max_iter=50,  # how many iterations for each optimization problem
+                     max_iter=1000,  # how many iterations for each optimization problem
                      kkt_stop=True,  # stop based on KKT conditions?
                      parameter_stop=True,  # stop based on relative convergence of parameter?
                      objective_stop=True,  # stop based on relative decrease in objective?
-                     kkt_tol=1.e-4,  # tolerance for the KKT conditions
-                     parameter_tol=1.e-4,  # tolerance for relative convergence of parameter
-                     objective_tol=1.e-4  # tolerance for relative decrease in objective
+                     kkt_tol=1.e-8,  # tolerance for the KKT conditions
+                     parameter_tol=1.e-8,  # tolerance for relative convergence of parameter
+                     objective_tol=1.e-8  # tolerance for relative decrease in objective
                      ):
     """
     Find a row of debiasing matrix using line search of
@@ -131,7 +131,7 @@ def debiasing_matrix(X,
 
             if warn_kkt and not result['kkt_check']:
                 warn("Solution for row of M does not seem to be feasible")
-                
+
         M[idx] = result['soln'] * 1.
 
     return np.squeeze(M)
@@ -140,10 +140,10 @@ def debiasing_matrix(X,
 def _find_row_approx_inverse_X(X,
                                j,
                                delta,
-                               maxiter=50,
-                               kkt_tol=1.e-4,
-                               objective_tol=1.e-4,
-                               parameter_tol=1.e-4,
+                               maxiter=1000,
+                               kkt_tol=1.e-8,
+                               objective_tol=1.e-8,
+                               parameter_tol=1.e-8,
                                kkt_stop=True,
                                objective_stop=True,
                                parameter_stop=True,
@@ -191,6 +191,44 @@ def _find_row_approx_inverse_X(X,
                 parameter_stop)
 
     return theta
+
+
+def pseudoinverse_debiasing_matrix(X,
+                                   rows,
+                                   tol=1.e-9  # tolerance for rank computaion
+                                   ):
+    """
+    Find a row of debiasing matrix using algorithm of
+    Boot and Niedderling from https://arxiv.org/pdf/1703.03282.pdf
+    """
+
+    n, p = X.shape
+    nactive = len(rows)
+
+    if n < p:
+
+        U, D, V = np.linalg.svd(X, full_matrices=0)
+        rank = np.sum(D > max(D) * tol)
+
+        inv_D = 1. / D
+        inv_D[rank:] = 0.
+        inv_D2 = inv_D ** 2
+        inv = (U * inv_D2[None, :]).dot(U.T)
+        scaling = np.zeros(nactive)
+
+        pseudo_XTX = (V.T[rows] * inv_D2[None, :]).dot(V)
+
+        for i in range(nactive):
+            var = rows[i]
+            scaling[i] = 1. / (X[:, var] * inv.dot(X[:, var]).T).sum()
+
+    else:
+        pseudo_XTX = np.linalg.inv(X.T.dot(X))[rows]
+        scaling = np.ones(nactive)
+
+    M_active = scaling[:, None] * pseudo_XTX
+
+    return M_active
 
 
 def debiased_lasso_inference(lasso_obj, variables, delta):
