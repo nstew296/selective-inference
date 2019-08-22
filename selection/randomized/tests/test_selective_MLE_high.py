@@ -92,8 +92,6 @@ def test_full_targets(n=200,
                                                                    sel_cov_target_score,
                                                                    sel_alternatives)
 
-            #print("estimate, intervals", estimate, intervals)
-
             coverage = (beta[nonzero] > intervals[:, 0]) * (beta[nonzero] < intervals[:, 1])
             return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals, (estimate-beta[nonzero]), sel_estimate-beta[nonzero]
 

@@ -10,7 +10,7 @@ from selection.algorithms.lasso import lasso_full
 def test_mse_cvlamb(n=200, p=1000, nval=200, alpha=2., rho=0.70, s=10, beta_type=1, snr=1.0,
                     randomizer_scale=1., split_fraction=0.67,
                     nsim=100, B=100,
-                    choice_tuning = "adpative"):
+                    choice_tuning = "adaptive"):
 
     bias_tar_randomized = 0.
     bias_randomized = 0.
@@ -150,7 +150,6 @@ def test_mse_cvlamb(n=200, p=1000, nval=200, alpha=2., rho=0.70, s=10, beta_type
                       stderr_mse_randomized,
                       stderr_mse_split,
                       (sigma ** 2) / (n * Sigma[0, 0])))
-
 
 
 def test_mse_theory(n=200, p=1000, nval=200, alpha=2., rho=0.70, s=10, beta_type=1, snr=1.0,
@@ -384,7 +383,14 @@ def output_file(n=200, p=1000, nval=200, alpha= 2., rho=0.35, s=10, beta_type=0,
     df_mse.to_csv(outfile_inf_csv, index=False)
     df_mse.to_html(outfile_inf_html)
 
-output_file(n=100, p=500, nval=100, alpha= 1., rho=0.35, s=5, beta_type=1, snr=0.55,
+output_file(n=100,
+            p=500,
+            nval=100,
+            alpha= 1.,
+            rho=0.35,
+            s=5,
+            beta_type=1,
+            snr=0.55,
             randomizer_scale=1.,
             split_fraction=0.67,
             nsim= 1000,

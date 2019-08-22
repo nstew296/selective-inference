@@ -15,9 +15,9 @@ def test_lasso_estimate(X, y, sigma, beta, lam, randomizer_scale = 1.):
         n, p = X.shape
 
         lasso_sol = lasso.gaussian(X,
-                                  y,
-                                  feature_weights=np.append(0.001, np.ones(p - 1) * lam),
-                                  randomizer_scale=np.sqrt(n) * randomizer_scale * sigma_)
+                                   y,
+                                   feature_weights=np.append(0.001, np.ones(p - 1) * lam),
+                                   randomizer_scale=np.sqrt(n) * randomizer_scale * sigma_)
 
         signs = lasso_sol.fit()
         nonzero = signs != 0
