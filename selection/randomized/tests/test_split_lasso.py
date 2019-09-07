@@ -21,7 +21,7 @@ def test_split_lasso(n=100,
                      sigma=3,
                      target='full',
                      rho=0.4,
-                     proportion=0.5,
+                     proportion=0.67,
                      orthogonal=False,
                      ndraw=10000,
                      MLE=True,
@@ -32,6 +32,7 @@ def test_split_lasso(n=100,
 
     inst, const = gaussian_instance, split_lasso.gaussian
     signal = np.sqrt(signal_fac * np.log(p))
+    #signal = 15
     X, Y, beta = inst(n=n,
                       p=p,
                       signal=signal,
@@ -39,7 +40,7 @@ def test_split_lasso(n=100,
                       equicorrelated=False,
                       rho=rho,
                       sigma=sigma,
-                      random_signs=True)[:3]
+                      random_signs=False)[:3]
 
     if orthogonal:
         X = np.linalg.svd(X, full_matrices=False)[0] * np.sqrt(n)
@@ -49,7 +50,8 @@ def test_split_lasso(n=100,
 
     sigma_ = np.std(Y)
     W = np.ones(X.shape[1]) * np.sqrt(np.log(p)) * sigma_
-    W[0] = 0
+    #W = np.ones(X.shape[1])
+    #W[0] = 0
 
     conv = const(X,
                  Y,
@@ -113,6 +115,7 @@ def test_split_lasso(n=100,
         MLE_pivot = ndist.cdf((final_estimator - true_target) /
                               np.sqrt(np.diag(observed_info_mean)))
         MLE_pivot = 2 * np.minimum(MLE_pivot, 1. - MLE_pivot)
+        print("difference ", MLE_pivot - pval)
 
         if MLE:
             return MLE_pivot[true_target == 0], MLE_pivot[true_target != 0], coverage[1:], MLE_pivot
@@ -133,7 +136,7 @@ def test_all_targets(n=100, p=20, signal_fac=1.5, s=5, sigma=3, rho=0.4):
                          target=target)
 
 
-def main(nsim=500, n=100, p=500, target='selected', sigma=5, s=5):
+def main(nsim=100, n=100, p=500, target='selected', sigma=5., s=5):
     import matplotlib.pyplot as plt
     P0, PA, cover, Pivot = [], [], [], []
     from statsmodels.distributions import ECDF

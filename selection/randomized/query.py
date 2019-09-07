@@ -1475,8 +1475,6 @@ def selective_MLE(observed_target,
                              offset,
                              **solve_args)
 
-    print("verify shapes ", linear_part.shape, offset.shape, conjugate_arg.shape, prec_opt.shape, init_soln.shape)
-
     final_estimator = observed_target + target_cov.dot(target_lin.T.dot(prec_opt.dot(cond_mean - soln)))
     ind_unbiased_estimator = observed_target + target_cov.dot(target_lin.T.dot(prec_opt.dot(cond_mean
                                                                                             - init_soln)))
