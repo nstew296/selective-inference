@@ -115,7 +115,7 @@ def main(nsim):
         seed = i+100
         pivot_, coverage = test_boot_pivot(seedn= seed, n=100, p=500, nval=100, alpha=2.,
                                            rho=0.70, s=5, beta_type=1, snr=0.75, split_proportion=0.5,
-                                           B=5, nboot = 100)
+                                           B=2, nboot = 100)
         _pivot.append(pivot_)
         _cover += coverage
         print("iteration completed ", i, _cover/(i+1.))
