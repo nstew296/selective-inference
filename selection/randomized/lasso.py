@@ -787,7 +787,7 @@ class split_lasso(lasso):
             dispersion = 2 * (self.loglike.smooth_objective(self._beta_full,
                                                             'func') /
                               (n - df_fit))
-
+            #print("check df_fit ", df_fit)
             # run setup again after
             # estimating dispersion
 

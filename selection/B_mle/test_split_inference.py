@@ -23,15 +23,12 @@ def test_compare_split_carve(seedn, n=100, p=500, nval=100, alpha=2., rho=0.70, 
 
     sigma_ = np.std(y)
 
-    lam_theory = sigma_ * 0.90 * np.mean(np.fabs(np.dot(X[:, 1:].T, np.random.standard_normal((n, 2000)))).max(0))
+    lam_theory = sigma_ * 0.85 * np.mean(np.fabs(np.dot(X[:, 1:].T, np.random.standard_normal((n, 2000)))).max(0))
 
     mle_carved = np.zeros(B)
     mle_split = np.zeros(B)
 
     alpha_target_carved = np.zeros(B)
-
-    mse_carved = 0.
-    mse_split = 0.
 
     for j in range(B):
 
@@ -65,8 +62,9 @@ def test_compare_split_carve(seedn, n=100, p=500, nval=100, alpha=2., rho=0.70, 
         X_inf = X[inf_idx, :]
         mle_split[j] = np.linalg.pinv(X_inf[:, nonzero]).dot(y_inf)[0]
 
-    mse_carved += (np.mean(mle_carved) - alpha)**2
-    mse_split += (np.mean(mle_split) - alpha)**2
+    mse_carved = (np.mean(mle_carved) - alpha)**2
+    mse_split = (np.mean(mle_split) - alpha)**2
+    print("check ", mse_carved, mse_split)
 
     mle_carved_boot = np.zeros((nboot, B))
     mle_split_boot = np.zeros((nboot, B))
@@ -126,7 +124,7 @@ def main(nsim):
     for i in range(nsim):
         seed = i+100
         mse_carved, mse_split, length_carved, length_split = test_compare_split_carve(seedn= seed, n=100, p=500, nval=100, alpha=2.,
-                                                                                      rho=0.70, s=5, beta_type=1, snr=0.70, split_proportion=0.5,
+                                                                                      rho=0.70, s=5, beta_type=2, snr=0.71, split_proportion=0.5,
                                                                                       B=5, nboot = 50)
 
         _mse_carved += mse_carved
