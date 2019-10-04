@@ -6,7 +6,7 @@ rpy2.robjects.numpy2ri.activate()
 def sim_xy(n, p, nval, alpha =3., rho=0, s=5, beta_type=2, snr=1, seedn=0):
     robjects.r('''
     source('~/Research/Carving_causal_inference/simulation.R')
-    sim_xy = sim.regression.mixednormal
+    sim_xy = sim.regression
     ''')
 
     r_simulate = robjects.globalenv['sim_xy']
@@ -21,6 +21,31 @@ def sim_xy(n, p, nval, alpha =3., rho=0, s=5, beta_type=2, snr=1, seedn=0):
     seedn = np.array(sim.rx2('seedn'))
 
     return X, y, X_val, y_val, Sigma, beta, sigma, seedn
+
+
+def sim_xyd(n, p, nval, alpha =3., rho=0, s_y=5, beta_type_y=2, snr_y=1, s_d=5, beta_type_d=2, snr_d=1, seedn=0):
+    robjects.r('''
+    source('~/Research/Carving_causal_inference/simulation.R')
+    sim_xy = sim.regression.twostep
+    ''')
+
+    r_simulate = robjects.globalenv['sim_xy']
+    sim = r_simulate(n, p, nval, seedn, alpha, rho,
+                     s_y, beta_type_y, snr_y,
+                     s_d, beta_type_d, snr_d)
+    X = np.array(sim.rx2('x'))
+    y = np.array(sim.rx2('y'))
+    d = np.array(sim.rx2('d'))
+    X_val = np.array(sim.rx2('xval'))
+    y_val = np.array(sim.rx2('yval'))
+    Sigma = np.array(sim.rx2('Sigma'))
+    beta = np.array(sim.rx2('beta'))
+    gamma = np.array(sim.rx2('gamma'))
+    sigma_y = np.array(sim.rx2('sigma.y'))
+    sigma_d = np.array(sim.rx2('sigma.d'))
+    seedn = np.array(sim.rx2('seedn'))
+
+    return X, y, d, X_val, y_val, Sigma, beta, gamma, sigma_y, sigma_d, seedn
 
 def glmnet_lasso(X, y, lambda_val):
     robjects.r('''

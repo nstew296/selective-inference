@@ -3,8 +3,8 @@ import numpy as np
 from selection.randomized.lasso import lasso, split_lasso, selected_targets, full_targets, debiased_targets
 from selection.B_mle.utils import sim_xy
 
-def test_compare_split_carve_HOLP(seedn, n=100, p=500, nval=100, alpha=2., rho=0.70, s=10, beta_type=1, snr=0.55,
-                                  split_proportion=0.5, B=5):
+def test_compare_split_carve_adaptive(seedn, n=100, p=500, nval=100, alpha=2., rho=0.70, s=10, beta_type=1, snr=0.55,
+                                      split_proportion=0.5, B=5, delta = 0.1, lam_frac = 6.):
 
     X, y, _, _, Sigma, beta, sigma, _ = sim_xy(n=n,
                                                p=p,
@@ -19,7 +19,6 @@ def test_compare_split_carve_HOLP(seedn, n=100, p=500, nval=100, alpha=2., rho=0
     y = y - y.mean()
     scaling = X.std(0)[None, :] * np.sqrt(n / (n - 1.))
     X /= scaling
-    delta = 0.1
 
     mle_carved = np.zeros(B)
     mle_split = np.zeros(B)
@@ -37,11 +36,11 @@ def test_compare_split_carve_HOLP(seedn, n=100, p=500, nval=100, alpha=2., rho=0
 
         X_ind = X[~perturb_indices, :]
         Y_ind = y[~perturb_indices]
-        lambda_val = 1. / np.fabs(X_ind.T.dot(np.linalg.inv(X_ind.dot(X_ind.T) + delta * np.identity(ps_n))).dot(Y_ind))
+        lambda_val = lam_frac / np.fabs(X_ind.T.dot(np.linalg.inv(X_ind.dot(X_ind.T) + delta * np.identity(ps_n))).dot(Y_ind))
 
         X_sel = X[perturb_indices, :]
         Y_sel = y[perturb_indices]
-        lambda_val_split = 1. / np.fabs(X_sel.T.dot(np.linalg.inv(X_sel.dot(X_sel.T) + delta * np.identity(ps_n))).dot(Y_sel))
+        lambda_val_split = lam_frac / np.fabs(X_sel.T.dot(np.linalg.inv(X_sel.dot(X_sel.T) + delta * np.identity(ps_n))).dot(Y_sel))
 
         lasso_sol = split_lasso.gaussian(X,
                                          y,
@@ -73,7 +72,6 @@ def test_compare_split_carve_HOLP(seedn, n=100, p=500, nval=100, alpha=2., rho=0
         signs_split = lasso_sol_split.fit(perturb=perturb_indices)
         nonzero_split = signs_split != 0
         inf_idx_split = ~lasso_sol_split._selection_idx
-        print("check closeness ", np.allclose(perturb_indices,lasso_sol_split._selection_idx))
 
         y_inf = y[inf_idx_split]
         X_inf = X[inf_idx_split, :]
@@ -88,7 +86,7 @@ def test_compare_split_carve_HOLP(seedn, n=100, p=500, nval=100, alpha=2., rho=0
 
         X_ind_DTE = X[perturb_indices_DTE, :]
         Y_ind_DTE = y[perturb_indices_DTE]
-        lambda_val_DTE = 1. / np.fabs(X_ind_DTE.T.dot(np.linalg.inv(X_ind_DTE.dot(X_ind_DTE.T) + delta * np.identity(ps_n_DTE))).dot(Y_ind_DTE))
+        lambda_val_DTE = lam_frac / np.fabs(X_ind_DTE.T.dot(np.linalg.inv(X_ind_DTE.dot(X_ind_DTE.T) + delta * np.identity(ps_n_DTE))).dot(Y_ind_DTE))
 
         lasso_sol_DTE = split_lasso.gaussian(X,
                                              y,
@@ -97,8 +95,9 @@ def test_compare_split_carve_HOLP(seedn, n=100, p=500, nval=100, alpha=2., rho=0
 
         signs_DTE = lasso_sol_DTE.fit(perturb = perturb_indices_DTE)
         nonzero_DTE = signs_DTE != 0
+        print("selected by Splits 50% and 67% ", nonzero_split.sum(), nonzero_DTE.sum())
         inf_idx_DTE = ~lasso_sol_DTE._selection_idx
-        print("check closeness DTE ", np.allclose(perturb_indices_DTE, lasso_sol_DTE._selection_idx))
+
         y_inf_DTE = y[inf_idx_DTE]
         X_inf_DTE = X[inf_idx_DTE, :]
         mle_split_DTE[j] = np.linalg.pinv(X_inf_DTE[:, nonzero_DTE]).dot(y_inf_DTE)[0]
@@ -122,7 +121,8 @@ def test_compare_split_carve_HOLP(seedn, n=100, p=500, nval=100, alpha=2., rho=0
     print("check ", mse_carved, mse_split)
     print("check ", bias_carved, bias_split, (sigma ** 2) / (n * Sigma[0, 0]))
 
-    return mse_carved, mse_split, mse_split_DTE, bias_carved, bias_split, bias_split_DTE
+    return mse_carved, mse_split, mse_split_DTE, bias_carved, bias_split, bias_split_DTE, \
+           bias_tar_carved, bias_tar_split, bias_tar_split_DTE
 
 def test_compare_split_carve(seedn, n=100, p=500, nval=100, alpha=2., rho=0.70, s=10, beta_type=1, snr=0.55,
                              split_proportion=0.5, B=5):
@@ -211,7 +211,8 @@ def test_compare_split_carve(seedn, n=100, p=500, nval=100, alpha=2., rho=0.70, 
     print("check ", mse_carved, mse_split)
     print("check ", bias_carved, bias_split, (sigma ** 2) / (n * Sigma[0, 0]))
 
-    return mse_carved, mse_split, mse_split_DTE, bias_carved, bias_split, bias_split_DTE
+    return mse_carved, mse_split, mse_split_DTE, bias_carved, bias_split, bias_split_DTE, \
+           bias_tar_carved, bias_tar_split, bias_tar_split_DTE
 
     # return np.vstack((bias_tar_split,
     #                   bias_split,
@@ -237,18 +238,30 @@ def main(nsim, adaptive= False):
     _bias_carved = 0.
     _bias_split = 0.
     _bias_split_DTE = 0.
+    _bias_tar_carved = 0.
+    _bias_tar_split = 0.
+    _bias_tar_split_DTE = 0.
+    nvar_DTE = 0.
+    mse_split_DTE_nvar = 0.
 
     for i in range(nsim):
         seed = i+100
         if adaptive == True:
-            mse_carved, mse_split, mse_split_DTE, bias_carved, bias_split, bias_split_DTE = test_compare_split_carve_HOLP(seedn= seed, n=100, p=500, nval=100, alpha=2.,
-                                                                                        rho=0.35, s=5, beta_type=2, snr=0.71, split_proportion=0.50,
-                                                                                        B=3)
+            mse_carved, mse_split, mse_split_DTE, bias_carved, \
+            bias_split, bias_split_DTE, bias_tar_carved, \
+            bias_tar_split, bias_tar_split_DTE = test_compare_split_carve_adaptive(seedn= seed, n=120, p=500, nval=120, alpha=2.,
+                                                                                   rho=0.90, s=5, beta_type=2, snr=0.90, split_proportion=0.50,
+                                                                                   B=5)
+            if mse_split_DTE>5:
+                nvar_DTE += 1
+                mse_split_DTE_nvar += mse_split_DTE
+                mse_split_DTE = 0.
         else:
-            mse_carved, mse_split, mse_split_DTE, bias_carved, bias_split, bias_split_DTE = test_compare_split_carve(seedn=seed, n=100, p=500, nval=100, alpha=2.,
-                                                                                                                     rho=0.35, s=5, beta_type=2,
-                                                                                                                     snr=0.71, split_proportion=0.50,
-                                                                                                                     B=3)
+            mse_carved, mse_split, mse_split_DTE, bias_carved, \
+            bias_split, bias_split_DTE, bias_tar_carved, \
+            bias_tar_split, bias_tar_split_DTE = test_compare_split_carve(seedn=seed, n=100, p=500, nval=100, alpha=2.,
+                                                                          rho=0.35, s=5, beta_type=2, snr=0.90, split_proportion=0.50,
+                                                                          B=5)
 
         _mse_carved += mse_carved
         _mse_split += mse_split
@@ -256,16 +269,22 @@ def main(nsim, adaptive= False):
         _bias_carved += bias_carved
         _bias_split += bias_split
         _bias_split_DTE += bias_split_DTE
+        _bias_tar_carved += bias_tar_carved
+        _bias_tar_split +=  bias_tar_split
+        _bias_tar_split_DTE += bias_tar_split_DTE
 
         _var_carved = _mse_carved/(i+1.) - ((_bias_carved/(i+1.))**2)
         _var_split = _mse_split / (i + 1.) - ((_bias_split / (i + 1.)) ** 2)
-        _var_split_DTE = _mse_split_DTE / (i + 1.) - ((_bias_split_DTE / (i + 1.)) ** 2)
+        _var_split_DTE = _mse_split_DTE / (i + 1.-nvar_DTE) - ((_bias_split_DTE / (i + 1.)) ** 2)
 
-        print("iteration completed ", i, _mse_carved/(i+1.), _mse_split/(i+1.), _mse_split_DTE/(i+1.))
-        print("bias ", _bias_carved/(i+1.), _bias_split/(i+1.), _bias_split_DTE/(i+1.))
+        print("iteration completed ", i, _mse_carved / (i + 1.), _mse_split / (i + 1.),
+              _mse_split_DTE / (i + 1. - nvar_DTE), mse_split_DTE_nvar / max(float(nvar_DTE), 1.), (_mse_split_DTE+mse_split_DTE_nvar)/ (i + 1.))
+        print("bias ", _bias_carved / (i + 1.), _bias_split / (i + 1.), _bias_split_DTE / (i + 1.))
         print("var so far ", _var_carved, _var_split, _var_split_DTE)
+        print("bias in target so far ", _bias_tar_carved / (i + 1.), _bias_tar_split / (i + 1.),
+              _bias_tar_split_DTE / (i + 1.))
 
-main(nsim=1000, adaptive= False)
+main(nsim=1000, adaptive= True)
 
 
 # def main(nsim = 500):
