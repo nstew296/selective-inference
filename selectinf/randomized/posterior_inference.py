@@ -48,7 +48,7 @@ class posterior(object):
         offset = query.sampler.affine_con.offset
         logdens_linear = query.sampler.logdens_transform[0]
 
-        _, self.inverse_info, log_ref = query.selective_MLE(observed_target,
+        result, self.inverse_info, log_ref = query.selective_MLE(observed_target,
                                                             cov_target,
                                                             cov_target_score)
             
@@ -69,7 +69,7 @@ class posterior(object):
         self.linear_part = linear_part
         self.offset = offset
 
-        self.initial_estimate = observed_target
+        self.initial_estimate = np.asarray(result['MLE'])
         self.dispersion = dispersion
         self.log_ref = log_ref
 
@@ -174,12 +174,12 @@ def langevin_sampler(selective_posterior,
                        selective_posterior.log_posterior,
                        proposal_scale,
                        stepsize,
-                       selective_posterior.dispersion)
+                       np.sqrt(selective_posterior.dispersion))
 
     samples = np.zeros((nsample, selective_posterior.ntarget))
 
     for i, sample in enumerate(sampler):
-        sampler.scaling = selective_posterior.dispersion
+        sampler.scaling = np.sqrt(selective_posterior.dispersion)
         samples[i,:] = sample.copy()
         if i == nsample - 1:
             break
@@ -202,22 +202,22 @@ def gibbs_sampler(selective_posterior,
                        selective_posterior.log_posterior,
                        proposal_scale,
                        stepsize,
-                       selective_posterior.dispersion)
+                       np.sqrt(selective_posterior.dispersion))
     samples = np.zeros((nsample, selective_posterior.ntarget))
     scale_samples = np.zeros(nsample)
-    scale_update = selective_posterior.dispersion
+    scale_update = np.sqrt(selective_posterior.dispersion)
     for i in range(nsample):
 
         sample = sampler.__next__()
         samples[i, :] = sample
 
-        scale_update = invgamma.rvs(a=(0.1 +
+        scale_update_sq = invgamma.rvs(a=(0.1 +
                                        selective_posterior.ntarget +
                                        selective_posterior.ntarget/2),
-                                    scale=0.1-(scale_update * sampler.grad_posterior[1]),
-                                    size=1)
-        scale_samples[i] = scale_update
-        sampler.scaling = scale_update
+                                       scale=0.1-((scale_update**2) * sampler.grad_posterior[1]),
+                                       size=1)
+        scale_samples[i] = np.sqrt(scale_update_sq)
+        sampler.scaling = np.sqrt(scale_update_sq)
 
     return samples[nburnin:, :], scale_samples[nburnin:]
 
