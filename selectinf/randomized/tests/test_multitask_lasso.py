@@ -1,7 +1,4 @@
 import numpy as np
-import pandas as pd
-#import dc_stat_think as dcst
-#from statsmodels.distributions.empirical_distribution import ECDF
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -57,7 +54,7 @@ def cross_validate_posi_global(ntask=2,
 
             feature_weight = weights[w] * np.ones(p)
             sigmas_ = sigma
-            randomizer_scales = .25 * sigmas_
+            randomizer_scales = .7 * sigmas_
 
             _initial_omega = np.array([randomizer_scales[i] * _gaussian_noise[(i * p):((i + 1) * p)] for i in range(ntask)]).T
 
@@ -115,7 +112,7 @@ def cross_validate_posi_hetero(ntask=2,
                                                                                        equicorrelated=False)[:4]
     cv_weights = []
 
-    for i in range(1):
+    for i in range(10):
 
         train = np.random.choice(np.arange(nsamples[0]), size=np.int(np.round(.8*nsamples[0])), replace=False)
         test = np.setdiff1d(np.arange(nsamples[0]),train)
@@ -127,7 +124,7 @@ def cross_validate_posi_hetero(ntask=2,
         predictor_vars_test = {i: predictor_vars[i][test] for i in range(ntask)}
 
         lambdamin = .5
-        lambdamax = 2.25
+        lambdamax = 2.7
         weights = np.arange(np.log(lambdamin),np.log(lambdamax), lambdamax/100)
         weights = np.exp(weights)
 
@@ -207,7 +204,7 @@ def test_multitask_lasso_global(ntask=2,
     # sigmas_ = np.array([np.std(response_vars[i]) for i in range(ntask)])
     sigmas_ = sigma
 
-    randomizer_scales = 0.25 * sigmas_
+    randomizer_scales = 0.7 * sigmas_
 
     # ridge_terms = np.array([np.std(response_vars[i]) * np.sqrt(np.mean((predictor_vars[i] ** 2).sum(0)))/ np.sqrt(nsamples[i] - 1)
     #                          for i in range(ntask)])
@@ -481,7 +478,6 @@ def test_coverage(weight,nsim=100):
                                          signal_fac=.7,
                                          rhos=0.1 * np.ones(ntask),
                                          randomizer_scale = weight)
-    print(penalty_hetero)
 
     for n in range(nsim):
 
@@ -551,15 +547,15 @@ def test_coverage(weight,nsim=100):
 
 def main():
 
-    weights = np.arange(.4,.8,.025)
+    scale = np.arange(.6,.8,.025)
     coverage = []
     coverage_er = []
     lengths = []
     lengths_er = []
 
-    for i in range(len(weights)):
-        print(weights[i], 'signal')
-        results = test_coverage(weights[i], nsim=100)
+    for i in range(len(scale)):
+        print(scale[i], 'signal')
+        results = test_coverage(scale[i], nsim=100)
         coverage = np.append(coverage, results[0])
         print(coverage,"cov")
         coverage_er = np.append(coverage_er, 1.64 * results[1] / np.sqrt(100))
@@ -567,20 +563,20 @@ def main():
         lengths_er = np.append(lengths_er, 1.64 * results[3] / np.sqrt(100))
 
     fig = plt.figure()
-    plt.errorbar(weights, coverage, yerr=coverage_er)
+    plt.errorbar(scale, coverage, yerr=coverage_er)
     axes = plt.gca()
-    axes.set_ylim([.5, 1])
+    axes.set_ylim([0, 1])
     plt.ylabel('Mean Coverage')
     plt.xlabel('Randomizer Scale (sigma_omega)')
-    plt.title('Coverage by Randomizer Scale - Strong Signal')
+    plt.title('Coverage by Randomizer Scale')
     plt.savefig("coverage.png")
     plt.show()
 
     fig = plt.figure()
-    plt.errorbar(weights, lengths, yerr=lengths_er, uplims=True, lolims=True)
+    plt.errorbar(scale, lengths, yerr=lengths_er)
     plt.ylabel('Mean Length')
     plt.xlabel('Randomizer Scale (sigma_omega)')
-    plt.title('Length by Randomizer Scale - Strong Signal')
+    plt.title('Length by Randomizer Scale')
     plt.savefig("length.png")
     plt.show()
 
