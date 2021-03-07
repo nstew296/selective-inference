@@ -83,7 +83,7 @@ def cross_validate_posi_global(ntask=2,
         cv_weights.append(weights[idx_min_error])
         print(cv_weights)
 
-    return(np.median(np.asarray(cv_weights)))
+    return(np.mean(np.asarray(cv_weights)))
 
 
 def cross_validate_posi_hetero(ntask=2,
