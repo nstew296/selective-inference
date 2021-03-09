@@ -28,7 +28,7 @@ def cross_validate_posi_global(ntask=2,
                                                                                        sigma,
                                                                                        signal,
                                                                                        rhos,
-                                                                                       random_signs=False,
+                                                                                       random_signs=True,
                                                                                        equicorrelated=False)[:4]
     cv_weights = []
 
@@ -72,8 +72,10 @@ def cross_validate_posi_global(ntask=2,
                 estimate, observed_info_mean, _, _, intervals = multi_lasso.multitask_inference_global(dispersions=dispersions)
 
             except:
-                errors.append(10e30)
-                continue
+                sum = 0
+                for j in range(ntask):
+                    sum += np.linalg.norm(response_vars_test[j], 2)
+                errors.append(sum)
 
             error = []
 
@@ -113,7 +115,7 @@ def cross_validate_posi_hetero(ntask=2,
                                                                                        sigma,
                                                                                        signal,
                                                                                        rhos,
-                                                                                       random_signs=False,
+                                                                                       random_signs=True,
                                                                                        equicorrelated=False)[:4]
     cv_weights = []
 
@@ -129,13 +131,15 @@ def cross_validate_posi_hetero(ntask=2,
         predictor_vars_test = {i: predictor_vars[i][test] for i in range(ntask)}
 
         lambdamin = 1.0
-        lambdamax = 2*np.sqrt(2*np.log(p))
+        lambdamax = 3*np.sqrt(2*np.log(p))
         weights = np.arange(np.log(lambdamin),np.log(lambdamax), lambdamax/50)
         weights = np.exp(weights)
 
         errors = []
 
         for w in range(len(weights)):
+
+            print(w)
 
             feature_weight = weights[w] * np.ones(p)
             sigmas_ = sigma
@@ -161,7 +165,10 @@ def cross_validate_posi_hetero(ntask=2,
                 dispersions=dispersions)
 
             except:
-                errors.append(10e30)
+                sum = 0
+                for j in range(ntask):
+                    sum += np.linalg.norm(response_vars_test[j], 2)
+                errors.append(sum)
                 continue
 
             error = []
@@ -224,8 +231,8 @@ def cross_validate_naive_hetero(ntask=2,
         response_vars_test = {i: response_vars[i][test] for i in range(ntask)}
         predictor_vars_test = {i: predictor_vars[i][test] for i in range(ntask)}
 
-        lambdamin = 1.0
-        lambdamax = 2*np.sqrt(2*np.log(p))
+        lambdamin = .5
+        lambdamax = 3*np.sqrt(2*np.log(p))
         weights = np.arange(np.log(lambdamin),np.log(lambdamax), lambdamax/50)
         weights = np.exp(weights)
 
@@ -252,7 +259,10 @@ def cross_validate_naive_hetero(ntask=2,
 
 
             except:
-                errors.append(10e30)
+                sum = 0
+                for j in range(ntask):
+                    sum += np.linalg.norm(response_vars_test[j], 2)
+                errors.append(sum)
                 continue
 
             error = []
@@ -583,7 +593,7 @@ def test_coverage(weight,nsim=100):
                                          global_sparsity=0.95,
                                          task_sparsity=.2,
                                          sigma=1. * np.ones(ntask),
-                                         signal_fac=np.array([1.0, 5.0]),
+                                         signal_fac=np.array([1.0, 3.0]),
                                          rhos=.7 * np.ones(ntask),
                                          randomizer_scale = weight)
 
@@ -594,7 +604,7 @@ def test_coverage(weight,nsim=100):
                                                 global_sparsity=0.95,
                                                 task_sparsity=.2,
                                                 sigma=1. * np.ones(ntask),
-                                                signal_fac=np.array([1.0, 5.0]),
+                                                signal_fac=np.array([1.0, 3.0]),
                                                 rhos=.7 * np.ones(ntask),
                                                 randomizer_scale=weight)
 
@@ -629,7 +639,7 @@ def test_coverage(weight,nsim=100):
                                                                   global_sparsity=0.95,
                                                                   task_sparsity=0.2,
                                                                   sigma=1. * np.ones(ntask),
-                                                                  signal_fac=np.array([1.0, 5.0]),
+                                                                  signal_fac=np.array([1.0, 3.0]),
                                                                   rhos=.7 * np.ones(ntask),
                                                                   weight=np.float(penalty_hetero),
                                                                   randomizer_scale = weight)
@@ -641,7 +651,7 @@ def test_coverage(weight,nsim=100):
                                                                          global_sparsity=0.95,
                                                                          task_sparsity=0.20,
                                                                          sigma=1. * np.ones(ntask),
-                                                                         signal_fac=np.array([1.0, 5.0]),
+                                                                         signal_fac=np.array([1.0, 3.0]),
                                                                          rhos=.7 * np.ones(ntask),
                                                                          weight=np.float(penalty_hetero_naive))
 
@@ -662,8 +672,8 @@ def test_coverage(weight,nsim=100):
 
     plt.clf()
     grid = np.linspace(0, 1, 101)
-    points = [np.searchsorted(np.sort(np.asarray(pivots)),i)/np.float(np.shape(pivots)[0]) for i in np.linspace(0, 1, 101)]
-    points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i) / np.float(np.shape(pivots_naive)[0]) for i in
+    points = [np.min(np.searchsorted(np.sort(np.asarray(pivots)),i))/np.float(np.shape(pivots)[0]) for i in np.linspace(0, 1, 101)]
+    points_naive = [np.min(np.searchsorted(np.sort(np.asarray(pivots_naive)), i)) / np.float(np.shape(pivots_naive)[0]) for i in
               np.linspace(0, 1, 101)]
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
@@ -682,7 +692,7 @@ def main():
 
     for i in range(len(scale)):
         print(scale[i], 'signal')
-        results = test_coverage(scale[i], nsim=20)
+        results = test_coverage(scale[i], nsim=50)
         coverage = np.append(coverage, results[0])
         print(coverage,"cov")
         coverage_er = np.append(coverage_er, 1.64 * results[1] / np.sqrt(100))
