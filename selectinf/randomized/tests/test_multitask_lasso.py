@@ -583,8 +583,8 @@ def test_coverage(weight,nsim=100):
                                          global_sparsity=0.95,
                                          task_sparsity=.2,
                                          sigma=1. * np.ones(ntask),
-                                         signal_fac=np.array([.1, .5]),
-                                         rhos=.1 * np.ones(ntask),
+                                         signal_fac=np.array([1.0, 5.0]),
+                                         rhos=.7 * np.ones(ntask),
                                          randomizer_scale = weight)
 
 
@@ -594,8 +594,8 @@ def test_coverage(weight,nsim=100):
                                                 global_sparsity=0.95,
                                                 task_sparsity=.2,
                                                 sigma=1. * np.ones(ntask),
-                                                signal_fac=np.array([.1, .5]),
-                                                rhos=.1 * np.ones(ntask),
+                                                signal_fac=np.array([1.0, 5.0]),
+                                                rhos=.7 * np.ones(ntask),
                                                 randomizer_scale=weight)
 
     for n in range(nsim):
@@ -629,8 +629,8 @@ def test_coverage(weight,nsim=100):
                                                                   global_sparsity=0.95,
                                                                   task_sparsity=0.2,
                                                                   sigma=1. * np.ones(ntask),
-                                                                  signal_fac=np.array([.1, .5]),
-                                                                  rhos=.1 * np.ones(ntask),
+                                                                  signal_fac=np.array([1.0, 5.0]),
+                                                                  rhos=.7 * np.ones(ntask),
                                                                   weight=np.float(penalty_hetero),
                                                                   randomizer_scale = weight)
 
@@ -641,8 +641,8 @@ def test_coverage(weight,nsim=100):
                                                                          global_sparsity=0.95,
                                                                          task_sparsity=0.20,
                                                                          sigma=1. * np.ones(ntask),
-                                                                         signal_fac=np.array([.1, .5]),
-                                                                         rhos=.1 * np.ones(ntask),
+                                                                         signal_fac=np.array([1.0, 5.0]),
+                                                                         rhos=.7 * np.ones(ntask),
                                                                          weight=np.float(penalty_hetero_naive))
 
             cov.extend(coverage)
