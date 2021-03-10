@@ -591,9 +591,9 @@ def test_coverage(weight,nsim=100):
                                          nsamples=1000 * np.ones(ntask),
                                          p=50,
                                          global_sparsity=0.95,
-                                         task_sparsity=.2,
+                                         task_sparsity=.25,
                                          sigma=1. * np.ones(ntask),
-                                         signal_fac=np.array([1.0, 3.0]),
+                                         signal_fac=np.array([1.0, 5.0]),
                                          rhos=.7 * np.ones(ntask),
                                          randomizer_scale = weight)
 
@@ -602,9 +602,9 @@ def test_coverage(weight,nsim=100):
                                                 nsamples=1000 * np.ones(ntask),
                                                 p=50,
                                                 global_sparsity=0.95,
-                                                task_sparsity=.2,
+                                                task_sparsity=.25,
                                                 sigma=1. * np.ones(ntask),
-                                                signal_fac=np.array([1.0, 3.0]),
+                                                signal_fac=np.array([1.0, 5.0]),
                                                 rhos=.7 * np.ones(ntask),
                                                 randomizer_scale=weight)
 
@@ -637,9 +637,9 @@ def test_coverage(weight,nsim=100):
                                                                   nsamples=1000 * np.ones(ntask),
                                                                   p=50,
                                                                   global_sparsity=0.95,
-                                                                  task_sparsity=0.2,
+                                                                  task_sparsity=.5,
                                                                   sigma=1. * np.ones(ntask),
-                                                                  signal_fac=np.array([1.0, 3.0]),
+                                                                  signal_fac=np.array([1.0, 5.0]),
                                                                   rhos=.7 * np.ones(ntask),
                                                                   weight=np.float(penalty_hetero),
                                                                   randomizer_scale = weight)
@@ -649,9 +649,9 @@ def test_coverage(weight,nsim=100):
                                                                          nsamples=1000 * np.ones(ntask),
                                                                          p=50,
                                                                          global_sparsity=0.95,
-                                                                         task_sparsity=0.20,
+                                                                         task_sparsity=.5,
                                                                          sigma=1. * np.ones(ntask),
-                                                                         signal_fac=np.array([1.0, 3.0]),
+                                                                         signal_fac=np.array([1.0, 5.0]),
                                                                          rhos=.7 * np.ones(ntask),
                                                                          weight=np.float(penalty_hetero_naive))
 
@@ -672,12 +672,13 @@ def test_coverage(weight,nsim=100):
 
     plt.clf()
     grid = np.linspace(0, 1, 101)
-    points = [np.min(np.searchsorted(np.sort(np.asarray(pivots)),i))/np.float(np.shape(pivots)[0]) for i in np.linspace(0, 1, 101)]
-    points_naive = [np.min(np.searchsorted(np.sort(np.asarray(pivots_naive)), i)) / np.float(np.shape(pivots_naive)[0]) for i in
+    points = [np.max(np.searchsorted(np.sort(np.asarray(pivots)),i,side='right'))/np.float(np.shape(pivots)[0]) for i in np.linspace(0, 1, 101)]
+    points_naive = [np.max(np.searchsorted(np.sort(np.asarray(pivots_naive)), i,side='right')) / np.float(np.shape(pivots_naive)[0]) for i in
               np.linspace(0, 1, 101)]
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
+    plt.title('Empirical Distribution of Pivots: 50% Task Sparsity')
     plt.savefig("pivot.png")
 
     return(np.mean(np.asarray(cov)),np.std(np.asarray(cov)),np.mean(np.asarray(len)),np.std(np.asarray(len)))
