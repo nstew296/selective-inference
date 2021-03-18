@@ -417,7 +417,7 @@ def main():
     tuning = {0: [], 1: [],2:[],3:[]}
 
     for i in range(len(signals)):
-        sims = test_coverage(signals[i],50)
+        sims = test_coverage(signals[i],3)
         pivot[i] = sims[0]
         pivot_naive[i] = sims[1]
         tuning[i] = sims[2]
