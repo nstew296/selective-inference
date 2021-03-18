@@ -471,7 +471,6 @@ def main():
     plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 1.0-5.0')
 
     plt.savefig("25_sparsity.png")
-    plt.show()
 
     print(tuning)
 
