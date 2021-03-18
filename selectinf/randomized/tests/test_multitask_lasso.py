@@ -447,7 +447,6 @@ def main():
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
     plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 0.5-3.0')
-    plt.savefig("pivot_5_3_25.png")
 
     pivots = pivot[2]
     pivots_naive = pivot_naive[2]
