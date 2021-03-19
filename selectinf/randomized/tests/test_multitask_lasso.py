@@ -3,6 +3,7 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from scipy.stats import norm as ndist
+from scipy.stats import t as tdist
 
 from selectinf.randomized.multitask_lasso import multi_task_lasso
 from selectinf.tests.instance import gaussian_multitask_instance
@@ -41,9 +42,9 @@ def cross_validate_posi_hetero(ntask=2,
         folds[i] = np.random.choice(samples, size=np.int(np.round(.2 * holdout)), replace=False)
         samples = np.setdiff1d(samples, folds[i])
 
-    lambdamin = 1.5
+    lambdamin = 2.0
     lambdamax = 4.0
-    weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 30)
+    weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 50)
     weights = np.exp(weights)
 
     errors = np.zeros(len(weights))
@@ -111,13 +112,11 @@ def cross_validate_posi_hetero(ntask=2,
     lam_min = weights[idx_min_error]
     print(lam_min,"tuning param")
 
-    fit_response = {}
     fit_predictor = {}
     for j in range(ntask):
-        fit_response[j] = response_vars[j][np.int(holdout)+1:]
         fit_predictor[j] = predictor_vars[j][np.int(holdout)+1:]
 
-    return (lam_min,fit_response,fit_predictor,beta,_gaussian_noise)
+    return (lam_min,fit_predictor,beta)
 
 
 def cross_validate_naive_hetero(ntask=2,
@@ -152,9 +151,9 @@ def cross_validate_naive_hetero(ntask=2,
         folds[i] = np.random.choice(samples, size=np.int(np.round(.2 * holdout)), replace=False)
         samples = np.setdiff1d(samples, folds[i])
 
-    lambdamin = 0.5
-    lambdamax = 3.0
-    weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 30)
+    lambdamin = 1.0
+    lambdamax = 3.5
+    weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 50)
     weights = np.exp(weights)
 
     errors = np.zeros(len(weights))
@@ -214,25 +213,39 @@ def cross_validate_naive_hetero(ntask=2,
     lam_min = weights[idx_min_error]
     print(lam_min,"tuning param naive")
 
-    fit_response = {}
+
     fit_predictor = {}
     for j in range(ntask):
-        fit_response[j] = response_vars[j][np.int(holdout)+1:]
         fit_predictor[j] = predictor_vars[j][np.int(holdout)+1:]
 
-    return (lam_min,fit_response,fit_predictor,beta)
+    return (lam_min,fit_predictor,beta)
 
 
-def test_multitask_lasso_hetero(response_vars,
-                                predictor_vars,
+def test_multitask_lasso_hetero(predictor_vars,
                                 beta,
-                                _gaussian_noise,
                                 sigma=1. * np.ones(2),
                                 weight=2.,
                                 randomizer_scale=1):
 
-    ntask = len(response_vars.keys())
+    ntask = len(predictor_vars.keys())
+    nsamples = np.asarray([np.shape(predictor_vars[i])[0] for i in range(ntask)])
     p = np.shape(beta)[0]
+
+    def _noise(n, df=np.inf):
+        if df == np.inf:
+            return np.random.standard_normal(n)
+        else:
+            sd_t = np.std(tdist.rvs(df, size=50000))
+        return tdist.rvs(df, size=n) / sd_t
+
+    gaussian_noise = _noise(nsamples.sum() + p*ntask, np.inf)
+    response_vars = {}
+    nsamples_cumsum = np.cumsum(nsamples)
+    for i in range(ntask):
+        if i == 0:
+            response_vars[i] = (predictor_vars[i].dot(beta[:, i]) + gaussian_noise[:nsamples_cumsum[i]]) * sigma[i]
+        else:
+            response_vars[i] = (predictor_vars[i].dot(beta[:, i]) + gaussian_noise[nsamples_cumsum[i-1]:nsamples_cumsum[i]]) * sigma[i]
 
     while True:
 
@@ -242,7 +255,7 @@ def test_multitask_lasso_hetero(response_vars,
         randomizer_scales = randomizer_scale * np.array([sigmas_[i] for i in range(ntask)])
 
         _initial_omega = np.array(
-            [randomizer_scales[i] * _gaussian_noise[(i * p):((i + 1) * p)] for i in range(ntask)]).T
+            [randomizer_scales[i] * gaussian_noise[(i * p):((i + 1) * p)] for i in range(ntask)]).T
 
         multi_lasso = multi_task_lasso.gaussian(predictor_vars,
                                                 response_vars,
@@ -275,13 +288,31 @@ def test_multitask_lasso_hetero(response_vars,
             return coverage, intervals[:, 1] - intervals[:, 0], pivot
 
 
-def test_multitask_lasso_naive_hetero(response_vars,
-                                      predictor_vars,
+def test_multitask_lasso_naive_hetero(predictor_vars,
                                       beta,
                                       sigma=1. * np.ones(2),
                                       weight=2.):
-    ntask = len(response_vars.keys())
+
+    ntask = len(predictor_vars.keys())
+    nsamples = np.asarray([np.shape(predictor_vars[i])[0] for i in range(ntask)])
     p = np.shape(beta)[0]
+
+    def _noise(n, df=np.inf):
+        if df == np.inf:
+            return np.random.standard_normal(n)
+        else:
+            sd_t = np.std(tdist.rvs(df, size=50000))
+        return tdist.rvs(df, size=n) / sd_t
+
+    gaussian_noise = _noise(nsamples.sum() + p * ntask, np.inf)
+    response_vars = {}
+    nsamples_cumsum = np.cumsum(nsamples)
+    for i in range(ntask):
+        if i == 0:
+            response_vars[i] = (predictor_vars[i].dot(beta[:, i]) + gaussian_noise[:nsamples_cumsum[i]]) * sigma[i]
+        else:
+            response_vars[i] = (predictor_vars[i].dot(beta[:, i]) + gaussian_noise[
+                                                                    nsamples_cumsum[i - 1]:nsamples_cumsum[i]]) * sigma[i]
 
     while True:
 
@@ -339,39 +370,37 @@ def test_coverage(signal,nsim=100):
 
     ntask = 5
 
+    penalty_hetero, predictor, coef = cross_validate_posi_hetero(ntask=ntask,
+                                                                 nsamples=2000 * np.ones(ntask),
+                                                                 p=50,
+                                                                 global_sparsity=0.95,
+                                                                 task_sparsity=.25,
+                                                                 sigma=1. * np.ones(ntask),
+                                                                 signal_fac=np.array(signal),
+                                                                 rhos=.7 * np.ones(ntask),
+                                                                 randomizer_scale=1)
+
+    penalty_hetero_naive, predictor_naive, coef_naive = cross_validate_naive_hetero(ntask=ntask,
+                                                                                    nsamples=2000 * np.ones(ntask),
+                                                                                    p=50,
+                                                                                    global_sparsity=0.95,
+                                                                                    task_sparsity=.25,
+                                                                                    sigma=1. * np.ones(ntask),
+                                                                                    signal_fac=np.array(signal),
+                                                                                    rhos=.7 * np.ones(ntask))
+
+    penalties.append(penalty_hetero)
+    penalties_naive.append(penalty_hetero_naive)
+
     for n in range(nsim):
-
-
-        penalty_hetero, response, predictor, coef, omega = cross_validate_posi_hetero(ntask=ntask,
-                                                                                      nsamples=2000 * np.ones(ntask),
-                                                                                      p=50,
-                                                                                      global_sparsity=0.95,
-                                                                                      task_sparsity=.25,
-                                                                                      sigma=1. * np.ones(ntask),
-                                                                                      signal_fac=np.array(signal),
-                                                                                      rhos=.7 * np.ones(ntask),
-                                                                                      randomizer_scale=1)
-
-        penalty_hetero_naive, response_naive, predictor_naive, coef_naive = cross_validate_naive_hetero(ntask=ntask,
-                                                                                                        nsamples=2000 * np.ones(ntask),
-                                                                                                        p=50,
-                                                                                                        global_sparsity=0.95,
-                                                                                                        task_sparsity=.25,
-                                                                                                        sigma=1. * np.ones(ntask),
-                                                                                                        signal_fac=np.array(signal),
-                                                                                                        rhos=.7 * np.ones(ntask))
-        penalties.append(penalty_hetero)
-        penalties_naive.append(penalty_hetero_naive)
 
 
         print(n,"n sim")
 
         try:
 
-            coverage, length, pivot = test_multitask_lasso_hetero(response,
-                                                                  predictor,
+            coverage, length, pivot = test_multitask_lasso_hetero(predictor,
                                                                   coef,
-                                                                  omega,
                                                                   sigma=1. * np.ones(ntask),
                                                                   weight=np.float(penalty_hetero),
                                                                   randomizer_scale = 1)
@@ -385,8 +414,7 @@ def test_coverage(signal,nsim=100):
 
         try:
 
-             coverage_naive, length_naive, pivot_naive = test_multitask_lasso_naive_hetero(response_naive,
-                                                                        predictor_naive,
+             coverage_naive, length_naive, pivot_naive = test_multitask_lasso_naive_hetero(predictor_naive,
                                                                         coef_naive,
                                                                         sigma=1. * np.ones(ntask),
                                                                         weight=np.float(penalty_hetero_naive))
@@ -417,7 +445,7 @@ def main():
     tuning = {0: [], 1: [],2:[],3:[]}
 
     for i in range(len(signals)):
-        sims = test_coverage(signals[i],3)
+        sims = test_coverage(signals[i],50)
         pivot[i] = sims[0]
         pivot_naive[i] = sims[1]
         tuning[i] = sims[2]
