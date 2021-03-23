@@ -42,8 +42,8 @@ def cross_validate_posi_hetero(ntask=2,
         folds[i] = np.random.choice(samples, size=np.int(np.round(.2 * holdout)), replace=False)
         samples = np.setdiff1d(samples, folds[i])
 
-    lambdamin = 2.0
-    lambdamax = 4.0
+    lambdamin = 1.5
+    lambdamax = 5.5
     weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 50)
     weights = np.exp(weights)
 
@@ -152,7 +152,7 @@ def cross_validate_naive_hetero(ntask=2,
         samples = np.setdiff1d(samples, folds[i])
 
     lambdamin = 1.0
-    lambdamax = 3.5
+    lambdamax = 4.0
     weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 50)
     weights = np.exp(weights)
 
@@ -374,7 +374,7 @@ def test_coverage(signal,nsim=100):
                                                                  nsamples=2000 * np.ones(ntask),
                                                                  p=50,
                                                                  global_sparsity=0.95,
-                                                                 task_sparsity=.25,
+                                                                 task_sparsity=.5,
                                                                  sigma=1. * np.ones(ntask),
                                                                  signal_fac=np.array(signal),
                                                                  rhos=.7 * np.ones(ntask),
@@ -384,7 +384,7 @@ def test_coverage(signal,nsim=100):
                                                                                     nsamples=2000 * np.ones(ntask),
                                                                                     p=50,
                                                                                     global_sparsity=0.95,
-                                                                                    task_sparsity=.25,
+                                                                                    task_sparsity=.5,
                                                                                     sigma=1. * np.ones(ntask),
                                                                                     signal_fac=np.array(signal),
                                                                                     rhos=.7 * np.ones(ntask))
@@ -462,7 +462,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 0.5-0-1.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 0.5-0-1.0')
 
     pivots = pivot[1]
     pivots_naive = pivot_naive[1]
@@ -474,7 +474,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 0.5-3.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 0.5-3.0')
 
     pivots = pivot[2]
     pivots_naive = pivot_naive[2]
@@ -485,7 +485,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 1.0-3.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 1.0-3.0')
 
     pivots = pivot[3]
     pivots_naive = pivot_naive[3]
@@ -496,7 +496,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 1.0-5.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 1.0-5.0')
 
     plt.savefig("25_sparsity.png")
 
