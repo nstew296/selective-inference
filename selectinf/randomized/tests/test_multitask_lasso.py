@@ -1,5 +1,5 @@
 import numpy as np
-from Tkinter import * 
+#from Tkinter import *
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
