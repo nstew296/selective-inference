@@ -469,7 +469,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 0.5-0-1.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 0.5-0-1.0')
 
     pivots = pivot[1]
     pivots_naive = pivot_naive[1]
@@ -486,7 +486,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 0.5-3.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 0.5-3.0')
 
     pivots = pivot[2]
     pivots_naive = pivot_naive[2]
@@ -502,7 +502,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 1.0-3.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 1.0-3.0')
 
     pivots = pivot[3]
     pivots_naive = pivot_naive[3]
@@ -518,7 +518,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 1.0-5.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 1.0-5.0')
 
     plt.savefig("25_90_sparsity.png")
 
