@@ -43,7 +43,7 @@ def cross_validate_posi_hetero(ntask=2,
         folds[i] = np.random.choice(samples, size=np.int(np.round(.2 * holdout)), replace=False)
         samples = np.setdiff1d(samples, folds[i])
 
-    lambdamin = 1.5
+    lambdamin = 2.5
     lambdamax = 5.5
     weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 25)
     weights = np.exp(weights)
@@ -153,7 +153,7 @@ def cross_validate_naive_hetero(ntask=2,
         samples = np.setdiff1d(samples, folds[i])
 
     lambdamin = 1.0
-    lambdamax = 4.0
+    lambdamax = 4.5
     weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 25)
     weights = np.exp(weights)
 
@@ -373,9 +373,9 @@ def test_coverage(signal,nsim=100):
 
     penalty_hetero, predictor, coef = cross_validate_posi_hetero(ntask=ntask,
                                                                  nsamples=2000 * np.ones(ntask),
-                                                                 p=50,
-                                                                 global_sparsity=0.95,
-                                                                 task_sparsity=.25,
+                                                                 p=100,
+                                                                 global_sparsity=0.9,
+                                                                 task_sparsity=.5,
                                                                  sigma=1. * np.ones(ntask),
                                                                  signal_fac=np.array(signal),
                                                                  rhos=.7 * np.ones(ntask),
@@ -383,9 +383,9 @@ def test_coverage(signal,nsim=100):
 
     penalty_hetero_naive, predictor_naive, coef_naive = cross_validate_naive_hetero(ntask=ntask,
                                                                                     nsamples=2000 * np.ones(ntask),
-                                                                                    p=50,
-                                                                                    global_sparsity=0.95,
-                                                                                    task_sparsity=.25,
+                                                                                    p=100,
+                                                                                    global_sparsity=0.9,
+                                                                                    task_sparsity=.5,
                                                                                     sigma=1. * np.ones(ntask),
                                                                                     signal_fac=np.array(signal),
                                                                                     rhos=.7 * np.ones(ntask))
@@ -457,11 +457,9 @@ def main():
     plt.clf()
     grid = np.linspace(0, 1, 101)
     points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in np.linspace(0, 1, 101)]
-    dist_posi = [(np.sqrt(points[np.int(i)]) - np.sqrt(i/100))**2 for i in np.linspace(0, 1, 101)]
-    dist_posi = (1/np.sqrt(2.0))*np.sqrt(np.sum(dist_posi))
+    dist_posi = np.sum([points[np.int(i)]*np.log(points[np.int(i)]/(i/100)) for i in np.linspace(0, 1, 101)])
     points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
-    dist_naive = [(np.sqrt(points_naive[np.int(i)]) - np.sqrt(i/100))**2 for i in np.linspace(0, 1, 101)]
-    dist_naive = (1/np.sqrt(2.0))*np.sqrt(np.sum(dist_naive))
+    dist_naive = np.sum([points_naive[np.int(i)]*np.log(points_naive[np.int(i)]/(i/100)) for i in np.linspace(0, 1, 101)])
     hellinger_dist[0] = [dist_posi,dist_naive]
     fig = plt.figure(figsize=(15, 15))
     fig.tight_layout()
@@ -469,58 +467,52 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 0.5-0-1.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 0.5-0-1.0')
 
     pivots = pivot[1]
     pivots_naive = pivot_naive[1]
     grid = np.linspace(0, 1, 101)
     points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in
               np.linspace(0, 1, 101)]
-    dist_posi = [(np.sqrt(points[np.int(i)]) - np.sqrt(i/100)) ** 2 for i in np.linspace(0, 1, 101)]
-    dist_posi = (1 / np.sqrt(2.0)) * np.sqrt(np.sum(dist_posi))
+    dist_posi = np.sum([points[np.int(i)]*np.log(points[np.int(i)]/(i/100)) for i in np.linspace(0, 1, 101)])
     points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
-    dist_naive = [(np.sqrt(points_naive[np.int(i)]) - np.sqrt(i/100)) ** 2 for i in np.linspace(0, 1, 101)]
-    dist_naive = (1 / np.sqrt(2.0)) * np.sqrt(np.sum(dist_naive))
+    dist_naive = np.sum([points_naive[np.int(i)]*np.log(points_naive[np.int(i)]/(i/100)) for i in np.linspace(0, 1, 101)])
     hellinger_dist[1] = [dist_posi, dist_naive]
     fig.add_subplot(2, 2, 2)
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 0.5-3.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 0.5-3.0')
 
     pivots = pivot[2]
     pivots_naive = pivot_naive[2]
     grid = np.linspace(0, 1, 101)
     points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in np.linspace(0, 1, 101)]
-    dist_posi = [(np.sqrt(points[np.int(i)]) - np.sqrt(i/100)) ** 2 for i in np.linspace(0, 1, 101)]
-    dist_posi = (1 / np.sqrt(2.0)) * np.sqrt(np.sum(dist_posi))
+    dist_posi = np.sum([points[np.int(i)]*np.log(points[np.int(i)]/(i/100)) for i in np.linspace(0, 1, 101)])
     points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
-    dist_naive = [(np.sqrt(points_naive[np.int(i)]) - np.sqrt(i/100)) ** 2 for i in np.linspace(0, 1, 101)]
-    dist_naive = (1 / np.sqrt(2.0)) * np.sqrt(np.sum(dist_naive))
+    dist_naive = np.sum([points_naive[np.int(i)]*np.log(points_naive[np.int(i)]/(i/100)) for i in np.linspace(0, 1, 101)])
     hellinger_dist[2] = [dist_posi, dist_naive]
     fig.add_subplot(2, 2, 3)
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 1.0-3.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 1.0-3.0')
 
     pivots = pivot[3]
     pivots_naive = pivot_naive[3]
     grid = np.linspace(0, 1, 101)
     points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in np.linspace(0, 1, 101)]
-    dist_posi = [(np.sqrt(points[np.int(i)]) - np.sqrt(i/100)) ** 2 for i in np.linspace(0, 1, 101)]
-    dist_posi = (1 / np.sqrt(2.0)) * np.sqrt(np.sum(dist_posi))
+    dist_posi = np.sum([points[np.int(i)]*np.log(points[np.int(i)]/(i/100)) for i in np.linspace(0, 1, 101)])
     points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
-    dist_naive = [(np.sqrt(points_naive[np.int(i)]) - np.sqrt(i/100)) ** 2 for i in np.linspace(0, 1, 101)]
-    dist_naive = (1 / np.sqrt(2.0)) * np.sqrt(np.sum(dist_naive))
+    dist_naive = np.sum([points_naive[np.int(i)]*np.log(points_naive[np.int(i)]/(i/100)) for i in np.linspace(0, 1, 101)])
     hellinger_dist[3] = [dist_posi, dist_naive]
     fig.add_subplot(2, 2, 4)
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 1.0-5.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 1.0-5.0')
 
-    plt.savefig("25_95_sparsity.png")
+    plt.savefig("50_90_100.png")
 
     print(tuning)
     print(hellinger_dist)
