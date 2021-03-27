@@ -373,9 +373,9 @@ def test_coverage(signal,nsim=100):
 
     penalty_hetero, predictor, coef = cross_validate_posi_hetero(ntask=ntask,
                                                                  nsamples=2000 * np.ones(ntask),
-                                                                 p=50,
+                                                                 p=200,
                                                                  global_sparsity=0.90,
-                                                                 task_sparsity=.25,
+                                                                 task_sparsity=.5,
                                                                  sigma=1. * np.ones(ntask),
                                                                  signal_fac=np.array(signal),
                                                                  rhos=.7 * np.ones(ntask),
@@ -383,9 +383,9 @@ def test_coverage(signal,nsim=100):
 
     penalty_hetero_naive, predictor_naive, coef_naive = cross_validate_naive_hetero(ntask=ntask,
                                                                                     nsamples=2000 * np.ones(ntask),
-                                                                                    p=50,
+                                                                                    p=200,
                                                                                     global_sparsity=0.90,
-                                                                                    task_sparsity=.25,
+                                                                                    task_sparsity=.5,
                                                                                     sigma=1. * np.ones(ntask),
                                                                                     signal_fac=np.array(signal),
                                                                                     rhos=.7 * np.ones(ntask))
@@ -467,7 +467,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 0.5-0-1.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 0.5-0-1.0')
 
     pivots = pivot[1]
     pivots_naive = pivot_naive[1]
@@ -482,7 +482,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 0.5-3.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 0.5-3.0')
 
     pivots = pivot[2]
     pivots_naive = pivot_naive[2]
@@ -496,7 +496,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 1.0-3.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 1.0-3.0')
 
     pivots = pivot[3]
     pivots_naive = pivot_naive[3]
@@ -510,9 +510,9 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 25%, SNR 1.0-5.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 1.0-5.0')
 
-    plt.savefig("25_90.png")
+    plt.savefig("50_90_200.png")
 
     print(tuning)
     print(hellinger_dist)
