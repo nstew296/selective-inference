@@ -43,9 +43,9 @@ def cross_validate_posi_hetero(ntask=2,
         folds[i] = np.random.choice(samples, size=np.int(np.round(.2 * holdout)), replace=False)
         samples = np.setdiff1d(samples, folds[i])
 
-    lambdamin = 2.5
-    lambdamax = 5.5
-    weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 25)
+    lambdamin = 2.0
+    lambdamax = 4.0
+    weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 100)
     weights = np.exp(weights)
 
     errors = np.zeros(len(weights))
@@ -153,8 +153,8 @@ def cross_validate_naive_hetero(ntask=2,
         samples = np.setdiff1d(samples, folds[i])
 
     lambdamin = 1.0
-    lambdamax = 4.5
-    weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 25)
+    lambdamax = 3.0
+    weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 100)
     weights = np.exp(weights)
 
     errors = np.zeros(len(weights))
@@ -447,7 +447,7 @@ def main():
     hellinger_dist = {0: [], 1: [], 2: [], 3: []}
 
     for i in range(len(signals)):
-        sims = test_coverage(signals[i],100)
+        sims = test_coverage(signals[i],50)
         pivot[i] = sims[0]
         pivot_naive[i] = sims[1]
         tuning[i] = sims[2]
@@ -456,10 +456,10 @@ def main():
     pivots_naive = pivot_naive[0]
     plt.clf()
     grid = np.linspace(0, 1, 101)
-    points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in np.linspace(0, 1, 101)]
-    dist_posi = np.sum([points[np.int(i)]*np.log(points[np.int(i)]/(i/100)) for i in np.linspace(0, 1, 101)])
-    points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
-    dist_naive = np.sum([points_naive[np.int(i)]*np.log(points_naive[np.int(i)]/(i/100)) for i in np.linspace(0, 1, 101)])
+    points = [np.max(np.searchsorted(np.sort(np.asarray(pivots)), i, side='right')) / np.float(np.shape(pivots)[0]) for i in np.linspace(0, 1, 101)]
+    dist_posi = np.sum([points[i]*np.log((points[i]+0.00001)/((np.float(i)+1.0)/100)) for i in range(100)])
+    points_naive = [np.max(np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right')) / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
+    dist_naive = np.sum([points_naive[i]*np.log((points_naive[i]+0.00001)/((np.float(i)+1.0)/100)) for i in range(100)])
     hellinger_dist[0] = [dist_posi,dist_naive]
     fig = plt.figure(figsize=(15, 15))
     fig.tight_layout()
@@ -474,9 +474,9 @@ def main():
     grid = np.linspace(0, 1, 101)
     points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in
               np.linspace(0, 1, 101)]
-    dist_posi = np.sum([points[np.int(i)]*np.log(points[np.int(i)]/(i/100)) for i in np.linspace(0, 1, 101)])
+    dist_posi = np.sum([points[i]*np.log((points[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
     points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
-    dist_naive = np.sum([points_naive[np.int(i)]*np.log(points_naive[np.int(i)]/(i/100)) for i in np.linspace(0, 1, 101)])
+    dist_naive = np.sum([points_naive[i]*np.log((points_naive[i]+0.00001)/((np.float(i)+1.0)/100)) for i in range(100)])
     hellinger_dist[1] = [dist_posi, dist_naive]
     fig.add_subplot(2, 2, 2)
     plt.plot(grid, points, c='blue', marker='^')
@@ -488,9 +488,9 @@ def main():
     pivots_naive = pivot_naive[2]
     grid = np.linspace(0, 1, 101)
     points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in np.linspace(0, 1, 101)]
-    dist_posi = np.sum([points[np.int(i)]*np.log(points[np.int(i)]/(i/100)) for i in np.linspace(0, 1, 101)])
+    dist_posi = np.sum([points[i]*np.log((points[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
     points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
-    dist_naive = np.sum([points_naive[np.int(i)]*np.log(points_naive[np.int(i)]/(i/100)) for i in np.linspace(0, 1, 101)])
+    dist_naive = np.sum([points_naive[i]*np.log((points_naive[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
     hellinger_dist[2] = [dist_posi, dist_naive]
     fig.add_subplot(2, 2, 3)
     plt.plot(grid, points, c='blue', marker='^')
@@ -502,9 +502,9 @@ def main():
     pivots_naive = pivot_naive[3]
     grid = np.linspace(0, 1, 101)
     points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in np.linspace(0, 1, 101)]
-    dist_posi = np.sum([points[np.int(i)]*np.log(points[np.int(i)]/(i/100)) for i in np.linspace(0, 1, 101)])
+    dist_posi = np.sum([points[i]*np.log((points[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
     points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
-    dist_naive = np.sum([points_naive[np.int(i)]*np.log(points_naive[np.int(i)]/(i/100)) for i in np.linspace(0, 1, 101)])
+    dist_naive = np.sum([points_naive[i]*np.log((points_naive[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
     hellinger_dist[3] = [dist_posi, dist_naive]
     fig.add_subplot(2, 2, 4)
     plt.plot(grid, points, c='blue', marker='^')
@@ -512,7 +512,7 @@ def main():
     plt.plot(grid, grid, 'k--')
     plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 1.0-5.0')
 
-    plt.savefig("50_90_100.png")
+    plt.savefig("50_90_100_2.png")
 
     print(tuning)
     print(hellinger_dist)
