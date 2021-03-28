@@ -373,7 +373,7 @@ def test_coverage(signal,nsim=100):
 
     penalty_hetero, predictor, coef = cross_validate_posi_hetero(ntask=ntask,
                                                                  nsamples=2000 * np.ones(ntask),
-                                                                 p=200,
+                                                                 p=50,
                                                                  global_sparsity=0.90,
                                                                  task_sparsity=.5,
                                                                  sigma=1. * np.ones(ntask),
@@ -383,7 +383,7 @@ def test_coverage(signal,nsim=100):
 
     penalty_hetero_naive, predictor_naive, coef_naive = cross_validate_naive_hetero(ntask=ntask,
                                                                                     nsamples=2000 * np.ones(ntask),
-                                                                                    p=200,
+                                                                                    p=50,
                                                                                     global_sparsity=0.90,
                                                                                     task_sparsity=.5,
                                                                                     sigma=1. * np.ones(ntask),
