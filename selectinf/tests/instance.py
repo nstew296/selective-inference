@@ -410,6 +410,7 @@ def gaussian_multitask_instance(ntask,
         global_nulls = np.random.choice(p, nsignal, replace=False)
         beta[global_nulls, :] = np.zeros((ntask,))
 
+        print(np.delete(range(p), global_nulls))
         for i in np.delete(range(p), global_nulls):
             null_positions = np.random.choice(ntask, int(round(task_sparsity * ntask)), replace=False)
             beta[i, null_positions] = 0.
@@ -447,3 +448,149 @@ def gaussian_multitask_instance(ntask,
             response_vars[i] = (predictor_vars[i].dot(beta[:, i]) + gaussian_noise[nsamples_cumsum[i-1]:nsamples_cumsum[i]]) * sigma[i]
 
     return response_vars, predictor_vars, beta * sigma, gaussian_noise[nsamples_cumsum[-1]:], np.nonzero(active), sigma
+
+
+def logistic_multitask_instance(ntask,
+                                nsamples,
+                                p,
+                                global_sparsity,
+                                task_sparsity,
+                                sigma,
+                                signal,
+                                rhos, #list of correlation parameters
+                                random_signs=False,
+                                df=np.inf,
+                                scale=True,
+                                center=True,
+                                equicorrelated=False):
+
+
+    predictor_vars= {i: _design(nsamples[i], p, rhos[i], equicorrelated)[0] for i in range(ntask)}
+
+    if center:
+        predictor_vars = {i: predictor_vars[i]-predictor_vars[i].mean(0)[None, :] for i in range(ntask)}
+
+    signal = np.atleast_1d(signal)
+
+    if signal.shape == (1,):
+        beta = float(signal[0]) * np.ones((p,ntask))
+        global_nulls = np.random.choice(p, int(round(global_sparsity * p)), replace=False)
+        beta[global_nulls, :] = np.zeros((ntask,))
+        for i in np.delete(range(p), global_nulls):
+            beta[i, np.random.choice(ntask, int(round(task_sparsity * ntask)), replace=False)] = 0.
+
+    else:
+        beta = np.ones((p,ntask))
+        nsignal = int(round(global_sparsity * p))
+        global_nulls = np.random.choice(p, nsignal, replace=False)
+        beta[global_nulls, :] = np.zeros((ntask,))
+
+        for i in np.delete(range(p), global_nulls):
+            null_positions = np.random.choice(ntask, int(round(task_sparsity * ntask)), replace=False)
+            beta[i, null_positions] = 0.
+            non_null_positions = np.setdiff1d(np.arange(ntask), null_positions)
+            beta[i, non_null_positions] = np.linspace(float(signal[0]), float(signal[1]), num=ntask-null_positions.shape[0])
+
+    if random_signs:
+        beta *= (2 * np.random.binomial(1, 0.5, size=(p,ntask)) - 1.)
+
+    beta /= np.sqrt(nsamples)
+
+    if scale:
+        scalings = {i: predictor_vars[i].std(0) * np.sqrt(nsamples[i]) for i in range(ntask)}
+        predictor_vars = {i: predictor_vars[i]/(scalings[i][None, :]) for i in range(ntask)}
+        beta *= np.sqrt(nsamples)
+
+    active = np.zeros((p, ntask), np.bool)
+    active[beta != 0] = True
+
+    # noise model
+    def _noise(n, df=np.inf):
+        if df == np.inf:
+            return np.random.standard_normal(n)
+        else:
+            sd_t = np.std(tdist.rvs(df, size=50000))
+        return tdist.rvs(df, size=n) / sd_t
+
+    gaussian_noise = _noise(p*ntask, df)
+    response_vars = {}
+    pis = {}
+    for i in range(ntask):
+        pis[i] = predictor_vars[i].dot(beta[:, i])*sigma[i]
+        response_vars[i] = np.random.binomial(1,np.exp(pis[i])/(1.0+np.exp(pis[i]))).astype(float)
+        print(response_vars[i])
+
+    return response_vars, predictor_vars, beta * sigma, gaussian_noise, np.nonzero(active), sigma
+
+
+def poisson_multitask_instance(ntask,
+                                nsamples,
+                                p,
+                                global_sparsity,
+                                task_sparsity,
+                                sigma,
+                                signal,
+                                rhos, #list of correlation parameters
+                                random_signs=False,
+                                df=np.inf,
+                                scale=True,
+                                center=True,
+                                equicorrelated=False):
+
+
+    predictor_vars= {i: _design(nsamples[i], p, rhos[i], equicorrelated)[0] for i in range(ntask)}
+
+    if center:
+        predictor_vars = {i: predictor_vars[i]-predictor_vars[i].mean(0)[None, :] for i in range(ntask)}
+
+    signal = np.atleast_1d(signal)
+
+    if signal.shape == (1,):
+        beta = float(signal[0]) * np.ones((p,ntask))
+        global_nulls = np.random.choice(p, int(round(global_sparsity * p)), replace=False)
+        beta[global_nulls, :] = np.zeros((ntask,))
+        for i in np.delete(range(p), global_nulls):
+            beta[i, np.random.choice(ntask, int(round(task_sparsity * ntask)), replace=False)] = 0.
+
+    else:
+        beta = np.ones((p,ntask))
+        nsignal = int(round(global_sparsity * p))
+        global_nulls = np.random.choice(p, nsignal, replace=False)
+        beta[global_nulls, :] = np.zeros((ntask,))
+
+        for i in np.delete(range(p), global_nulls):
+            null_positions = np.random.choice(ntask, int(round(task_sparsity * ntask)), replace=False)
+            beta[i, null_positions] = 0.
+            non_null_positions = np.setdiff1d(np.arange(ntask), null_positions)
+            beta[i, non_null_positions] = np.linspace(float(signal[0]), float(signal[1]), num=ntask-null_positions.shape[0])
+
+    if random_signs:
+        beta *= (2 * np.random.binomial(1, 0.5, size=(p,ntask)) - 1.)
+
+    beta /= np.sqrt(nsamples)
+
+    if scale:
+        scalings = {i: predictor_vars[i].std(0) * np.sqrt(nsamples[i]) for i in range(ntask)}
+        predictor_vars = {i: predictor_vars[i]/(scalings[i][None, :]) for i in range(ntask)}
+        beta *= np.sqrt(nsamples)
+
+    active = np.zeros((p, ntask), np.bool)
+    active[beta != 0] = True
+
+    # noise model
+    def _noise(n, df=np.inf):
+        if df == np.inf:
+            return np.random.standard_normal(n)
+        else:
+            sd_t = np.std(tdist.rvs(df, size=50000))
+        return tdist.rvs(df, size=n) / sd_t
+
+    gaussian_noise = _noise(p*ntask, df)
+    response_vars = {}
+    pis = {}
+    for i in range(ntask):
+        pis[i] = predictor_vars[i].dot(beta[:, i])*sigma[i]
+        response_vars[i] = np.random.poisson(np.exp(pis[i])).astype(float)
+        print(response_vars[i])
+
+    return response_vars, predictor_vars, beta * sigma, gaussian_noise, np.nonzero(active), sigma

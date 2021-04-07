@@ -85,6 +85,8 @@ class multi_task_lasso():
          self.selection_variable = {'sign': active_signs.copy(),
                                     'variables': ordered_variables}
 
+         #print(self.selection_variable,"selection variable")
+
          def signed_basis_vector(p, j, s):
              v = np.zeros(p)
              v[j] = s
@@ -218,7 +220,9 @@ class multi_task_lasso():
                  _con_sum[j, :][_len_var[j-1]:_len_var[j]] = 1
 
          self.linear_con = np.vstack((-np.identity(opt_vars), _con_sum))
+         #print(self.linear_con,"linear_con")
          self.offset_con = np.append(np.zeros(opt_vars), _con_trunc)
+         #print(self.offset_con,"offset_con")
 
          self.opt_linears = opt_linears
          self.opt_offsets = opt_offsets
@@ -231,7 +235,7 @@ class multi_task_lasso():
          print("check signs of observed opt_states ", ((self.linear_con.dot(observed_opt_states)-self.offset_con) < 0).sum(),
                self.linear_con.shape[0], opt_vars, observed_opt_states.shape[0], self.seltasks.sum())
          print("check  K.K.T. map",
-               np.allclose(omegas, self.observed_score_states + self.opt_linears.dot(self.observed_opt_states) + self.opt_offsets, atol=1e-05))
+               np.allclose(omegas, self.observed_score_states + self.opt_linears.dot(self.observed_opt_states) + self.opt_offsets, atol=1e-01))
 
          return active_signs
 
@@ -277,21 +281,39 @@ class multi_task_lasso():
          prec_opt = cond_precision
          conjugate_arg = prec_opt.dot(cond_mean)
 
+         #val, soln, hess = prjctd_grdnt_dscnt(conjugate_arg,
+                                                   #prec_opt,
+                                                   #init_soln,
+                                                   #self.linear_con,
+                                                   #self.offset_con,
+                                                   #step=1.,
+                                                   #nstep=5000,
+                                                   #min_its=500,
+                                                   #tol=1.e-12)
+         #print(soln,"soln")
+
          val, soln, hess = solve_barrier_affine_py(conjugate_arg,
                                                    prec_opt,
                                                    init_soln,
                                                    self.linear_con,
                                                    self.offset_con,
                                                    step=1.,
-                                                   nstep=10000,
-                                                   min_its=5000,
+                                                   nstep=5000,
+                                                   min_its=500,
                                                    tol=1.e-12)
 
+         #print(soln1,"soln1")
+
+         #diff = np.linalg.norm(soln-soln1,2)
+
+
          final_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(cond_mean - soln)))
+         #print(final_estimator,"final est")
 
          L = target_lin.T.dot(prec_opt)
          observed_info_natural = prec_target + L.dot(target_lin) - L.dot(hess.dot(L.T))
          observed_info_mean = cov_target.dot(observed_info_natural.dot(cov_target))
+         #observed_info_mean = cov_target
 
          Z_scores = final_estimator / np.sqrt(np.diag(observed_info_mean))
          pvalues = ndist.cdf(Z_scores)
@@ -302,10 +324,15 @@ class multi_task_lasso():
          intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
                                 final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
 
-         return final_estimator, observed_info_mean, Z_scores, pvalues, intervals
+         #print(final_estimator, observed_info_mean, Z_scores, pvalues, intervals,"all the stuff")
 
-     def multitask_target_hetero(self,
-                                dispersions=None):
+         #print(diff/np.shape(final_estimator)[0],"diff")
+
+         diff=0
+
+         return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, diff/np.shape(final_estimator)[0]
+
+     def multitask_target_hetero(self,dispersions=None):
 
          observed_targets = []
          #ancillary_stats = []
@@ -351,13 +378,18 @@ class multi_task_lasso():
                                            0)
                      for i in range(self.ntask)]
 
+
         problem_list = [rr.simple_problem(self.loglikes[i], penalty) for i in range(self.ntask)]
 
+
         initial_solns = np.array([problem_list[i].solve(quad_list[i], **solve_args) for i in range(self.ntask)])
+
+
         initial_subgrads = np.array([-(self.loglikes[i].smooth_objective(initial_solns[i, :],
                                                                         'grad') +
                                        quad_list[i].objective(initial_solns[i, :], 'grad'))
                                      for i in range(self.ntask)])
+
 
         return initial_solns, initial_subgrads
 
@@ -549,7 +581,7 @@ class multi_task_lasso():
 
          return log_lik, grad_lik, hess_lik
 
-     def _solve_multitask_problem(self, perturbations=None, num_iter=1000, atol=1.e-5):
+     def _solve_multitask_problem(self, perturbations=None, num_iter=100, atol=1.e-5):
 
         if perturbations is not None:
             self._initial_omega = perturbations
@@ -632,6 +664,92 @@ class multi_task_lasso():
                                 ntask,
                                 perturbations)
 
+     @staticmethod
+     def logistic(predictor_vars,
+                  successes,
+                  feature_weight,
+                  trials=None,
+                  quadratic=None,
+                  ridge_term=None,
+                  randomizer_scales=None,
+                  perturbations=None):
+
+        ntask = len(successes)
+
+        loglikes = {i: rr.glm.logistic(predictor_vars[i], successes[i], trials=trials, quadratic=quadratic)
+                    for i in range(ntask)}
+
+
+        sample_sizes = np.asarray([predictor_vars[i].shape[0] for i in range(ntask)])
+        nfeatures = [predictor_vars[i].shape[1] for i in range(ntask)]
+
+        if all(x == nfeatures[0] for x in nfeatures) == False:
+            raise ValueError("all the predictor matrices must have the same regression dimensions")
+        else:
+            nfeature = nfeatures[0]
+
+        if ridge_term is None:
+            ridge_terms = np.zeros(ntask)
+        else:
+            ridge_terms = ridge_term
+
+        mean_diag_list = [np.mean((predictor_vars[i] ** 2).sum(0)) for i in range(ntask)]
+        if randomizer_scales is None:
+            randomizer_scales = np.asarray([np.sqrt(mean_diag_list[i]) * 0.5 * np.std(successes[i])
+                                            * np.sqrt(sample_sizes[i] / (sample_sizes[i] - 1.)) for i in range(ntask)])
+
+        randomizers = {i: randomization.isotropic_gaussian((nfeature,), randomizer_scales[i]) for i in range(ntask)}
+
+        return multi_task_lasso(loglikes,
+                                np.asarray(feature_weight),
+                                ridge_terms,
+                                randomizers,
+                                nfeature,
+                                ntask,
+                                perturbations)
+
+     @staticmethod
+     def poisson(predictor_vars,
+                  counts,
+                  feature_weight,
+                  quadratic=None,
+                  ridge_term=None,
+                  randomizer_scales=None,
+                  perturbations=None):
+
+         ntask = len(counts)
+
+         loglikes = {i: rr.glm.poisson(predictor_vars[i], counts[i], quadratic=quadratic)
+                     for i in range(ntask)}
+
+         sample_sizes = np.asarray([predictor_vars[i].shape[0] for i in range(ntask)])
+         nfeatures = [predictor_vars[i].shape[1] for i in range(ntask)]
+
+         if all(x == nfeatures[0] for x in nfeatures) == False:
+             raise ValueError("all the predictor matrices must have the same regression dimensions")
+         else:
+             nfeature = nfeatures[0]
+
+         if ridge_term is None:
+             ridge_terms = np.zeros(ntask)
+         else:
+             ridge_terms = ridge_term
+
+         mean_diag_list = [np.mean((predictor_vars[i] ** 2).sum(0)) for i in range(ntask)]
+         if randomizer_scales is None:
+             randomizer_scales = np.asarray([np.sqrt(mean_diag_list[i]) * 0.5 * np.std(counts[i])
+                                             * np.sqrt(sample_sizes[i] / (sample_sizes[i] - 1.)) for i in range(ntask)])
+
+         randomizers = {i: randomization.isotropic_gaussian((nfeature,), randomizer_scales[i]) for i in range(ntask)}
+
+         return multi_task_lasso(loglikes,
+                                 np.asarray(feature_weight),
+                                 ridge_terms,
+                                 randomizers,
+                                 nfeature,
+                                 ntask,
+                                 perturbations)
+
 def solve_barrier_affine_py(conjugate_arg,
                             precision,
                             feasible_point,
@@ -702,6 +820,96 @@ def solve_barrier_affine_py(conjugate_arg,
             step *= 2
 
     hess = np.linalg.inv(precision + barrier_hessian(current))
+    return current_value, current, hess
+
+
+def prjctd_grdnt_dscnt(conjugate_arg,
+                            precision,
+                            feasible_point,
+                            con_linear,
+                            con_offset,
+                            step=.1,
+                            nstep=10,
+                            min_its=20,
+                            tol=1.e-10):
+
+    scaling = np.sqrt(np.diag(con_linear.dot(precision).dot(con_linear.T)))
+
+    if feasible_point is None:
+        feasible_point = 1. / scaling
+
+    objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2.
+
+    grad = lambda u: -conjugate_arg + precision.dot(u)
+
+    barrier_hessian = lambda u: con_linear.T.dot(np.diag(-1. / ((scaling + con_offset - con_linear.dot(u)) ** 2.)
+                                                         + 1. / ((con_offset - con_linear.dot(u)) ** 2.))).dot(
+        con_linear)
+
+    current = feasible_point
+    current_value = np.inf
+
+    for itercount in range(nstep):
+
+        cur_grad = grad(current)
+        #print(cur_grad,"current gradient")
+        proposal = current - step * cur_grad
+
+        for j in range(4):
+
+            # project onto non-negative orthant:
+            proposal = np.maximum(proposal, 0)
+            #print(proposal, "proposal positive")
+
+            #project onto sum restriction
+            n_sum = np.shape(con_linear)[0] - np.shape(con_linear)[1]
+            sums = con_offset[-n_sum:]
+            partial_sums = con_linear.dot(proposal)[-n_sum:]
+            num_per_partial_sum = [np.sum(con_linear[-i,]) for i in np.arange(n_sum,0,-1)]
+            diff = [(partial_sums[i]-sums[i])/num_per_partial_sum[i] for i in range(n_sum)]
+            offset = np.repeat(diff,num_per_partial_sum)
+            proposal = proposal - offset
+            #print(proposal,"proposal sum")
+
+            #print("gap",con_linear.dot(proposal)-con_offset)
+
+        # make sure proposal is a descent
+
+        count = 0
+        while True:
+            count += 1
+            proposal = current - step * cur_grad
+            proposed_value = objective(proposal)
+            if proposed_value <= current_value:
+                break
+            step *= 0.5
+            if count >= 1000:
+                if not (np.isnan(proposed_value) or np.isnan(current_value)):
+                    break
+                else:
+                    print("crap")
+                    raise ValueError('value is NaN: %f, %f' % (proposed_value, current_value))
+
+        proposal = current - step * cur_grad
+        #print(itercount,proposal,"itercount,proposal")
+        proposed_value = objective(proposal)
+        #print(proposed_value,"proposed_value")
+
+        if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value) and itercount >= min_its:
+            current = proposal
+            current_value = proposed_value
+            break
+
+        current = proposal
+        current_value = proposed_value
+
+        if itercount % 4 == 0:
+            step *= 2
+
+    hess = np.linalg.inv(precision + barrier_hessian(current))
+    objective2 = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u) / 2. \
+                          + np.log(1. + 1. / ((con_offset - con_linear.dot(u)) / scaling)).sum()
+    current_value = objective2(proposal)
     return current_value, current, hess
 
 
