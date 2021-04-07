@@ -286,10 +286,10 @@ class multi_task_lasso():
                                                    #init_soln,
                                                    #self.linear_con,
                                                    #self.offset_con,
-                                                   #step=1.,
-                                                   #nstep=5000,
-                                                   #min_its=500,
-                                                   #tol=1.e-12)
+                                                  # step=1.,
+                                                  #nstep=5000,
+                                                  # min_its=500,
+                                                  # tol=1.e-12)
          #print(soln,"soln")
 
          val, soln, hess = solve_barrier_affine_py(conjugate_arg,
@@ -329,6 +329,7 @@ class multi_task_lasso():
          #print(diff/np.shape(final_estimator)[0],"diff")
 
          diff=0
+
 
          return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, diff/np.shape(final_estimator)[0]
 

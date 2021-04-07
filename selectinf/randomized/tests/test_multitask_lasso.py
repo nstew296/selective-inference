@@ -73,7 +73,7 @@ def cross_validate_posi_hetero(ntask=2,
         samples = np.setdiff1d(samples, folds[i])
 
     lambdamin = 0.75
-    lambdamax = 3.5
+    lambdamax = 2.75
     weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 20)
     weights = np.exp(weights)
 
