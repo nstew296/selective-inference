@@ -533,7 +533,7 @@ def test_coverage(signal,nsim=100):
                                                                  nsamples=2000 * np.ones(ntask),
                                                                  p=50,
                                                                  global_sparsity=0.9,
-                                                                 task_sparsity=.5,
+                                                                 task_sparsity=0,
                                                                  sigma=1. * np.ones(ntask),
                                                                  signal_fac=np.array(signal),
                                                                  rhos=.7 * np.ones(ntask),
@@ -544,7 +544,7 @@ def test_coverage(signal,nsim=100):
                                                                                     nsamples=2000 * np.ones(ntask),
                                                                                     p=50,
                                                                                     global_sparsity=0.9,
-                                                                                    task_sparsity=.5,
+                                                                                    task_sparsity=0,
                                                                                     sigma=1. * np.ones(ntask),
                                                                                     signal_fac=np.array(signal),
                                                                                     rhos=.7 * np.ones(ntask),
@@ -634,7 +634,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 0.5-1.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 0%, SNR 0.5-1.0')
 
     pivots = pivot[1]
     pivots_naive = pivot_naive[1]
@@ -649,7 +649,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 0.5-3.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 0%, SNR 0.5-3.0')
 
     pivots = pivot[2]
     pivots_naive = pivot_naive[2]
@@ -663,7 +663,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 1.0-3.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 0%, SNR 1.0-3.0')
 
     pivots = pivot[3]
     pivots_naive = pivot_naive[3]
@@ -677,9 +677,9 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 1.0-5.0')
+    plt.title('Empirical Distribution of Pivots: Task Sparsity 0%, SNR 1.0-5.0')
 
-    plt.savefig("50_90_hess.png")
+    plt.savefig("0_90_hess.png")
 
     print(tuning)
     print(hellinger_dist)
