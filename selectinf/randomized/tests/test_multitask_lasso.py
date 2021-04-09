@@ -628,13 +628,13 @@ def main():
     points_naive = [np.max(np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right')) / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
     dist_naive = np.sum([points_naive[i]*np.log((points_naive[i]+0.00001)/((np.float(i)+1.0)/100)) for i in range(100)])
     hellinger_dist[0] = [dist_posi,dist_naive]
-    fig = plt.figure(figsize=(15, 15))
+    fig = plt.figure(figsize=(32, 8))
     fig.tight_layout()
     fig.add_subplot(1, 4, 1)
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 0%, SNR 0.5-1.0')
+    plt.title('Task Sparsity 0%, SNR 0.5-1.0')
 
     pivots = pivot[1]
     pivots_naive = pivot_naive[1]
@@ -649,7 +649,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 0%, SNR 0.5-3.0')
+    plt.title('Task Sparsity 0%, SNR 0.5-3.0')
 
     pivots = pivot[2]
     pivots_naive = pivot_naive[2]
@@ -663,7 +663,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 0%, SNR 1.0-3.0')
+    plt.title('Task Sparsity 0%, SNR 1.0-3.0')
 
     pivots = pivot[3]
     pivots_naive = pivot_naive[3]
@@ -677,7 +677,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Empirical Distribution of Pivots: Task Sparsity 0%, SNR 1.0-5.0')
+    plt.title('Task Sparsity 0%, SNR 1.0-5.0')
 
     plt.savefig("0_90_hess.png")
 
