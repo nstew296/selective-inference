@@ -281,18 +281,7 @@ class multi_task_lasso():
          prec_opt = cond_precision
          conjugate_arg = prec_opt.dot(cond_mean)
 
-         #val, soln, hess = prjctd_grdnt_dscnt(conjugate_arg,
-                                                   #prec_opt,
-                                                   #init_soln,
-                                                   #self.linear_con,
-                                                   #self.offset_con,
-                                                  # step=1.,
-                                                  #nstep=5000,
-                                                  # min_its=500,
-                                                  # tol=1.e-12)
-         #print(soln,"soln")
-
-         val, soln, hess = solve_barrier_affine_py(conjugate_arg,
+         val, soln, hess = prjctd_grdnt_dscnt(conjugate_arg,
                                                    prec_opt,
                                                    init_soln,
                                                    self.linear_con,
@@ -301,10 +290,22 @@ class multi_task_lasso():
                                                    nstep=5000,
                                                    min_its=500,
                                                    tol=1.e-12)
+         #print(soln,"soln")
+
+         #val, soln, hess = solve_barrier_affine_py(conjugate_arg,
+                                                   #prec_opt,
+                                                   #init_soln,
+                                                   #self.linear_con,
+                                                   #self.offset_con,
+                                                   #step=1.,
+                                                   #nstep=5000,
+                                                   #min_its=500,
+                                                   #tol=1.e-12)
 
          #print(soln1,"soln1")
 
          #diff = np.linalg.norm(soln-soln1,2)
+         #diff = 0
 
 
          final_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(cond_mean - soln)))
@@ -820,7 +821,7 @@ def solve_barrier_affine_py(conjugate_arg,
         if itercount % 4 == 0:
             step *= 2
 
-    hess = np.linalg.inv(precision + barrier_hessian(current))
+    hess = 0*np.linalg.inv(precision + barrier_hessian(current))
     return current_value, current, hess
 
 
@@ -856,11 +857,11 @@ def prjctd_grdnt_dscnt(conjugate_arg,
         #print(cur_grad,"current gradient")
         proposal = current - step * cur_grad
 
-        for j in range(4):
+        for j in range(10):
 
             # project onto non-negative orthant:
             proposal = np.maximum(proposal, 0)
-            #print(proposal, "proposal positive")
+            # print(proposal, "proposal positive")
 
             #project onto sum restriction
             n_sum = np.shape(con_linear)[0] - np.shape(con_linear)[1]
@@ -907,7 +908,7 @@ def prjctd_grdnt_dscnt(conjugate_arg,
         if itercount % 4 == 0:
             step *= 2
 
-    hess = np.linalg.inv(precision + barrier_hessian(current))
+    hess = 0*np.linalg.inv(precision + barrier_hessian(current))
     objective2 = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u) / 2. \
                           + np.log(1. + 1. / ((con_offset - con_linear.dot(u)) / scaling)).sum()
     current_value = objective2(proposal)

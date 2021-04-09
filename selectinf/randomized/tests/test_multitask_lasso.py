@@ -72,9 +72,9 @@ def cross_validate_posi_hetero(ntask=2,
         folds[i] = np.random.choice(samples, size=np.int(np.round(.2 * holdout)), replace=False)
         samples = np.setdiff1d(samples, folds[i])
 
-    lambdamin = 0.75
-    lambdamax = 2.75
-    weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 20)
+    lambdamin = 1.25
+    lambdamax = 4.0
+    weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 25)
     weights = np.exp(weights)
 
     errors = np.zeros(len(weights))
@@ -133,12 +133,13 @@ def cross_validate_posi_hetero(ntask=2,
 
             except:
                 sum = 0
-                for j in range(ntask):
-                    sum += np.linalg.norm(response_vars_test[j], 2)
-                errors[w] += sum
-                continue
+                break
+                #for j in range(ntask):
+                   # sum += np.linalg.norm(response_vars_test[j], 2)
+                #errors[w] += sum
 
-            error = []
+
+            error = 0
 
             idx = 0
 
@@ -146,14 +147,15 @@ def cross_validate_posi_hetero(ntask=2,
 
                 idx_new = np.sum(active_signs[:, j] != 0)
                 if idx_new == 0:
+                    error += 0.5*np.sum(np.square(response_vars_test[j]))
                     continue
-                error.extend(response_vars_test[j] - (predictor_vars_test[j])[:, (active_signs[:, j] != 0)].dot(
-                    estimate[idx:idx + idx_new]))
+                error += 0.5 * np.sum(np.square((response_vars_test[j] - (predictor_vars_test[j])[:, (active_signs[:, j] != 0)].dot(
+                    estimate[idx:idx + idx_new]))))
                 idx = idx + idx_new
 
-            error = np.sqrt(np.sum(np.square(error))) / (len(test) * ntask)
             errors[w] += error
 
+    errors = errors[errors>0]
     print("errors",np.maximum(errors-(np.std(errors)/np.sqrt(len(errors))),0))
     idx_min_error = np.int(np.argmin(np.maximum(errors-(np.std(errors)/np.sqrt(len(errors))),0)))
     lam_min = weights[idx_min_error]
@@ -224,9 +226,9 @@ def cross_validate_naive_hetero(ntask=2,
         folds[i] = np.random.choice(samples, size=np.int(np.round(.2 * holdout)), replace=False)
         samples = np.setdiff1d(samples, folds[i])
 
-    lambdamin = 0.5
-    lambdamax = 1.25
-    weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 20)
+    lambdamin = 0.75
+    lambdamax = 3.5
+    weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 25)
     weights = np.exp(weights)
 
     errors = np.zeros(len(weights))
@@ -279,26 +281,28 @@ def cross_validate_naive_hetero(ntask=2,
 
             except:
                 sum = 0
-                for j in range(ntask):
-                    sum += np.linalg.norm(response_vars_test[j], 2)
-                errors[w] += sum
-                continue
+                break
+                #for j in range(ntask):
+                #    sum += np.linalg.norm(response_vars_test[j], 2)
+                #errors[w] += sum
+                #continue
 
-            error = []
+            error = 0
 
             for j in range(ntask):
 
                 idx_new = np.sum(active_signs[:, j] != 0)
                 if idx_new == 0:
+                    error += 0.5 * np.sum(np.square(response_vars_test[j]))
                     continue
                 X, y = multi_lasso.loglikes[j].data
                 observed_target = np.linalg.pinv(X[:, (active_signs[:, j] != 0)]).dot(y)
-                error.extend(
-                    response_vars_test[j] - (predictor_vars_test[j])[:, (active_signs[:, j] != 0)].dot(observed_target))
+                error += 0.5 * np.sum(np.square(response_vars_test[j] - (predictor_vars_test[j])[:, (active_signs[:, j] != 0)].dot(observed_target)))
 
-            error = np.sqrt(np.sum(np.square(error))) / (len(test) * ntask)
             errors[w] += error
 
+    errors = errors[errors>0]
+    print("errors naive",np.argmin(np.maximum(errors-(np.std(errors)/np.sqrt(len(errors))),0)))
     idx_min_error = np.int(np.argmin(np.maximum(errors-(np.std(errors)/np.sqrt(len(errors))),0)))
     lam_min = weights[idx_min_error]
     print(lam_min,"tuning param naive")
@@ -610,7 +614,7 @@ def main():
     hellinger_dist = {0: [], 1: [], 2: [], 3: []}
 
     for i in range(len(signals)):
-        sims = test_coverage(signals[i],50)
+        sims = test_coverage(signals[i],200)
         pivot[i] = sims[0]
         pivot_naive[i] = sims[1]
         tuning[i] = sims[2]
@@ -626,7 +630,7 @@ def main():
     hellinger_dist[0] = [dist_posi,dist_naive]
     fig = plt.figure(figsize=(15, 15))
     fig.tight_layout()
-    fig.add_subplot(2, 2, 1)
+    fig.add_subplot(1, 4, 1)
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
@@ -641,7 +645,7 @@ def main():
     points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
     dist_naive = np.sum([points_naive[i]*np.log((points_naive[i]+0.00001)/((np.float(i)+1.0)/100)) for i in range(100)])
     hellinger_dist[1] = [dist_posi, dist_naive]
-    fig.add_subplot(2, 2, 2)
+    fig.add_subplot(1, 4, 2)
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
@@ -655,7 +659,7 @@ def main():
     points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
     dist_naive = np.sum([points_naive[i]*np.log((points_naive[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
     hellinger_dist[2] = [dist_posi, dist_naive]
-    fig.add_subplot(2, 2, 3)
+    fig.add_subplot(1, 4, 3)
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
@@ -669,13 +673,13 @@ def main():
     points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
     dist_naive = np.sum([points_naive[i]*np.log((points_naive[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
     hellinger_dist[3] = [dist_posi, dist_naive]
-    fig.add_subplot(2, 2, 4)
+    fig.add_subplot(1, 4, 4)
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
     plt.title('Empirical Distribution of Pivots: Task Sparsity 50%, SNR 1.0-5.0')
 
-    plt.savefig("50_90_2000.png")
+    plt.savefig("50_90_hess.png")
 
     print(tuning)
     print(hellinger_dist)
