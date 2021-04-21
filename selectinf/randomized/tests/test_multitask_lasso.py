@@ -531,9 +531,9 @@ def test_coverage(signal,nsim=100):
 
     penalty_hetero, predictor, coef = cross_validate_posi_hetero(ntask=ntask,
                                                                  nsamples=2000 * np.ones(ntask),
-                                                                 p=100,
+                                                                 p=50,
                                                                  global_sparsity=0.9,
-                                                                 task_sparsity=0,
+                                                                 task_sparsity=.5,
                                                                  sigma=1. * np.ones(ntask),
                                                                  signal_fac=np.array(signal),
                                                                  rhos=.7 * np.ones(ntask),
@@ -542,9 +542,9 @@ def test_coverage(signal,nsim=100):
 
     penalty_hetero_naive, predictor_naive, coef_naive = cross_validate_naive_hetero(ntask=ntask,
                                                                                     nsamples=2000 * np.ones(ntask),
-                                                                                    p=100,
+                                                                                    p=50,
                                                                                     global_sparsity=0.9,
-                                                                                    task_sparsity=0,
+                                                                                    task_sparsity=.5,
                                                                                     sigma=1. * np.ones(ntask),
                                                                                     signal_fac=np.array(signal),
                                                                                     rhos=.7 * np.ones(ntask),
@@ -679,7 +679,7 @@ def main():
     plt.plot(grid, grid, 'k--')
     plt.title('Task Sparsity 25%, SNR 3.0-5.0')
 
-    plt.savefig("0_90_newscaling.png")
+    plt.savefig("25_90_newscaling.png")
 
     print(tuning)
     print(hellinger_dist)

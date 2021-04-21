@@ -281,7 +281,7 @@ class multi_task_lasso():
          prec_opt = cond_precision
          conjugate_arg = prec_opt.dot(cond_mean)
 
-         val, soln, hess = prjctd_grdnt_dscnt(conjugate_arg,
+         val, soln, hess = solve_barrier_affine_py(conjugate_arg,
                                                    prec_opt,
                                                    init_soln,
                                                    self.linear_con,
@@ -292,7 +292,7 @@ class multi_task_lasso():
                                                    tol=1.e-12)
          #print(soln,"soln")
 
-         #val, soln, hess = solve_barrier_affine_py(conjugate_arg,
+         #val1, soln1, hess1 = solve_barrier_affine_py(conjugate_arg,
                                                    #prec_opt,
                                                    #init_soln,
                                                    #self.linear_con,
@@ -302,10 +302,10 @@ class multi_task_lasso():
                                                    #min_its=500,
                                                    #tol=1.e-12)
 
-         #print(soln1,"soln1")
+        # print(soln1,"soln1")
 
          #diff = np.linalg.norm(soln-soln1,2)
-         #diff = 0
+         diff = 0
 
 
          final_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(cond_mean - soln)))
@@ -327,9 +327,9 @@ class multi_task_lasso():
 
          #print(final_estimator, observed_info_mean, Z_scores, pvalues, intervals,"all the stuff")
 
-         #print(diff/np.shape(final_estimator)[0],"diff")
+         print(diff/np.shape(final_estimator)[0],"diff")
 
-         diff=0
+         #diff=0
 
 
          return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, diff/np.shape(final_estimator)[0]
@@ -781,7 +781,6 @@ def solve_barrier_affine_py(conjugate_arg,
         cur_grad = grad(current)
 
         # make sure proposal is feasible
-
         count = 0
         while True:
             count += 1
@@ -793,7 +792,6 @@ def solve_barrier_affine_py(conjugate_arg,
                 raise ValueError('not finding a feasible point')
 
         # make sure proposal is a descent
-
         count = 0
         while True:
             count += 1
@@ -809,7 +807,6 @@ def solve_barrier_affine_py(conjugate_arg,
                     raise ValueError('value is NaN: %f, %f' % (proposed_value, current_value))
 
         # stop if relative decrease is small
-
         if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value) and itercount >= min_its:
             current = proposal
             current_value = proposed_value
@@ -821,8 +818,66 @@ def solve_barrier_affine_py(conjugate_arg,
         if itercount % 4 == 0:
             step *= 2
 
-    hess = 0*np.linalg.inv(precision + barrier_hessian(current))
+    hess = np.linalg.inv(precision + barrier_hessian(current))
     return current_value, current, hess
+
+
+def solve_barrier_newton(conjugate_arg,
+                            precision,
+                            feasible_point,
+                            con_linear,
+                            con_offset,
+                            step=1,
+                            nstep=1000,
+                            min_its=200,
+                            tol=1.e-10):
+
+    scaling = np.sqrt(np.diag(con_linear.dot(precision).dot(con_linear.T)))
+
+    if feasible_point is None:
+        feasible_point = 1. / scaling
+
+    objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2. \
+                          + np.log(1.+ 1./((con_offset - con_linear.dot(u))/ scaling)).sum()
+    grad = lambda u: -conjugate_arg + precision.dot(u) - con_linear.T.dot(1./(scaling + con_offset - con_linear.dot(u)) -
+                                                                       1./(con_offset - con_linear.dot(u)))
+    hessian = lambda u: np.linalg.inv(precision + con_linear.T.dot(np.diag(-1./((scaling + con_offset-con_linear.dot(u))**2.)
+                                                 + 1./((con_offset-con_linear.dot(u))**2.))).dot(con_linear))
+
+    current = feasible_point
+    current_value = np.inf
+
+    for itercount in range(nstep):
+        cur_grad = grad(current)
+        cur_hess = hessian(current)
+
+        # make sure proposal is feasible
+        count = 0
+        while True:
+            count += 1
+            proposal = current - step * cur_hess.dot(cur_grad)
+            if np.all(con_offset-con_linear.dot(proposal) > 0):
+                break
+            step *= 0.5
+            if count >= 40:
+                raise ValueError('not finding a feasible point')
+
+        proposed_value = objective(proposal)
+
+        # stop if relative decrease is small
+        if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value) and itercount >= min_its:
+            current = proposal
+            current_value = proposed_value
+            break
+
+        current = proposal
+        current_value = proposed_value
+        current_hessian = 0*hessian(proposal)
+
+        if itercount % 4 == 0 and step <= 0.5:
+            step *= 2
+
+    return current_value, current, current_hessian
 
 
 def prjctd_grdnt_dscnt(conjugate_arg,
@@ -835,18 +890,9 @@ def prjctd_grdnt_dscnt(conjugate_arg,
                             min_its=20,
                             tol=1.e-10):
 
-    scaling = np.sqrt(np.diag(con_linear.dot(precision).dot(con_linear.T)))
-
-    if feasible_point is None:
-        feasible_point = 1. / scaling
-
     objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2.
 
     grad = lambda u: -conjugate_arg + precision.dot(u)
-
-    barrier_hessian = lambda u: con_linear.T.dot(np.diag(-1. / ((scaling + con_offset - con_linear.dot(u)) ** 2.)
-                                                         + 1. / ((con_offset - con_linear.dot(u)) ** 2.))).dot(
-        con_linear)
 
     current = feasible_point
     current_value = np.inf
@@ -854,14 +900,10 @@ def prjctd_grdnt_dscnt(conjugate_arg,
     for itercount in range(nstep):
 
         cur_grad = grad(current)
-        #print(cur_grad,"current gradient")
         proposal = current - step * cur_grad
+        proposal = np.maximum(proposal, 0)
 
         for j in range(10):
-
-            # project onto non-negative orthant:
-            proposal = np.maximum(proposal, 0)
-            # print(proposal, "proposal positive")
 
             #project onto sum restriction
             n_sum = np.shape(con_linear)[0] - np.shape(con_linear)[1]
@@ -871,12 +913,11 @@ def prjctd_grdnt_dscnt(conjugate_arg,
             diff = [(partial_sums[i]-sums[i])/num_per_partial_sum[i] for i in range(n_sum)]
             offset = np.repeat(diff,num_per_partial_sum)
             proposal = proposal - offset
-            #print(proposal,"proposal sum")
 
-            #print("gap",con_linear.dot(proposal)-con_offset)
+            # project onto non-negative orthant:
+            proposal = np.maximum(proposal, 0)
 
         # make sure proposal is a descent
-
         count = 0
         while True:
             count += 1
@@ -886,16 +927,10 @@ def prjctd_grdnt_dscnt(conjugate_arg,
                 break
             step *= 0.5
             if count >= 1000:
-                if not (np.isnan(proposed_value) or np.isnan(current_value)):
-                    break
-                else:
-                    print("crap")
-                    raise ValueError('value is NaN: %f, %f' % (proposed_value, current_value))
+                break
 
         proposal = current - step * cur_grad
-        #print(itercount,proposal,"itercount,proposal")
         proposed_value = objective(proposal)
-        #print(proposed_value,"proposed_value")
 
         if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value) and itercount >= min_its:
             current = proposal
@@ -908,10 +943,105 @@ def prjctd_grdnt_dscnt(conjugate_arg,
         if itercount % 4 == 0:
             step *= 2
 
-    hess = 0*np.linalg.inv(precision + barrier_hessian(current))
-    objective2 = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u) / 2. \
-                          + np.log(1. + 1. / ((con_offset - con_linear.dot(u)) / scaling)).sum()
-    current_value = objective2(proposal)
+    hess = 0*np.linalg.inv(precision)
+    return current_value, current, hess
+
+def solve_penalty_grdnt_dscnt(conjugate_arg,
+                            precision,
+                            feasible_point,
+                            con_linear,
+                            con_offset,
+                            step=1,
+                            nstep=1000,
+                            min_its=200,
+                            tol=1.e-10):
+
+    penalty = 0.001
+    current = feasible_point
+    current_value = np.inf
+
+    for i in range(100):
+
+        objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2. \
+                              + 0.5* penalty * np.square(np.maximum(0,(con_offset - con_linear.dot(u)))).sum()
+
+        grad = lambda u : -conjugate_arg + precision.dot(u) - penalty * con_linear.T.dot((np.maximum(0,(con_offset - con_linear.dot(u)))))
+
+        for itercount in range(nstep):
+            cur_grad = grad(current)
+
+            # make sure proposal is a descent
+            count = 0
+            while True:
+                count += 1
+                proposal = current - step * cur_grad
+                proposed_value = objective(proposal)
+                if proposed_value <= current_value:
+                    break
+                step *= 0.5
+                if count >= 1000:
+                    break
+
+            # stop if relative decrease is small
+            if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value) and itercount >= min_its:
+                current = proposal
+                current_value = proposed_value
+                break
+
+            current = proposal
+            current_value = proposed_value
+
+            if itercount % 4 == 0:
+                step *= 2
+
+        penalty = penalty*50
+
+
+    hess = 0*np.linalg.inv(precision)
+    return current_value, current, hess
+
+
+def solve_penalty_newton(conjugate_arg,
+                            precision,
+                            feasible_point,
+                            con_linear,
+                            con_offset,
+                            step=1,
+                            nstep=1000,
+                            min_its=200,
+                            tol=1.e-10):
+
+    penalty = .0001
+    current = feasible_point
+    current_value = np.inf
+
+    for i in range(100):
+
+        objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2. \
+                              + 0.5* penalty * np.square(np.maximum(0,(con_offset - con_linear.dot(u)))).sum()
+
+        grad = lambda u : -conjugate_arg + precision.dot(u) - penalty * con_linear.T.dot((np.maximum(0,(con_offset - con_linear.dot(u)))))
+
+        hessian = lambda u: np.linalg.inv(precision + penalty * con_linear.T.dot(np.diag((con_offset - con_linear.dot(current)>0)).dot(con_linear)))
+
+        for j in range(min_its):
+            cur_grad = grad(current)
+            cur_hess = hessian(current)
+            proposal = current - step * cur_hess.dot(cur_grad)
+            proposed_value = objective(proposal)
+
+            # stop if relative decrease is small
+            if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value):
+                current = proposal
+                current_value = proposed_value
+                break
+
+            current = proposal
+            current_value = proposed_value
+
+        penalty = penalty*50
+
+    hess = 0*np.linalg.inv(precision)
     return current_value, current, hess
 
 
