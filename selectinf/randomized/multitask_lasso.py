@@ -284,7 +284,7 @@ class multi_task_lasso():
 
          a = datetime.datetime.now()
 
-         val, soln, hess = solve_barrier_newton(conjugate_arg,
+         val, soln, hess = solve_penalty_newton(conjugate_arg,
                                                    prec_opt,
                                                    init_soln,
                                                    self.linear_con,
@@ -1022,11 +1022,11 @@ def solve_penalty_newton(conjugate_arg,
                             min_its=200,
                             tol=1.e-10):
 
-    penalty = .0001
+    penalty = 0.001
     current = feasible_point
     current_value = np.inf
 
-    for i in range(100):
+    for i in range(5):
 
         objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2. \
                               + 0.5* penalty * np.square(np.maximum(0,(con_offset - con_linear.dot(u)))).sum()
@@ -1035,7 +1035,7 @@ def solve_penalty_newton(conjugate_arg,
 
         hessian = lambda u: np.linalg.inv(precision + penalty * con_linear.T.dot(np.diag((con_offset - con_linear.dot(current)>0)).dot(con_linear)))
 
-        for j in range(min_its):
+        for j in range(nstep):
             cur_grad = grad(current)
             cur_hess = hessian(current)
             proposal = current - step * cur_hess.dot(cur_grad)
