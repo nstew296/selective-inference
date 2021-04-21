@@ -128,7 +128,7 @@ def cross_validate_posi_hetero(ntask=2,
 
                 dispersions = sigma ** 2
 
-                estimate, observed_info_mean, Z_scores, pvalues, intervals, diffs = multi_lasso.multitask_inference_hetero(
+                estimate, observed_info_mean, Z_scores, pvalues, intervals, diffs, time_diff = multi_lasso.multitask_inference_hetero(
                 dispersions=dispersions)
 
             except:
@@ -396,7 +396,7 @@ def test_multitask_lasso_hetero(predictor_vars,
 
             dispersions = sigma ** 2
 
-            estimate, observed_info_mean, Z_scores, pvalues, intervals, mean_diff = multi_lasso.multitask_inference_hetero(
+            estimate, observed_info_mean, Z_scores, pvalues, intervals, mean_diff, time_diff = multi_lasso.multitask_inference_hetero(
                 dispersions=dispersions)
 
             beta_target = []
@@ -411,7 +411,7 @@ def test_multitask_lasso_hetero(predictor_vars,
 
             coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
 
-            return coverage, intervals[:, 1] - intervals[:, 0], pivot, mean_diff
+            return coverage, intervals[:, 1] - intervals[:, 0], pivot, mean_diff, time_diff
 
 
 def test_multitask_lasso_naive_hetero(predictor_vars,
@@ -521,11 +521,13 @@ def test_coverage(signal,nsim=100):
     pivots = []
     penalties = []
     diff_solns = []
+    time_diffs = []
 
     cov_naive = []
     len_naive = []
     pivots_naive = []
     penalties_naive = []
+    time_diffs = []
 
     ntask = 5
 
@@ -561,7 +563,7 @@ def test_coverage(signal,nsim=100):
         try:
             #print(pivot,"pivot")
 
-            coverage, length, pivot, diff_soln = test_multitask_lasso_hetero(predictor,
+            coverage, length, pivot, diff_soln, time_difference = test_multitask_lasso_hetero(predictor,
                                                                   coef,
                                                                   sigma=1. * np.ones(ntask),
                                                                   weight=np.float(penalty_hetero),
@@ -571,6 +573,7 @@ def test_coverage(signal,nsim=100):
             len.extend(length)
             pivots.extend(pivot)
             diff_solns.append(diff_soln)
+            time_diffs.append(time_difference)
 
         except:
             print("no selection posi")
@@ -602,6 +605,7 @@ def test_coverage(signal,nsim=100):
         print("mean penalty", np.mean(np.asarray(penalties)))
         print("mean penalty naive", np.mean(np.asarray(penalties_naive)))
         print("mean diff so far", np.mean(np.asarray(diff_solns)))
+        print("mean time diff so far", np.mean(np.asarray(time_diffs)))
 
     return([pivots,pivots_naive,[np.mean(np.asarray(penalties)),np.mean(np.asarray(penalties_naive)),np.mean(diff_solns)]])
 
@@ -679,7 +683,7 @@ def main():
     plt.plot(grid, grid, 'k--')
     plt.title('Task Sparsity 50%, SNR 3.0-5.0')
 
-    plt.savefig("50_90_barrier_hess_ub.png")
+    plt.savefig("50_90_barrier_hess_ub_time.png")
 
     print(tuning)
     print(hellinger_dist)

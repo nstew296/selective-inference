@@ -1,4 +1,5 @@
 import numpy as np
+import datetime
 from scipy.linalg import block_diag
 from scipy.stats import norm as ndist
 
@@ -281,6 +282,8 @@ class multi_task_lasso():
          prec_opt = cond_precision
          conjugate_arg = prec_opt.dot(cond_mean)
 
+         a = datetime.datetime.now()
+
          val, soln, hess = solve_barrier_affine_py(conjugate_arg,
                                                    prec_opt,
                                                    init_soln,
@@ -290,6 +293,12 @@ class multi_task_lasso():
                                                    nstep=5000,
                                                    min_its=500,
                                                    tol=1.e-12)
+
+         b = datetime.datetime.now()
+
+         time_diff = b-a
+         time_diff = int(time_diff.total_seconds() * 1000)
+
          #print(soln,"soln")
 
          #val1, soln1, hess1 = solve_barrier_affine_py(conjugate_arg,
@@ -327,12 +336,12 @@ class multi_task_lasso():
 
          #print(final_estimator, observed_info_mean, Z_scores, pvalues, intervals,"all the stuff")
 
-         print(diff/np.shape(final_estimator)[0],"diff")
+         #print(diff/np.shape(final_estimator)[0],"diff")
+         #print(time_diff,"time diff")
 
          #diff=0
 
-
-         return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, diff/np.shape(final_estimator)[0]
+         return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, diff/np.shape(final_estimator)[0], time_diff
 
      def multitask_target_hetero(self,dispersions=None):
 
