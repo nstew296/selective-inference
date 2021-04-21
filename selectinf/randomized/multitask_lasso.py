@@ -284,7 +284,7 @@ class multi_task_lasso():
 
          a = datetime.datetime.now()
 
-         val, soln, hess = solve_penalty_grdnt_dscnt(conjugate_arg,
+         val, soln, hess = solve_barrier_newton(conjugate_arg,
                                                    prec_opt,
                                                    init_soln,
                                                    self.linear_con,
@@ -881,10 +881,12 @@ def solve_barrier_newton(conjugate_arg,
 
         current = proposal
         current_value = proposed_value
-        current_hessian = 0*hessian(proposal)
+        #current_hessian = 0*hessian(proposal)
 
         if itercount % 4 == 0 and step <= 0.5:
             step *= 2
+
+    current_hessian = 0 * hessian(proposal)
 
     return current_value, current, current_hessian
 
