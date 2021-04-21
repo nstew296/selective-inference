@@ -284,7 +284,7 @@ class multi_task_lasso():
 
          a = datetime.datetime.now()
 
-         val, soln, hess = prjctd_grdnt_dscnt(conjugate_arg,
+         val, soln, hess = solve_penalty_grdnt_dscnt(conjugate_arg,
                                                    prec_opt,
                                                    init_soln,
                                                    self.linear_con,
@@ -965,11 +965,11 @@ def solve_penalty_grdnt_dscnt(conjugate_arg,
                             min_its=200,
                             tol=1.e-10):
 
-    penalty = 0.001
+    penalty = 0.01
     current = feasible_point
     current_value = np.inf
 
-    for i in range(100):
+    for i in range(5):
 
         objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2. \
                               + 0.5* penalty * np.square(np.maximum(0,(con_offset - con_linear.dot(u)))).sum()
