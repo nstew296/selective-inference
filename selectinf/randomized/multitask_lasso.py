@@ -281,7 +281,7 @@ class multi_task_lasso():
          prec_opt = cond_precision
          conjugate_arg = prec_opt.dot(cond_mean)
 
-         val, soln, hess = solve_barrier_affine_py(conjugate_arg,
+         val, soln, hess = prjctd_grdnt_dscnt(conjugate_arg,
                                                    prec_opt,
                                                    init_soln,
                                                    self.linear_con,
@@ -292,20 +292,20 @@ class multi_task_lasso():
                                                    tol=1.e-12)
          #print(soln,"soln")
 
-         #val1, soln1, hess1 = solve_barrier_affine_py(conjugate_arg,
-                                                   #prec_opt,
-                                                   #init_soln,
-                                                   #self.linear_con,
-                                                   #self.offset_con,
-                                                   #step=1.,
-                                                   #nstep=5000,
-                                                   #min_its=500,
-                                                   #tol=1.e-12)
+         val1, soln1, hess1 = solve_barrier_affine_py(conjugate_arg,
+                                                   prec_opt,
+                                                   init_soln,
+                                                   self.linear_con,
+                                                   self.offset_con,
+                                                   step=1.,
+                                                   nstep=5000,
+                                                   min_its=500,
+                                                   tol=1.e-12)
 
         # print(soln1,"soln1")
 
-         #diff = np.linalg.norm(soln-soln1,2)
-         diff = 0
+         diff = np.linalg.norm(soln-soln1,2)
+         #diff = 0
 
 
          final_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(cond_mean - soln)))

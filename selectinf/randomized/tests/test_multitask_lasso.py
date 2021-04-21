@@ -679,7 +679,7 @@ def main():
     plt.plot(grid, grid, 'k--')
     plt.title('Task Sparsity 50%, SNR 3.0-5.0')
 
-    plt.savefig("50_90_newscaling_barrier_gd.png")
+    plt.savefig("50_90_newscaling_pgd.png")
 
     print(tuning)
     print(hellinger_dist)
