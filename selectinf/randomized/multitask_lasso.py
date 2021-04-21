@@ -281,7 +281,7 @@ class multi_task_lasso():
          prec_opt = cond_precision
          conjugate_arg = prec_opt.dot(cond_mean)
 
-         val, soln, hess = prjctd_grdnt_dscnt(conjugate_arg,
+         val, soln, hess = solve_penalty_grdnt_dscnt(conjugate_arg,
                                                    prec_opt,
                                                    init_soln,
                                                    self.linear_con,
