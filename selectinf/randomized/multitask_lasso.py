@@ -284,7 +284,7 @@ class multi_task_lasso():
 
          a = datetime.datetime.now()
 
-         val, soln, hess = solve_penalty_newton(conjugate_arg,
+         val, soln, hess = prjctd_grdnt_dscnt(conjugate_arg,
                                                    prec_opt,
                                                    init_soln,
                                                    self.linear_con,

@@ -683,7 +683,7 @@ def main():
     plt.plot(grid, grid, 'k--')
     plt.title('Task Sparsity 50%, SNR 3.0-5.0')
 
-    plt.savefig("50_90_penalty_newton_hess_ub_time.png")
+    plt.savefig("50_90_pgd_hess_ub_time2.png")
 
     print(tuning)
     print(hellinger_dist)
