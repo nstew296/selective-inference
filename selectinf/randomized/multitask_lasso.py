@@ -284,7 +284,7 @@ class multi_task_lasso():
 
          a = datetime.datetime.now()
 
-         val, soln, hess = prjctd_grdnt_dscnt(conjugate_arg,
+         val, soln, hess = solve_penalty_newton(conjugate_arg,
                                                    prec_opt,
                                                    init_soln,
                                                    self.linear_con,
@@ -1029,14 +1029,14 @@ def solve_penalty_newton(conjugate_arg,
     current = feasible_point
     current_value = np.inf
 
-    for i in range(5):
+    for i in range(10):
 
         objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2. \
-                              + 0.5* penalty * np.square(np.maximum(0,(con_offset - con_linear.dot(u)))).sum()
+                              + 0.5* penalty * np.square(np.minimum(0,(con_offset - con_linear.dot(u)))).sum()
 
-        grad = lambda u : -conjugate_arg + precision.dot(u) - penalty * con_linear.T.dot((np.maximum(0,(con_offset - con_linear.dot(u)))))
+        grad = lambda u : -conjugate_arg + precision.dot(u) - penalty * con_linear.T.dot((np.minimum(0,(con_offset - con_linear.dot(u)))))
 
-        hessian = lambda u: np.linalg.inv(precision + penalty * con_linear.T.dot(np.diag((con_offset - con_linear.dot(current)>0)).dot(con_linear)))
+        hessian = lambda u: np.linalg.inv(precision + penalty * con_linear.T.dot(np.diag((con_offset - con_linear.dot(current)<0)).dot(con_linear)))
 
         for j in range(nstep):
             cur_grad = grad(current)

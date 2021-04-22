@@ -72,7 +72,7 @@ def cross_validate_posi_hetero(ntask=2,
         folds[i] = np.random.choice(samples, size=np.int(np.round(.2 * holdout)), replace=False)
         samples = np.setdiff1d(samples, folds[i])
 
-    lambdamin = 1.25
+    lambdamin = 2.5
     lambdamax = 4.0
     weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 25)
     weights = np.exp(weights)
@@ -683,7 +683,7 @@ def main():
     plt.plot(grid, grid, 'k--')
     plt.title('Task Sparsity 50%, SNR 3.0-5.0')
 
-    plt.savefig("50_90_pgd_hess_ub_time3.png")
+    plt.savefig("50_90_newton_penalty_hess_ub_time2.png")
 
     print(tuning)
     print(hellinger_dist)
