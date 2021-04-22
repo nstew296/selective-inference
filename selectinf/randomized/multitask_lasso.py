@@ -873,7 +873,7 @@ def solve_barrier_newton(conjugate_arg,
 
         proposed_value = objective(proposal)
 
-        # stop if relative decrease is small
+        #Check for convergence
         if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value) and itercount >= min_its:
             current = proposal
             current_value = proposed_value
@@ -912,11 +912,12 @@ def prjctd_grdnt_dscnt(conjugate_arg,
 
         cur_grad = grad(current)
         proposal = current - step * cur_grad
-        proposal = np.maximum(proposal, 0)
 
+        #Check if proposal is feasible
         if np.all(con_offset - con_linear.dot(proposal) > 0):
             pass
         else:
+            proposal = np.maximum(proposal, 0)
             for j in range(10):
 
                 #project onto sum restriction
@@ -931,7 +932,7 @@ def prjctd_grdnt_dscnt(conjugate_arg,
                 # project onto non-negative orthant:
                 proposal = np.maximum(proposal, 0)
 
-        # make sure proposal is a descent
+        #Choose step size to guarantee a descent
         count = 0
         while True:
             count += 1
@@ -984,7 +985,7 @@ def solve_penalty_grdnt_dscnt(conjugate_arg,
         for itercount in range(nstep):
             cur_grad = grad(current)
 
-            # make sure proposal is a descent
+            #Choose step size to ensure a descent
             count = 0
             while True:
                 count += 1
@@ -996,7 +997,7 @@ def solve_penalty_grdnt_dscnt(conjugate_arg,
                 if count >= 1000:
                     break
 
-            # stop if relative decrease is small
+            #check for convergence
             if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value) and itercount >= min_its:
                 current = proposal
                 current_value = proposed_value
@@ -1044,7 +1045,7 @@ def solve_penalty_newton(conjugate_arg,
             proposal = current - step * cur_hess.dot(cur_grad)
             proposed_value = objective(proposal)
 
-            # stop if relative decrease is small
+            # check for convergence
             if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value):
                 current = proposal
                 current_value = proposed_value
