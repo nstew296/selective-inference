@@ -914,19 +914,22 @@ def prjctd_grdnt_dscnt(conjugate_arg,
         proposal = current - step * cur_grad
         proposal = np.maximum(proposal, 0)
 
-        for j in range(10):
+        if np.all(con_offset - con_linear.dot(proposal) > 0):
+            pass
+        else:
+            for j in range(10):
 
-            #project onto sum restriction
-            n_sum = np.shape(con_linear)[0] - np.shape(con_linear)[1]
-            sums = con_offset[-n_sum:]
-            partial_sums = con_linear.dot(proposal)[-n_sum:]
-            num_per_partial_sum = [np.sum(con_linear[-i,]) for i in np.arange(n_sum,0,-1)]
-            diff = [(partial_sums[i]-sums[i])/num_per_partial_sum[i] for i in range(n_sum)]
-            offset = np.repeat(diff,num_per_partial_sum)
-            proposal = proposal - offset
+                #project onto sum restriction
+                n_sum = np.shape(con_linear)[0] - np.shape(con_linear)[1]
+                sums = con_offset[-n_sum:]
+                partial_sums = con_linear.dot(proposal)[-n_sum:]
+                num_per_partial_sum = [np.sum(con_linear[-i,]) for i in np.arange(n_sum,0,-1)]
+                diff = [(partial_sums[i]-sums[i])/num_per_partial_sum[i] for i in range(n_sum)]
+                offset = np.repeat(diff,num_per_partial_sum)
+                proposal = proposal - offset
 
-            # project onto non-negative orthant:
-            proposal = np.maximum(proposal, 0)
+                # project onto non-negative orthant:
+                proposal = np.maximum(proposal, 0)
 
         # make sure proposal is a descent
         count = 0
