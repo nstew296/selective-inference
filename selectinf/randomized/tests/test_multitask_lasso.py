@@ -605,7 +605,7 @@ def test_coverage(signal,nsim=100):
         print("mean penalty", np.mean(np.asarray(penalties)))
         print("mean penalty naive", np.mean(np.asarray(penalties_naive)))
         print("mean diff so far", np.mean(np.asarray(diff_solns)))
-        print("mean time diff so far", np.mean(np.asarray(time_diffs)))
+        print("mean time diff so far", np.median(np.asarray(time_diffs)))
 
     return([pivots,pivots_naive,[np.mean(np.asarray(penalties)),np.mean(np.asarray(penalties_naive)),np.mean(diff_solns)]])
 
@@ -683,7 +683,7 @@ def main():
     plt.plot(grid, grid, 'k--')
     plt.title('Task Sparsity 50%, SNR 3.0-5.0')
 
-    plt.savefig("50_90_newton_penalty_hess_ub_time2.png")
+    plt.savefig("50_90_newton_penalty_hess_ub_time3.png")
 
     print(tuning)
     print(hellinger_dist)

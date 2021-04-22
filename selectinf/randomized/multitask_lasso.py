@@ -977,9 +977,9 @@ def solve_penalty_grdnt_dscnt(conjugate_arg,
     for i in range(5):
 
         objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2. \
-                              + 0.5* penalty * np.square(np.maximum(0,(con_offset - con_linear.dot(u)))).sum()
+                              + 0.5* penalty * np.square(np.minimum(0,(con_offset - con_linear.dot(u)))).sum()
 
-        grad = lambda u : -conjugate_arg + precision.dot(u) - penalty * con_linear.T.dot((np.maximum(0,(con_offset - con_linear.dot(u)))))
+        grad = lambda u : -conjugate_arg + precision.dot(u) - penalty * con_linear.T.dot((np.minimum(0,(con_offset - con_linear.dot(u)))))
 
         for itercount in range(nstep):
             cur_grad = grad(current)
