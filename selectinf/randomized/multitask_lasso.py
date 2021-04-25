@@ -284,7 +284,7 @@ class multi_task_lasso():
 
          a = datetime.datetime.now()
 
-         val, soln, hess = solve_penalty_grdnt_dscnt(conjugate_arg,
+         val, soln, hess = solve_barrier_affine_py(conjugate_arg,
                                                    prec_opt,
                                                    init_soln,
                                                    self.linear_con,
@@ -301,20 +301,20 @@ class multi_task_lasso():
 
          #print(soln,"soln")
 
-         val1, soln1, hess1 = solve_barrier_affine_py(conjugate_arg,
-                                                   prec_opt,
-                                                   init_soln,
-                                                   self.linear_con,
-                                                   self.offset_con,
-                                                   step=1.,
-                                                   nstep=5000,
-                                                   min_its=500,
-                                                   tol=1.e-12)
+         #val1, soln1, hess1 = solve_barrier_affine_py(conjugate_arg,
+                                                  # prec_opt,
+                                                  # init_soln,
+                                                  # self.linear_con,
+                                                  # self.offset_con,
+                                                  # step=1.,
+                                                  # nstep=5000,
+                                                  # min_its=500,
+                                                  # tol=1.e-12)
 
          #print(soln1,"soln1")
 
-         diff = np.linalg.norm(soln-soln1,2)
-         #diff = 0
+       #  diff = np.linalg.norm(soln-soln1,2)
+         diff = 0
 
 
          final_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(cond_mean - soln)))
@@ -830,7 +830,7 @@ def solve_barrier_affine_py(conjugate_arg,
     hess = 0*np.linalg.inv(precision + barrier_hessian(current))
     return current_value, current, hess
 
-
+#Barrier function, Newton's Method
 def solve_barrier_newton(conjugate_arg,
                             precision,
                             feasible_point,
@@ -890,7 +890,7 @@ def solve_barrier_newton(conjugate_arg,
 
     return current_value, current, current_hessian
 
-
+#Projected gradient descent
 def prjctd_grdnt_dscnt(conjugate_arg,
                             precision,
                             feasible_point,
@@ -961,6 +961,7 @@ def prjctd_grdnt_dscnt(conjugate_arg,
     hess = 0*np.linalg.inv(precision)
     return current_value, current, hess
 
+#Penatly function, gradient descent
 def solve_penalty_grdnt_dscnt(conjugate_arg,
                             precision,
                             feasible_point,
@@ -1015,7 +1016,7 @@ def solve_penalty_grdnt_dscnt(conjugate_arg,
     hess = 0*np.linalg.inv(precision)
     return current_value, current, hess
 
-
+#Penalty function, Newton's method
 def solve_penalty_newton(conjugate_arg,
                             precision,
                             feasible_point,

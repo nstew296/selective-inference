@@ -615,7 +615,7 @@ def main():
     pivot = {0:[],1:[],2:[],3:[]}
     pivot_naive = {0:[], 1:[],2:[],3:[]}
     tuning = {0: [], 1: [],2:[],3:[]}
-    hellinger_dist = {0: [], 1: [], 2: [], 3: []}
+    KL_divergence = {0: [], 1: [], 2: [], 3: []}
 
     for i in range(len(signals)):
         sims = test_coverage(signals[i],200)
@@ -631,7 +631,7 @@ def main():
     dist_posi = np.sum([points[i]*np.log((points[i]+0.00001)/((np.float(i)+1.0)/100)) for i in range(100)])
     points_naive = [np.max(np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right')) / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
     dist_naive = np.sum([points_naive[i]*np.log((points_naive[i]+0.00001)/((np.float(i)+1.0)/100)) for i in range(100)])
-    hellinger_dist[0] = [dist_posi,dist_naive]
+    KL_divergence[0] = [dist_posi,dist_naive]
     fig = plt.figure(figsize=(32, 8))
     fig.tight_layout()
     fig.add_subplot(1, 4, 1)
@@ -648,7 +648,7 @@ def main():
     dist_posi = np.sum([points[i]*np.log((points[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
     points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
     dist_naive = np.sum([points_naive[i]*np.log((points_naive[i]+0.00001)/((np.float(i)+1.0)/100)) for i in range(100)])
-    hellinger_dist[1] = [dist_posi, dist_naive]
+    KL_divergence[1] = [dist_posi, dist_naive]
     fig.add_subplot(1, 4, 2)
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
@@ -662,7 +662,7 @@ def main():
     dist_posi = np.sum([points[i]*np.log((points[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
     points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
     dist_naive = np.sum([points_naive[i]*np.log((points_naive[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
-    hellinger_dist[2] = [dist_posi, dist_naive]
+    KL_divergence[2] = [dist_posi, dist_naive]
     fig.add_subplot(1, 4, 3)
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
@@ -676,7 +676,7 @@ def main():
     dist_posi = np.sum([points[i]*np.log((points[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
     points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
     dist_naive = np.sum([points_naive[i]*np.log((points_naive[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
-    hellinger_dist[3] = [dist_posi, dist_naive]
+    KL_divergence[3] = [dist_posi, dist_naive]
     fig.add_subplot(1, 4, 4)
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
@@ -686,7 +686,7 @@ def main():
     plt.savefig("50_90_penalty_hess_ub_time3.png")
 
     print(tuning)
-    print(hellinger_dist)
+    print(KL_divergence)
 
     #scale = [1]
     #coverage = []
