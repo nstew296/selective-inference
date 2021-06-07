@@ -1039,7 +1039,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Task Sparsity 0%, SNR 0.2-0.5')
+    plt.title('Task Sparsity 25%, SNR 0.2-0.5')
 
     pivots = pivot[1]
     pivots_naive = pivot_naive[1]
@@ -1053,7 +1053,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Task Sparsity 0%, SNR 0.5-1.0')
+    plt.title('Task Sparsity 25%, SNR 0.5-1.0')
 
     pivots = pivot[2]
     pivots_naive = pivot_naive[2]
@@ -1067,7 +1067,7 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Task Sparsity 0%, SNR 1.0-3.0')
+    plt.title('Task Sparsity 25%, SNR 1.0-3.0')
 
     pivots = pivot[3]
     pivots_naive = pivot_naive[3]
@@ -1081,9 +1081,9 @@ def main():
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Task Sparsity 0%, SNR 3.0-5.0')
+    plt.title('Task Sparsity 25%, SNR 3.0-5.0')
 
-    plt.savefig("0_p100.png")
+    plt.savefig("25_p100.png")
 
 if __name__ == "__main__":
     main()
