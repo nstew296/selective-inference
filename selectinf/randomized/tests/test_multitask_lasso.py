@@ -10,6 +10,7 @@ from selectinf.randomized.multitask_lasso import multi_task_lasso
 from selectinf.tests.instance import gaussian_multitask_instance
 from selectinf.tests.instance import logistic_multitask_instance
 from selectinf.tests.instance import poisson_multitask_instance
+from selectinf.randomized.lasso import lasso, selected_targets
 
 
 def cross_validate_posi_hetero(ntask=2,
@@ -72,9 +73,9 @@ def cross_validate_posi_hetero(ntask=2,
         folds[i] = np.random.choice(samples, size=np.int(np.round(.2 * holdout)), replace=False)
         samples = np.setdiff1d(samples, folds[i])
 
-    lambdamin = 2.5
+    lambdamin = 1.5
     lambdamax = 4.0
-    weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 25)
+    weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 10)
     weights = np.exp(weights)
 
     errors = np.zeros(len(weights))
@@ -128,13 +129,13 @@ def cross_validate_posi_hetero(ntask=2,
 
                 dispersions = sigma ** 2
 
-                estimate, observed_info_mean, Z_scores, pvalues, intervals, diffs, time_diff = multi_lasso.multitask_inference_hetero(
+                estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(
                 dispersions=dispersions)
 
             except:
                 sum = 0
                 for j in range(ntask):
-                    sum += 0.5*np.linalg.norm(response_vars_test[j], 2)
+                    sum += 0.5*np.linalg.norm(response_vars_test[j], 2)**2
                 errors[w] += sum
                 continue
 
@@ -155,10 +156,8 @@ def cross_validate_posi_hetero(ntask=2,
 
             errors[w] += error
 
-    #errors = errors[errors>0]
-    print("errors",np.maximum(errors-(np.std(errors)/np.sqrt(len(errors))),0))
-    #idx_min_error = np.int(np.argmin(np.maximum(errors-(np.std(errors)/np.sqrt(len(errors))),0)))
-    idx_min_error = np.int(np.argmin(np.maximum(errors, 0)))
+    print("errors",errors)
+    idx_min_error = np.int(np.argmin(errors))
     lam_min = weights[idx_min_error]
     print(lam_min,"tuning param")
 
@@ -227,9 +226,9 @@ def cross_validate_naive_hetero(ntask=2,
         folds[i] = np.random.choice(samples, size=np.int(np.round(.2 * holdout)), replace=False)
         samples = np.setdiff1d(samples, folds[i])
 
-    lambdamin = 0.75
-    lambdamax = 3.5
-    weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / 25)
+    lambdamin = 1.0
+    lambdamax = 4.0
+    weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) /10)
     weights = np.exp(weights)
 
     errors = np.zeros(len(weights))
@@ -283,7 +282,7 @@ def cross_validate_naive_hetero(ntask=2,
             except:
                 sum = 0
                 for j in range(ntask):
-                    sum += np.linalg.norm(response_vars_test[j], 2)
+                    sum += np.linalg.norm(response_vars_test[j], 2)**2
                 errors[w] += sum
                 continue
 
@@ -301,11 +300,10 @@ def cross_validate_naive_hetero(ntask=2,
 
             errors[w] += error
 
-    errors = errors[errors>0]
-    print("errors naive",np.argmin(np.maximum(errors-(np.std(errors)/np.sqrt(len(errors))),0)))
-    idx_min_error = np.int(np.argmin(np.maximum(errors-(np.std(errors)/np.sqrt(len(errors))),0)))
+    print("errors", errors)
+    idx_min_error = np.int(np.argmin(errors))
     lam_min = weights[idx_min_error]
-    print(lam_min,"tuning param naive")
+    print(lam_min, "tuning param")
 
 
     unused_predictor = {}
@@ -359,6 +357,17 @@ def test_multitask_lasso_hetero(predictor_vars,
             pis[i] = predictor_vars[i].dot(beta[:, i]) * sigma[i]
             response_vars[i] = np.random.poisson(np.exp(pis[i]))
 
+
+    samples = np.arange(np.int(nsamples[0]))
+    train = np.random.choice(samples, size=np.int(nsamples[0]), replace=False)
+    test = np.setdiff1d(samples, train)
+
+    response_vars_train = {j: response_vars[j][train] for j in range(ntask)}
+    predictor_vars_train = {j: predictor_vars[j][train] for j in range(ntask)}
+
+    response_vars_test = {j: response_vars[j][test] for j in range(ntask)}
+    predictor_vars_test = {j: predictor_vars[j][test] for j in range(ntask)}
+
     while True:
 
         feature_weight = weight * np.ones(p)
@@ -370,33 +379,43 @@ def test_multitask_lasso_hetero(predictor_vars,
             [randomizer_scales[i] * gaussian_noise[(i * p):((i + 1) * p)] for i in range(ntask)]).T
 
         if link == "identity":
-            multi_lasso = multi_task_lasso.gaussian(predictor_vars,
-                                                    response_vars,
+            multi_lasso = multi_task_lasso.gaussian(predictor_vars_train,
+                                                    response_vars_train,
                                                     feature_weight,
                                                     ridge_term=None,
                                                     randomizer_scales=randomizer_scales)
 
         if link == "logit":
-            multi_lasso = multi_task_lasso.logistic(predictor_vars,
-                                                    response_vars,
+            multi_lasso = multi_task_lasso.logistic(predictor_vars_train,
+                                                    response_vars_train,
                                                     feature_weight,
                                                     ridge_term=None,
                                                     randomizer_scales=randomizer_scales)
 
         if link == "log":
-            multi_lasso = multi_task_lasso.poisson(predictor_vars,
-                                                   response_vars,
+            multi_lasso = multi_task_lasso.poisson(predictor_vars_train,
+                                                   response_vars_train,
                                                    feature_weight,
                                                    ridge_term=None,
                                                    randomizer_scales=randomizer_scales)
 
         active_signs = multi_lasso.fit(perturbations=_initial_omega)
 
+        #Compute snesitivity and specificity
+        #true_active = np.transpose(np.nonzero(beta))
+        #selected_active = np.transpose(np.nonzero(active_signs))
+        #num_true_positive = np.sum(x in true_active.tolist() for x in selected_active.tolist())
+        #num_false_positive = np.sum(x not in true_active.tolist() for x in selected_active.tolist())
+        #num_positive = np.shape(true_active)[0]
+        #num_negative = np.shape(beta)[0]*np.shape(beta)[1]-num_positive
+        #sensitivity = np.float(num_true_positive)/np.float(num_positive)
+        #specificity = 1.0 - np.float(num_false_positive)/np.float(num_negative)
+
         if (active_signs != 0).sum() > 0:
 
             dispersions = sigma ** 2
 
-            estimate, observed_info_mean, Z_scores, pvalues, intervals, mean_diff, time_diff = multi_lasso.multitask_inference_hetero(
+            estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(
                 dispersions=dispersions)
 
             beta_target = []
@@ -411,7 +430,33 @@ def test_multitask_lasso_hetero(predictor_vars,
 
             coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
 
-            return coverage, intervals[:, 1] - intervals[:, 0], pivot, mean_diff, time_diff
+            error = 0
+            idx = 0
+            if np.shape(test)[0]==0:
+                pass
+            else:
+                for j in range(ntask):
+                    idx_new = np.sum(active_signs[:, j] != 0)
+                    if idx_new == 0:
+                        error += 0.5 * np.sum(np.square(response_vars_test[j]))
+                        continue
+                    error += 0.5 * np.sum(
+                        np.square((response_vars_test[j] - (predictor_vars_test[j])[:, (active_signs[:, j] != 0)].dot(
+                            estimate[idx:idx + idx_new]))))
+                    idx = idx + idx_new
+
+            # Compute snesitivity and specificity
+            true_active = np.transpose(np.nonzero(beta))
+            selected_active = np.transpose(np.nonzero(active_signs))
+            true_positive_selected = [x in true_active.tolist() for x in selected_active.tolist()]
+            num_true_positive_inference = np.sum([true_positive_selected[i]*(intervals[i,1]<0 or intervals[i,0]>0) for i in range(len(true_positive_selected))])
+            num_positive = np.shape(true_active)[0]
+            num_false_positive_inference = np.sum([(intervals[i,1]<0 or intervals[i,0]>0) for i in range(len(true_positive_selected))]) - num_true_positive_inference
+            num_negative = np.shape(beta)[0]*np.shape(beta)[1]-num_positive
+            sensitivity_inference = np.float(num_true_positive_inference)/np.float(num_positive)
+            specificity_inference = 1.0 - np.float(num_false_positive_inference)/np.float(num_negative)
+
+            return coverage, intervals[:, 1] - intervals[:, 0], pivot, sensitivity_inference, specificity_inference, error
 
 
 def test_multitask_lasso_naive_hetero(predictor_vars,
@@ -455,6 +500,16 @@ def test_multitask_lasso_naive_hetero(predictor_vars,
             pis[i] = predictor_vars[i].dot(beta[:, i]) * sigma[i]
             response_vars[i] = np.random.poisson(np.exp(pis[i]))
 
+    samples = np.arange(np.int(nsamples[0]))
+    train = np.random.choice(samples, size=np.int(nsamples[0]), replace=False)
+    test = np.setdiff1d(samples, train)
+
+    response_vars_train = {j: response_vars[j][train] for j in range(ntask)}
+    predictor_vars_train = {j: predictor_vars[j][train] for j in range(ntask)}
+
+    response_vars_test = {j: response_vars[j][test] for j in range(ntask)}
+    predictor_vars_test = {j: predictor_vars[j][test] for j in range(ntask)}
+
     while True:
 
         feature_weight = weight * np.ones(p)
@@ -464,24 +519,24 @@ def test_multitask_lasso_naive_hetero(predictor_vars,
         perturbations = np.zeros((p, ntask))
 
         if link == "identity":
-            multi_lasso = multi_task_lasso.gaussian(predictor_vars,
-                                                    response_vars,
+            multi_lasso = multi_task_lasso.gaussian(predictor_vars_train,
+                                                    response_vars_train,
                                                     feature_weight,
                                                     ridge_term=None,
                                                     randomizer_scales=1. * sigmas_,
                                                     perturbations=perturbations)
 
         if link == "logit":
-            multi_lasso = multi_task_lasso.logistic(predictor_vars,
-                                                    response_vars,
+            multi_lasso = multi_task_lasso.logistic(predictor_vars_train,
+                                                    response_vars_train,
                                                     feature_weight,
                                                     ridge_term=None,
                                                     randomizer_scales=1. * sigmas_,
                                                     perturbations=perturbations)
 
         if link == "log":
-            multi_lasso = multi_task_lasso.poisson(predictor_vars,
-                                                   response_vars,
+            multi_lasso = multi_task_lasso.poisson(predictor_vars_train,
+                                                   response_vars_train,
                                                    feature_weight,
                                                    ridge_term=None,
                                                    randomizer_scales=1. * sigmas_,
@@ -492,7 +547,10 @@ def test_multitask_lasso_naive_hetero(predictor_vars,
 
         coverage = []
         pivot = []
+        CIs = [[0,0]]
 
+
+        error = 0
         if (active_signs != 0).sum() > 0:
 
             for i in range(ntask):
@@ -505,13 +563,164 @@ def test_multitask_lasso_naive_hetero(predictor_vars,
                 quantile = ndist.ppf(1 - alpha / 2.)
                 intervals = np.vstack([observed_target - quantile * np.sqrt(np.diag(cov_target)),
                                        observed_target + quantile * np.sqrt(np.diag(cov_target))]).T
+                CIs = np.vstack([CIs,intervals])
                 coverage.extend((beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1]))
                 pivot_ = ndist.cdf((observed_target - beta_target) / np.sqrt(np.diag(cov_target)))
                 pivot.extend(2 * np.minimum(pivot_, 1. - pivot_))
 
-        return np.asarray(coverage), intervals[:, 1] - intervals[:, 0], np.asarray(pivot)
+                if np.shape(test)[0]==0:
+                    continue
+                else:
+                    idx_new = np.sum(active_signs[:, i] != 0)
+                    if idx_new == 0:
+                        error += 0.5 * np.sum(np.square(response_vars_test[i]))
+                        continue
+                    observed_target = np.linalg.pinv(X[:, (active_signs[:, i] != 0)]).dot(y)
+                    error += 0.5 * np.sum(np.square(
+                        response_vars_test[i] - (predictor_vars_test[i])[:, (active_signs[:, i] != 0)].dot(
+                            observed_target)))
+
+        return np.asarray(coverage), CIs[1:, 1] - CIs[1:, 0], np.asarray(pivot), error
 
 
+
+def test_multitask_lasso_data_splitting(predictor_vars,
+                                      beta,
+                                      sigma=1. * np.ones(2),
+                                      weight=2.,
+                                      link = "identity"):
+
+    ntask = len(predictor_vars.keys())
+    nsamples = np.asarray([np.shape(predictor_vars[i])[0] for i in range(ntask)])
+    p = np.shape(beta)[0]
+
+
+    def _noise(n, df=np.inf):
+        if df == np.inf:
+            return np.random.standard_normal(n)
+        else:
+            sd_t = np.std(tdist.rvs(df, size=50000))
+        return tdist.rvs(df, size=n) / sd_t
+
+    if link == "identity":
+        gaussian_noise = _noise(nsamples.sum(), np.inf)
+        response_vars = {}
+        nsamples_cumsum = np.cumsum(nsamples)
+        for i in range(ntask):
+            if i == 0:
+                response_vars[i] = (predictor_vars[i].dot(beta[:, i]) + gaussian_noise[:nsamples_cumsum[i]]) * sigma[i]
+            else:
+                response_vars[i] = (predictor_vars[i].dot(beta[:, i]) + gaussian_noise[nsamples_cumsum[i - 1]:nsamples_cumsum[i]]) * sigma[i]
+
+    if link == "logit":
+        response_vars = {}
+        pis = {}
+        for i in range(ntask):
+            pis[i] = predictor_vars[i].dot(beta[:, i]) * sigma[i]
+            response_vars[i] = np.random.binomial(1, np.exp(pis[i]) / (1.0 + np.exp(pis[i])))
+
+    if link == "log":
+        response_vars = {}
+        pis = {}
+        for i in range(ntask):
+            pis[i] = predictor_vars[i].dot(beta[:, i]) * sigma[i]
+            response_vars[i] = np.random.poisson(np.exp(pis[i]))
+
+    samples = np.arange(np.int(nsamples[0]))
+    train = np.random.choice(samples, size=np.int(0.5 * nsamples[0]), replace=False)
+    test = np.setdiff1d(samples, train)
+
+    response_vars_train = {j: response_vars[j][train] for j in range(ntask)}
+    predictor_vars_train = {j: predictor_vars[j][train] for j in range(ntask)}
+
+    response_vars_test = {j: response_vars[j][test] for j in range(ntask)}
+    predictor_vars_test = {j: predictor_vars[j][test] for j in range(ntask)}
+
+
+    while True:
+
+        feature_weight = weight * np.ones(p)
+
+        sigmas_ = sigma
+
+        perturbations = np.zeros((p, ntask))
+
+        if link == "identity":
+            multi_lasso = multi_task_lasso.gaussian(predictor_vars_train,
+                                                    response_vars_train,
+                                                    feature_weight,
+                                                    ridge_term=None,
+                                                    randomizer_scales=1. * sigmas_,
+                                                    perturbations=perturbations)
+
+        if link == "logit":
+            multi_lasso = multi_task_lasso.logistic(predictor_vars_train,
+                                                    response_vars_train,
+                                                    feature_weight,
+                                                    ridge_term=None,
+                                                    randomizer_scales=1. * sigmas_,
+                                                    perturbations=perturbations)
+
+        if link == "log":
+            multi_lasso = multi_task_lasso.poisson(predictor_vars_train,
+                                                   response_vars_train,
+                                                   feature_weight,
+                                                   ridge_term=None,
+                                                   randomizer_scales=1. * sigmas_,
+                                                   perturbations=perturbations)
+        active_signs = multi_lasso.fit()
+
+        # Compute snesitivity and specificity
+        #true_active = np.transpose(np.nonzero(beta))
+        #selected_active = np.transpose(np.nonzero(active_signs))
+        #num_true_positive = np.sum(x in true_active.tolist() for x in selected_active.tolist())
+        #num_false_positive = np.sum(x not in true_active.tolist() for x in selected_active.tolist())
+        #num_positive = np.shape(true_active)[0]
+        #num_negative = np.shape(beta)[0] * np.shape(beta)[1] - num_positive
+        #sensitivity = np.float(num_true_positive) / np.float(num_positive)
+        #specificity = 1.0 - np.float(num_false_positive) / np.float(num_negative)
+
+
+        dispersions = sigma ** 2
+
+        coverage = []
+        pivot = []
+        CIs = [[0,0]]
+
+        if (active_signs != 0).sum() > 0:
+
+            for i in range(ntask):
+                X = predictor_vars_test[i]
+                y = response_vars_test[i]
+                beta_target = np.linalg.pinv(X[:, (active_signs[:, i] != 0)]).dot(X.dot(beta[:, i]))
+                Qfeat = np.linalg.inv(X[:, (active_signs[:, i] != 0)].T.dot(X[:, (active_signs[:, i] != 0)]))
+                observed_target = np.linalg.pinv(X[:, (active_signs[:, i] != 0)]).dot(y)
+                cov_target = Qfeat * dispersions[i]
+                alpha = 1. - 0.90
+                quantile = ndist.ppf(1 - alpha / 2.)
+                intervals = np.vstack([observed_target - quantile * np.sqrt(np.diag(cov_target)),
+                                       observed_target + quantile * np.sqrt(np.diag(cov_target))]).T
+                coverage.extend((beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1]))
+                pivot_ = ndist.cdf((observed_target - beta_target) / np.sqrt(np.diag(cov_target)))
+                pivot.extend(2 * np.minimum(pivot_, 1. - pivot_))
+                CIs = np.vstack([CIs,intervals])
+
+            # Compute snesitivity and specificity
+            true_active = np.transpose(np.nonzero(beta))
+            selected_active = np.transpose(np.nonzero(active_signs))
+            true_positive_selected = [x in true_active.tolist() for x in selected_active.tolist()]
+            num_true_positive_inference = np.sum(
+                [true_positive_selected[i] * (CIs[i+1, 1] < 0 or CIs[i+1, 0] > 0) for i in
+                 range(len(true_positive_selected))])
+            num_positive = np.shape(true_active)[0]
+            num_false_positive_inference = np.sum([(CIs[i+1, 1] < 0 or CIs[i+1, 0] > 0) for i in range(
+                len(true_positive_selected))]) - num_true_positive_inference
+            num_negative = np.shape(beta)[0] * np.shape(beta)[1] - num_positive
+            sensitivity_inference = np.float(num_true_positive_inference) / np.float(num_positive)
+            specificity_inference = 1.0 - np.float(num_false_positive_inference) / np.float(num_negative)
+
+
+        return np.asarray(coverage), CIs[1:, 1] - CIs[1:, 0], np.asarray(pivot), sensitivity_inference, specificity_inference
 
 
 
@@ -520,22 +729,28 @@ def test_coverage(signal,nsim=100):
     len = []
     pivots = []
     penalties = []
-    diff_solns = []
-    time_diffs = []
+    sensitivity_list = []
+    specificity_list = []
+    posi_prediction_error_list = []
 
     cov_naive = []
     len_naive = []
     pivots_naive = []
     penalties_naive = []
-    time_diffs = []
+    naive_prediction_error_list = []
+
+    cov_data_splitting = []
+    len_data_splitting = []
+    sensitivity_list_ds = []
+    specificity_list_ds = []
 
     ntask = 5
 
     penalty_hetero, predictor, coef = cross_validate_posi_hetero(ntask=ntask,
                                                                  nsamples=2000 * np.ones(ntask),
-                                                                 p=50,
+                                                                 p=100,
                                                                  global_sparsity=0.9,
-                                                                 task_sparsity=.5,
+                                                                 task_sparsity=.25,
                                                                  sigma=1. * np.ones(ntask),
                                                                  signal_fac=np.array(signal),
                                                                  rhos=.7 * np.ones(ntask),
@@ -544,9 +759,9 @@ def test_coverage(signal,nsim=100):
 
     penalty_hetero_naive, predictor_naive, coef_naive = cross_validate_naive_hetero(ntask=ntask,
                                                                                     nsamples=2000 * np.ones(ntask),
-                                                                                    p=50,
+                                                                                    p=100,
                                                                                     global_sparsity=0.9,
-                                                                                    task_sparsity=.5,
+                                                                                    task_sparsity=.25,
                                                                                     sigma=1. * np.ones(ntask),
                                                                                     signal_fac=np.array(signal),
                                                                                     rhos=.7 * np.ones(ntask),
@@ -557,23 +772,22 @@ def test_coverage(signal,nsim=100):
 
     for n in range(nsim):
 
-
         print(n,"n sim")
 
         try:
-            #print(pivot,"pivot")
 
-            coverage, length, pivot, diff_soln, time_difference = test_multitask_lasso_hetero(predictor,
+            coverage, length, pivot, sns, spc, err = test_multitask_lasso_hetero(predictor,
                                                                   coef,
                                                                   sigma=1. * np.ones(ntask),
                                                                   weight=np.float(penalty_hetero),
                                                                   link = "identity",
                                                                   randomizer_scale = 1)
-            cov.extend(coverage)
+            cov.append(np.mean(np.asarray(coverage)))
             len.extend(length)
             pivots.extend(pivot)
-            diff_solns.append(diff_soln)
-            time_diffs.append(time_difference)
+            sensitivity_list.append(sns)
+            specificity_list.append(spc)
+            posi_prediction_error_list.append(err)
 
         except:
             print("no selection posi")
@@ -581,146 +795,295 @@ def test_coverage(signal,nsim=100):
 
         try:
 
-             coverage_naive, length_naive, pivot_naive = test_multitask_lasso_naive_hetero(predictor_naive,
+             coverage_naive, length_naive, pivot_naive, naive_err = test_multitask_lasso_naive_hetero(predictor_naive,
                                                                         coef_naive,
                                                                         sigma=1. * np.ones(ntask),
                                                                         link = "identity",
                                                                         weight=np.float(penalty_hetero_naive))
 
 
-             cov_naive.extend(coverage_naive)
+             cov_naive.append(np.mean(np.asarray((coverage_naive))))
              len_naive.extend(length_naive)
              pivots_naive.extend(pivot_naive)
+             naive_prediction_error_list.append(naive_err)
 
 
         except:
             print("no selection naive")
 
+        try:
+
+             coverage_data_splitting, length_data_splitting, pivot_data_splitting, sns_ds, spc_ds = test_multitask_lasso_data_splitting(predictor_naive,
+                                                                        coef_naive,
+                                                                        sigma=1. * np.ones(ntask),
+                                                                        link = "identity",
+                                                                        weight=np.float(penalty_hetero_naive))
+
+             cov_data_splitting.append(np.mean(np.asarray(coverage_data_splitting)))
+             len_data_splitting.extend(length_data_splitting)
+             sensitivity_list_ds.append(sns_ds)
+             specificity_list_ds.append(spc_ds)
+
+        except:
+            print("no selection data splitting")
+
 
         print("iteration completed ", n)
-        print("coverage so far ", np.mean(np.asarray(cov)))
+        print("posi coverage so far ", np.mean(np.asarray(cov)))
         print("naive coverage so far ", np.mean(np.asarray(cov_naive)))
-        print("length so far ", np.mean(np.asarray(len)))
-        print("length so far ", np.mean(np.asarray(len_naive)))
-        print("mean penalty", np.mean(np.asarray(penalties)))
-        print("mean penalty naive", np.mean(np.asarray(penalties_naive)))
-        print("mean diff so far", np.mean(np.asarray(diff_solns)))
-        print("mean time diff so far", np.median(np.asarray(time_diffs)))
+        print("data splitting coverage so far ", np.mean(np.asarray(cov_data_splitting)))
 
-    return([pivots,pivots_naive,[np.mean(np.asarray(penalties)),np.mean(np.asarray(penalties_naive)),np.mean(diff_solns)]])
+        print("posi length so far ", np.mean(np.asarray(len)))
+        print("naive length so far ", np.mean(np.asarray(len_naive)))
+        print("data splitting length so far ", np.mean(np.asarray(len_data_splitting)))
+
+        print("median sensitivity posi", np.median(np.asarray(sensitivity_list)))
+        print("median specificity posi", np.median(np.asarray(specificity_list)))
+        #print("mean prediction error posi", np.mean(np.asarray(posi_prediction_error_list)))
+        print("median sensitivity data splitting", np.median(np.asarray(sensitivity_list_ds)))
+        print("median specificity data splitting", np.median(np.asarray(specificity_list_ds)))
+
+    return([pivots,pivots_naive,
+            [np.mean(np.asarray(penalties)),np.mean(np.asarray(penalties_naive))],
+            np.median(np.asarray(sensitivity_list)),np.median(np.asarray(specificity_list)),
+            np.mean(np.asarray(posi_prediction_error_list)),
+            np.asarray(len),np.asarray(len_naive),np.asarray(len_data_splitting),
+            np.asarray(cov),np.asarray(cov_naive),np.asarray(cov_data_splitting)])
 
 def main():
 
     signals = [[0.2,0.5],[0.5,1.0],[1.0,3.0],[3.0,5.0]]
+    tuning = {0: [], 1: [], 2: [], 3: []}
     pivot = {0:[],1:[],2:[],3:[]}
     pivot_naive = {0:[], 1:[],2:[],3:[]}
-    tuning = {0: [], 1: [],2:[],3:[]}
-    KL_divergence = {0: [], 1: [], 2: [], 3: []}
 
+    KL_divergence = {0: [[],[]], 1: [[],[]], 2: [[],[]], 3: [[],[]]}
+    length = {0: [[], [], []], 1: [[], [], []], 2: [[], [], []], 3: [[], [], []]}
+    coverage = {0: [[], [], []], 1: [[], [], []], 2: [[], [], []], 3: [[], [], []]}
+
+    sensitivity = {0: [], 1: [], 2: [], 3: []}
+    specificity = {0: [], 1: [], 2: [], 3: []}
+    prediction_error_posi = {0: [], 1: [], 2: [], 3: []}
+
+    #KL Divergence plot
+    # #for j in range(50):
+
+        #for i in range(len(signals)):
+            #sims = test_coverage(signals[i],50)
+            #pivot[i] = sims[0]
+            #pivot_naive[i] = sims[1]
+
+        #pivots = pivot[0]
+        #pivots_naive = pivot_naive[0]
+        #plt.clf()
+        #grid = np.linspace(0, 1, 101)
+        #points = [np.max(np.searchsorted(np.sort(np.asarray(pivots)), i, side='right')) for i in np.linspace(0, 1, 101)]
+        #points.append(np.float(np.shape(pivots)[0]))
+        #p = np.diff(points) / np.float(np.shape(pivots)[0])
+        #dist_posi = np.sum([p[i] * np.log((p[i] + 0.00001) / 0.01) for i in range(100)])
+        #points_naive = [np.max(np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right')) for i in
+                       # np.linspace(0, 1, 101)]
+        #points_naive.append(np.float(np.shape(pivots_naive)[0]))
+        #q = np.diff(points_naive) / np.float(np.shape(pivots_naive)[0])
+        #dist_naive = np.sum([q[i] * np.log((q[i] + 0.00001) / 0.01) for i in range(100)])
+        #KL_divergence[0][0].append(dist_posi)
+        #KL_divergence[0][1].append(dist_naive)
+
+        #pivots = pivot[1]
+        #pivots_naive = pivot_naive[1]
+        #grid = np.linspace(0, 1, 101)
+        #points = [np.max(np.searchsorted(np.sort(np.asarray(pivots)), i, side='right')) for i in np.linspace(0, 1, 101)]
+        #points.append(np.float(np.shape(pivots)[0]))
+        #p = np.diff(points) / np.float(np.shape(pivots)[0])
+        #dist_posi = np.sum([p[i] * np.log((p[i] + 0.00001) / 0.01) for i in range(100)])
+        #points_naive = [np.max(np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right')) for i in
+                        #np.linspace(0, 1, 101)]
+        #points_naive.append(np.float(np.shape(pivots_naive)[0]))
+        #q = np.diff(points_naive) / np.float(np.shape(pivots_naive)[0])
+        #dist_naive = np.sum([q[i] * np.log((q[i] + 0.00001) / 0.01) for i in range(100)])
+        #KL_divergence[1][0].append(dist_posi)
+        #KL_divergence[1][1].append(dist_naive)
+
+        #pivots = pivot[2]
+        #pivots_naive = pivot_naive[2]
+        #grid = np.linspace(0, 1, 101)
+        #points = [np.max(np.searchsorted(np.sort(np.asarray(pivots)), i, side='right')) for i in np.linspace(0, 1, 101)]
+        #points.append(np.float(np.shape(pivots)[0]))
+        #p = np.diff(points) / np.float(np.shape(pivots)[0])
+        #dist_posi = np.sum([p[i] * np.log((p[i] + 0.00001) / 0.01) for i in range(100)])
+        #points_naive = [np.max(np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right')) for i in
+                   #     np.linspace(0, 1, 101)]
+        #points_naive.append(np.float(np.shape(pivots_naive)[0]))
+        #q = np.diff(points_naive) / np.float(np.shape(pivots_naive)[0])
+        #dist_naive = np.sum([q[i] * np.log((q[i] + 0.00001) / 0.01) for i in range(100)])
+        #KL_divergence[2][0].append(dist_posi)
+        #KL_divergence[2][1].append(dist_naive)
+
+        #pivots = pivot[3]
+        #pivots_naive = pivot_naive[3]
+        #grid = np.linspace(0, 1, 101)
+        #points = [np.max(np.searchsorted(np.sort(np.asarray(pivots)), i, side='right')) for i in np.linspace(0, 1, 101)]
+        #points.append(np.float(np.shape(pivots)[0]))
+        #p = np.diff(points) / np.float(np.shape(pivots)[0])
+        #dist_posi = np.sum([p[i] * np.log((p[i] + 0.00001) / 0.01) for i in range(100)])
+        #points_naive = [np.max(np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right')) for i in
+            #            np.linspace(0, 1, 101)]
+        #points_naive.append(np.float(np.shape(pivots_naive)[0]))
+        #q = np.diff(points_naive) / np.float(np.shape(pivots_naive)[0])
+        #dist_naive = np.sum([q[i] * np.log((q[i] + 0.00001) / 0.01) for i in range(100)])
+        #KL_divergence[3][0].append(dist_posi)
+        #KL_divergence[3][1].append(dist_naive)
+
+    # Boxplot of KL divergence
+    # print(tuning)
+    # print(KL_divergence)
+    # fig = plt.figure(figsize=(32, 8))
+    # fig.add_subplot(1, 4, 1)
+    # plt.boxplot(KL_divergence[0], positions=[1, 2], widths=0.6)
+    # plt.xticks([1, 2], ['POSI', 'Naive'])
+    # plt.ylabel('KL Divergence')
+    # plt.title('SNR 0.2-0.5')
+    # fig.add_subplot(1, 4, 2)
+    # plt.boxplot(KL_divergence[1], positions=[1, 2], widths=0.6)
+    # plt.xticks([1, 2], ['POSI', 'Naive'])
+    # plt.ylabel('KL Divergence')
+    # plt.title('SNR 0.5-1.0')
+    # fig.add_subplot(1, 4, 3)
+    # plt.boxplot(KL_divergence[2], positions=[1, 2], widths=0.6)
+    # plt.xticks([1, 2], ['POSI', 'Naive'])
+    # plt.ylabel('KL Divergence')
+    # plt.title('SNR 1.0-3.0')
+    # fig.add_subplot(1, 4, 4)
+    # plt.boxplot(KL_divergence[3], positions=[1, 2], widths=0.6)
+    # plt.xticks([1, 2], ['POSI', 'Naive'])
+    # plt.ylabel('KL Divergence')
+    # plt.title('SNR 3.0-5.0')
+    # plt.savefig("boxplot25.png")
+
+    #Coverage, length, and pivot plots
     for i in range(len(signals)):
-        sims = test_coverage(signals[i],200)
+        sims = test_coverage(signals[i],50)
         pivot[i] = sims[0]
         pivot_naive[i] = sims[1]
         tuning[i] = sims[2]
+        sensitivity[i] = sims[3]
+        specificity[i] = sims[4]
+        prediction_error_posi[i] = sims[5]
+        length[i][0].extend(sims[6])
+        length[i][1].extend(sims[7])
+        length[i][2].extend(sims[8])
+        coverage[i][0].extend(sims[9])
+        coverage[i][1].extend(sims[10])
+        coverage[i][2].extend(sims[11])
 
+    # Boxplot of length
+    fig = plt.figure(figsize=(32, 8))
+    fig.add_subplot(1, 4, 1)
+    plt.boxplot(length[0], positions=[1, 2, 3], widths=0.4)
+    plt.xticks([1, 2, 3], ['POSI', 'Naive', 'Data Splitting'])
+    plt.ylabel('Length')
+    plt.title('SNR 0.2-0.5')
+    fig.add_subplot(1, 4, 2)
+    plt.boxplot(length[1], positions=[1, 2, 3], widths=0.4)
+    plt.xticks([1, 2, 3], ['POSI', 'Naive', 'Data Splitting'])
+    plt.ylabel('Length')
+    plt.title('SNR 0.5-1.0')
+    fig.add_subplot(1, 4, 3)
+    plt.boxplot(length[2], positions=[1, 2, 3], widths=0.4)
+    plt.xticks([1, 2, 3], ['POSI', 'Naive', 'Data Splitting'])
+    plt.ylabel('Length')
+    plt.title('SNR 1.0-3.0')
+    fig.add_subplot(1, 4, 4)
+    plt.boxplot(length[3], positions=[1, 2, 3], widths=0.4)
+    plt.xticks([1, 2, 3], ['POSI', 'Naive', 'Data Splitting'])
+    plt.ylabel('Length')
+    plt.title('SNR 3.0-5.0')
+    plt.savefig("boxplot25length.png")
+
+    # Boxplot of coverage
+    fig = plt.figure(figsize=(32, 8))
+    fig.add_subplot(1, 4, 1)
+    plt.boxplot(coverage[0], positions=[1, 2, 3], widths=0.4)
+    plt.xticks([1, 2, 3], ['POSI', 'Naive', 'Data Splitting'])
+    plt.ylabel('Coverage')
+    plt.title('SNR 0.2-0.5')
+    fig.add_subplot(1, 4, 2)
+    plt.boxplot(coverage[1], positions=[1, 2, 3], widths=0.4)
+    plt.xticks([1, 2, 3], ['POSI', 'Naive', 'Data Splitting'])
+    plt.ylabel('Coverage')
+    plt.title('SNR 0.5-1.0')
+    fig.add_subplot(1, 4, 3)
+    plt.boxplot(coverage[2], positions=[1, 2, 3], widths=0.4)
+    plt.xticks([1, 2, 3], ['POSI', 'Naive', 'Data Splitting'])
+    plt.ylabel('Coverage')
+    plt.title('SNR 1.0-3.0')
+    fig.add_subplot(1, 4, 4)
+    plt.boxplot(coverage[3], positions=[1, 2, 3], widths=0.4)
+    plt.xticks([1, 2, 3], ['POSI', 'Naive', 'Data Splitting'])
+    plt.ylabel('Coverage')
+    plt.title('SNR 3.0-5.0')
+    plt.savefig("boxplot25coverage.png")
+
+    #Plot distribution of pivots
     pivots = pivot[0]
     pivots_naive = pivot_naive[0]
     plt.clf()
     grid = np.linspace(0, 1, 101)
-    points = [np.max(np.searchsorted(np.sort(np.asarray(pivots)), i, side='right')) / np.float(np.shape(pivots)[0]) for i in np.linspace(0, 1, 101)]
-    dist_posi = np.sum([points[i]*np.log((points[i]+0.00001)/((np.float(i)+1.0)/100)) for i in range(100)])
-    points_naive = [np.max(np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right')) / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
-    dist_naive = np.sum([points_naive[i]*np.log((points_naive[i]+0.00001)/((np.float(i)+1.0)/100)) for i in range(100)])
-    KL_divergence[0] = [dist_posi,dist_naive]
+    points = [np.max(np.searchsorted(np.sort(np.asarray(pivots)), i, side='right')) / np.float(np.shape(pivots)[0]) for
+              i in np.linspace(0, 1, 101)]
+    points_naive = [np.max(np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right')) / np.float(
+        np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
     fig = plt.figure(figsize=(32, 8))
     fig.tight_layout()
     fig.add_subplot(1, 4, 1)
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Task Sparsity 50%, SNR 0.2-0.5')
+    plt.title('Task Sparsity 0%, SNR 0.2-0.5')
 
     pivots = pivot[1]
     pivots_naive = pivot_naive[1]
     grid = np.linspace(0, 1, 101)
     points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in
               np.linspace(0, 1, 101)]
-    dist_posi = np.sum([points[i]*np.log((points[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
-    points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
-    dist_naive = np.sum([points_naive[i]*np.log((points_naive[i]+0.00001)/((np.float(i)+1.0)/100)) for i in range(100)])
-    KL_divergence[1] = [dist_posi, dist_naive]
+    points_naive = [
+        np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i
+        in np.linspace(0, 1, 101)]
     fig.add_subplot(1, 4, 2)
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Task Sparsity 50%, SNR 0.5-1.0')
+    plt.title('Task Sparsity 0%, SNR 0.5-1.0')
 
     pivots = pivot[2]
     pivots_naive = pivot_naive[2]
     grid = np.linspace(0, 1, 101)
-    points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in np.linspace(0, 1, 101)]
-    dist_posi = np.sum([points[i]*np.log((points[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
-    points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
-    dist_naive = np.sum([points_naive[i]*np.log((points_naive[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
-    KL_divergence[2] = [dist_posi, dist_naive]
+    points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in
+              np.linspace(0, 1, 101)]
+    points_naive = [
+        np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i
+        in np.linspace(0, 1, 101)]
     fig.add_subplot(1, 4, 3)
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Task Sparsity 50%, SNR 1.0-3.0')
+    plt.title('Task Sparsity 0%, SNR 1.0-3.0')
 
     pivots = pivot[3]
     pivots_naive = pivot_naive[3]
     grid = np.linspace(0, 1, 101)
-    points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in np.linspace(0, 1, 101)]
-    dist_posi = np.sum([points[i]*np.log((points[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
-    points_naive = [np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
-    dist_naive = np.sum([points_naive[i]*np.log((points_naive[i]+0.00001)/((np.float(i)+1)/100)) for i in range(100)])
-    KL_divergence[3] = [dist_posi, dist_naive]
+    points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in
+              np.linspace(0, 1, 101)]
+    points_naive = [
+        np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i
+        in np.linspace(0, 1, 101)]
     fig.add_subplot(1, 4, 4)
     plt.plot(grid, points, c='blue', marker='^')
     plt.plot(grid, points_naive, c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.title('Task Sparsity 50%, SNR 3.0-5.0')
+    plt.title('Task Sparsity 0%, SNR 3.0-5.0')
 
-    plt.savefig("50_90_penalty_hess_ub_time3.png")
-
-    print(tuning)
-    print(KL_divergence)
-
-    #scale = [1]
-    #coverage = []
-    #coverage_er = []
-    #lengths = []
-    #lengths_er = []
-
-    #for i in range(len(scale)):
-        #print(scale[i], 'signal')
-        #results = test_coverage(scale[i], nsim=200)
-        #coverage = np.append(coverage, results[0])
-        #print(coverage,"cov")
-        #coverage_er = np.append(coverage_er, 1.64 * results[1] / np.sqrt(100))
-        #lengths = np.append(lengths, results[1])
-        #lengths_er = np.append(lengths_er, 1.64 * results[3] / np.sqrt(100))
-
-    #fig = plt.figure()
-    #plt.errorbar(scale, coverage, yerr=coverage_er)
-    #axes = plt.gca()
-    #axes.set_ylim([0, 1])
-    #plt.ylabel('Mean Coverage')
-    #plt.xlabel('Randomizer Scale (sigma_omega)')
-    #plt.title('Coverage by Randomizer Scale')
-    #plt.savefig("coverage.png")
-    #plt.show()
-
-    #fig = plt.figure()
-    #plt.errorbar(scale, lengths, yerr=lengths_er)
-    #plt.ylabel('Mean Length')
-    #plt.xlabel('Randomizer Scale (sigma_omega)')
-    #plt.title('Length by Randomizer Scale')
-    #plt.savefig("length.png")
-    #plt.show()
-
+    plt.savefig("0_p100.png")
 
 if __name__ == "__main__":
     main()
