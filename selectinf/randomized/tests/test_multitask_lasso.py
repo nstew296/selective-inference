@@ -12,7 +12,7 @@ from selectinf.randomized.multitask_lasso import multi_task_lasso
 from selectinf.tests.instance import gaussian_multitask_instance
 from selectinf.tests.instance import logistic_multitask_instance
 from selectinf.tests.instance import poisson_multitask_instance
-from selectinf.randomized.lasso import lasso, split_lasso, selected_targets
+#from selectinf.randomized.lasso import lasso, split_lasso, selected_targets
 
 
 def test_multitask_lasso_hetero(predictor_vars_train,
@@ -403,58 +403,58 @@ def test_multitask_lasso_data_splitting(predictor_vars_train,
     return np.asarray(coverage), CIs[1:, 1] - CIs[1:, 0], pivot, sensitivity_inference, specificity_inference, error
 
 
-def test_single_task_lasso_posi_hetero(predictor_vars_train,
-                                      response_vars_train,
-                                      predictor_vars_test,
-                                      response_vars_test,
-                                      beta,
-                                      sigma,
-                                      link = "identity"):
+#def test_single_task_lasso_posi_hetero(predictor_vars_train,
+                     #                 response_vars_train,
+                     #                 predictor_vars_test,
+                     #                 response_vars_test,
+                      #                beta,
+                      #                sigma,
+                       #               link = "identity"):
 
-    ntask = len(predictor_vars_train.keys())
-    p = np.shape(beta)[0]
+   # ntask = len(predictor_vars_train.keys())
+    #p = np.shape(beta)[0]
 
-    coverage = []
-    pivot = []
-    CIs = [[0, 0]]
+    #coverage = []
+    #pivot = []
+    #CIs = [[0, 0]]
 
-    for i in range(ntask):
+    #for i in range(ntask):
 
-        W = np.ones(p) * np.sqrt(1.5 * np.log(p)) * sigma[i]
-        W[0] = 0
-        single_task_lasso = split_lasso.gaussian(predictor_vars_train[i],
-                     response_vars_train[i],
-                     W,
-                     0.5)
+       # W = np.ones(p) * np.sqrt(1.5 * np.log(p)) * sigma[i]
+       # W[0] = 0
+        #single_task_lasso = split_lasso.gaussian(predictor_vars_train[i],
+         #            response_vars_train[i],
+         #            W,
+         #            0.5)
 
-        signs = single_task_lasso.fit()
-        nonzero = signs != 0
+       # signs = single_task_lasso.fit()
+       # nonzero = signs != 0
 
-        (observed_target, cov_target, cov_target_score, alternatives) = \
-            selected_targets(single_task_lasso.loglike, single_task_lasso._W, nonzero)
+        #(observed_target, cov_target, cov_target_score, alternatives) = \
+         #   selected_targets(single_task_lasso.loglike, single_task_lasso._W, nonzero)
 
-        MLE_result, observed_info_mean, _ = single_task_lasso.selective_MLE(
-            observed_target,
-            cov_target,
-            cov_target_score)
+       # MLE_result, observed_info_mean, _ = single_task_lasso.selective_MLE(
+        #    observed_target,
+        ##    cov_target,
+        #    cov_target_score)
 
-        final_estimator = np.asarray(MLE_result['MLE'])
+       # final_estimator = np.asarray(MLE_result['MLE'])
 
-        alpha = 1. - 0.90
-        quantile = ndist.ppf(1 - alpha / 2.)
+        #alpha = 1. - 0.90
+        #quantile = ndist.ppf(1 - alpha / 2.)
 
-        intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
-                               final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
+        #intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
+         #                      final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
 
-        beta_target = np.linalg.pinv(predictor_vars_train[i][:, nonzero]).dot(predictor_vars_train[i].dot(beta[:, i]))
+        #beta_target = np.linalg.pinv(predictor_vars_train[i][:, nonzero]).dot(predictor_vars_train[i].dot(beta[:, i]))
 
-        coverage.extend((beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1]))
+        #coverage.extend((beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1]))
 
-        pivot_ = ndist.cdf((final_estimator - beta_target) / np.sqrt(np.diag(observed_info_mean)))
-        pivot.extend(2 * np.minimum(pivot_, 1. - pivot_))
-        CIs = np.vstack([CIs, intervals])
+        #pivot_ = ndist.cdf((final_estimator - beta_target) / np.sqrt(np.diag(observed_info_mean)))
+        #pivot.extend(2 * np.minimum(pivot_, 1. - pivot_))
+        #CIs = np.vstack([CIs, intervals])
 
-    return np.asarray(coverage), CIs[1:, 1] - CIs[1:, 0], np.asarray(pivot)
+   # return np.asarray(coverage), CIs[1:, 1] - CIs[1:, 0], np.asarray(pivot)
 
 
 
