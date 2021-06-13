@@ -390,7 +390,7 @@ class multi_task_lasso():
 
         return initial_solns, initial_subgrads
 
-    def _solve_multitask_problem(self, perturbations=None, num_iter=1000, atol=1.e-3):
+    def _solve_multitask_problem(self, perturbations=None, num_iter=1000, atol=1.e-5):
 
         if perturbations is not None:
             self._initial_omega = perturbations
