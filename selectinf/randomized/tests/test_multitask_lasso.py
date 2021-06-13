@@ -10,7 +10,7 @@ from selectinf.randomized.multitask_lasso import multi_task_lasso
 from selectinf.tests.instance import gaussian_multitask_instance
 from selectinf.tests.instance import logistic_multitask_instance
 from selectinf.tests.instance import poisson_multitask_instance
-from selectinf.randomized.lasso import lasso, split_lasso, selected_targets, full_targets
+from selectinf.randomized.lasso import lasso, selected_targets
 
 
 def test_multitask_lasso_hetero(predictor_vars_train,
