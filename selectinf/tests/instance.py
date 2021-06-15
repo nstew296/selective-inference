@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import random
 
 from scipy.stats import t as tdist
 
@@ -389,7 +390,7 @@ def gaussian_multitask_instance(ntask,
                                 center=True,
                                 equicorrelated=False):
 
-
+    np.random.seed(5)
     predictor_vars= {i: _design(nsamples[i], p, rhos[i], equicorrelated)[0] for i in range(ntask)}
 
     if center:
@@ -410,7 +411,7 @@ def gaussian_multitask_instance(ntask,
         global_nulls = np.random.choice(p, nsignal, replace=False)
         beta[global_nulls, :] = np.zeros((ntask,))
 
-        print(np.delete(range(p), global_nulls))
+        #print(np.delete(range(p), global_nulls))
         for i in np.delete(range(p), global_nulls):
             null_positions = np.random.choice(ntask, int(round(task_sparsity * ntask)), replace=False)
             beta[i, null_positions] = 0.
