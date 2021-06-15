@@ -858,14 +858,14 @@ def main():
     error = {i:[[],[],[],[]] for i in range(length_path)}
 
     lambdamin = 0.5
-    lambdamax = 5.0
+    lambdamax = 3.75
     #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
     #feature_weight_list = np.exp(weights)
     feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
     print(feature_weight_list)
 
     for i in range(len(feature_weight_list)):
-        sims = test_coverage(feature_weight_list[i],[3.0,5.0],100)
+        sims = test_coverage(feature_weight_list[i],[1.0,3.0],100)
         pivot[i][0].extend(sims[0])
         pivot[i][1].extend(sims[1])
         pivot[i][2].extend(sims[2])
@@ -940,7 +940,7 @@ def main():
     plt.tight_layout()
     plt.ylabel('Interval Length')
     plt.title('Interval Length Along Lambda Path')
-    plt.savefig('lengthcompare_strong.png',bbox_inches='tight')
+    plt.savefig('lengthcompare_mod.png',bbox_inches='tight')
 
     fig = plt.figure(figsize=(25, 10))
     first = plt.boxplot(selective_coverage, positions=np.array(xrange(length_path)) * 3, sym='', widths=0.4)
@@ -961,7 +961,7 @@ def main():
     plt.tight_layout()
     plt.ylabel('Coverage')
     plt.title('Coverage Along Lambda Path')
-    plt.savefig('coveragecompare_strong.png',bbox_inches='tight')
+    plt.savefig('coveragecompare_mod.png',bbox_inches='tight')
 
     fig = plt.figure(figsize=(25, 10))
     fig.tight_layout()
@@ -993,7 +993,7 @@ def main():
     plt.ylabel('Average Specificity')
     plt.xlabel('Lambda Value')
     plt.title('Specificity Along Lambda Path')
-    plt.savefig('specificitycompare_strong.png')
+    plt.savefig('specificitycompare_mod.png')
 
 
     fig = plt.figure(figsize=(8, 10))
@@ -1010,7 +1010,7 @@ def main():
     plt.ylabel('Average MSE')
     plt.xlabel('Lambda Value')
     plt.title('Error Along Lambda Path')
-    plt.savefig('errcompare_strong.png',bbox_inches='tight')
+    plt.savefig('errcompare_mod.png',bbox_inches='tight')
 
 
 
