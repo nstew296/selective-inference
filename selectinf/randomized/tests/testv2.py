@@ -858,14 +858,14 @@ def main():
     error = {i:[[],[],[],[]] for i in range(length_path)}
 
     lambdamin = 0.5
-    lambdamax = 5.0
+    lambdamax = 4.0
     #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
     #feature_weight_list = np.exp(weights)
     feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
     print(feature_weight_list)
 
     for i in range(len(feature_weight_list)):
-        sims = test_coverage(feature_weight_list[i],[3.0,5.0],100)
+        sims = test_coverage(feature_weight_list[i],[1.0,3.0],100)
         pivot[i][0].extend(sims[0])
         pivot[i][1].extend(sims[1])
         pivot[i][2].extend(sims[2])
