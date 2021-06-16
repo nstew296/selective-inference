@@ -80,20 +80,18 @@ def test_multitask_lasso_hetero(predictor_vars_train,
                                                randomizer_scales=randomizer_scales)
             active_signs = multi_lasso.fit(perturbations=_initial_omega)
 
-        except:
-            active_signs= np.asarray([])
-
             dispersions = sigma ** 2
 
             estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(
                 dispersions=dispersions)
 
+        except:
+            active_signs= np.asarray([])
+
     coverage = []
     pivot = []
-    intervals = np.asarray([[np.nan,np.nan]])
 
     if (active_signs != 0).sum() > 0:
-
 
         beta_target = []
 
@@ -123,6 +121,7 @@ def test_multitask_lasso_hetero(predictor_vars_train,
         error=0
         for j in range(ntask):
             error += (0.5 * np.linalg.norm(response_vars_test[j], 2) ** 2)/nsamples_test[j]
+        intervals = np.asarray([[np.nan, np.nan]])
 
 
     # Compute snesitivity and specificity after selection
