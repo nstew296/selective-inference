@@ -45,6 +45,11 @@ def test_multitask_lasso_hetero(predictor_vars_train,
 
             active_signs = multi_lasso.fit(perturbations=_initial_omega)
 
+            dispersions = sigma ** 2
+
+            estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(
+                dispersions=dispersions)
+
         except:
             active_signs = np.asarray([])
 
@@ -57,6 +62,11 @@ def test_multitask_lasso_hetero(predictor_vars_train,
                                                 randomizer_scales=randomizer_scales)
 
             active_signs = multi_lasso.fit(perturbations=_initial_omega)
+
+            dispersions = sigma ** 2
+
+            estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(
+                dispersions=dispersions)
 
         except:
             active_signs=np.asarray([])
@@ -73,16 +83,17 @@ def test_multitask_lasso_hetero(predictor_vars_train,
         except:
             active_signs= np.asarray([])
 
+            dispersions = sigma ** 2
+
+            estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(
+                dispersions=dispersions)
+
     coverage = []
     pivot = []
     intervals = np.asarray([[np.nan,np.nan]])
 
     if (active_signs != 0).sum() > 0:
 
-        dispersions = sigma ** 2
-
-        estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(
-            dispersions=dispersions)
 
         beta_target = []
 
