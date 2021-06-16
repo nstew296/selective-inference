@@ -861,7 +861,7 @@ def test_coverage(weight,signal,nsim=100):
             np.asarray(cov), np.asarray(cov_naive), np.asarray(cov_data_splitting), np.asarray(cov_single_task_selective), np.asarray(cov_one_lasso),
             np.asarray(len),np.asarray(len_naive),np.asarray(len_data_splitting),np.asarray(len_single_task_selective), np.asarray(len_one_lasso),
             np.mean(np.asarray(sensitivity_list)),np.mean(np.asarray(sensitivity_list_naive)),np.mean(np.asarray(sensitivity_list_ds)),np.mean(np.asarray(sensitivity_list_single_task_selective)),
-            np.mean(np.asarray(one_lasso_test_error_list)),np.mean(np.asarray(specificity_list)),np.mean(np.asarray(specificity_list_naive)),np.mean(np.asarray(specificity_list_ds)),np.mean(np.asarray(specificity_list_single_task_selective)),
+            np.mean(np.asarray(sensitivity_one_lasso)),np.mean(np.asarray(specificity_list)),np.mean(np.asarray(specificity_list_naive)),np.mean(np.asarray(specificity_list_ds)),np.mean(np.asarray(specificity_list_single_task_selective)),
             np.mean(np.asarray(specificity_one_lasso)), np.mean(np.asarray(test_error_list)),np.mean(np.asarray(naive_test_error_list)),
             np.mean(np.asarray(data_splitting_test_error_list)),np.mean(np.asarray(single_task_selective_test_error_list)),np.mean(np.asarray(one_lasso_test_error_list))])
 
@@ -1042,6 +1042,7 @@ def main():
     ds_sensitivity = [sensitivity[i][2] for i in range(length_path)]
     single_task_sensitivity = [sensitivity[i][3] for i in range(length_path)]
     one_lasso_sensitivity = [sensitivity[i][4] for i in range(length_path)]
+    print(one_lasso_sensitivity)
 
     selective_specificity = [specificity[i][0] for i in range(length_path)]
     naive_specificity = [specificity[i][1] for i in range(length_path)]

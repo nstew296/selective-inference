@@ -861,7 +861,7 @@ def test_coverage(weight,signal,nsim=100):
             np.asarray(cov), np.asarray(cov_naive), np.asarray(cov_data_splitting), np.asarray(cov_single_task_selective), np.asarray(cov_one_lasso),
             np.asarray(len),np.asarray(len_naive),np.asarray(len_data_splitting),np.asarray(len_single_task_selective), np.asarray(len_one_lasso),
             np.mean(np.asarray(sensitivity_list)),np.mean(np.asarray(sensitivity_list_naive)),np.mean(np.asarray(sensitivity_list_ds)),np.mean(np.asarray(sensitivity_list_single_task_selective)),
-            np.mean(np.asarray(one_lasso_test_error_list)),np.mean(np.asarray(specificity_list)),np.mean(np.asarray(specificity_list_naive)),np.mean(np.asarray(specificity_list_ds)),np.mean(np.asarray(specificity_list_single_task_selective)),
+            np.mean(np.asarray(sensitivity_one_lasso)),np.mean(np.asarray(specificity_list)),np.mean(np.asarray(specificity_list_naive)),np.mean(np.asarray(specificity_list_ds)),np.mean(np.asarray(specificity_list_single_task_selective)),
             np.mean(np.asarray(specificity_one_lasso)), np.mean(np.asarray(test_error_list)),np.mean(np.asarray(naive_test_error_list)),
             np.mean(np.asarray(data_splitting_test_error_list)),np.mean(np.asarray(single_task_selective_test_error_list)),np.mean(np.asarray(one_lasso_test_error_list))])
 
@@ -988,14 +988,14 @@ def main():
     error = {i:[[],[],[],[],[]] for i in range(length_path)}
 
     lambdamin = 0.5
-    lambdamax = 4.0
+    lambdamax = 3.5
     #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
     #feature_weight_list = np.exp(weights)
     feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
     print(feature_weight_list)
 
     for i in range(len(feature_weight_list)):
-        sims = test_coverage(feature_weight_list[i],[1.0,3.0],150)
+        sims = test_coverage(feature_weight_list[i],[2.0,3.0],150)
         pivot[i][0].extend(sims[0])
         pivot[i][1].extend(sims[1])
         pivot[i][2].extend(sims[2])
