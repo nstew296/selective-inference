@@ -640,7 +640,7 @@ def test_coverage(weight,signal,nsim=100):
     nsamples= 2000 * np.ones(ntask)
     p=50
     global_sparsity=0.9
-    task_sparsity=0.25
+    task_sparsity= 0.25
     sigma=1. * np.ones(ntask)
     signal_fac=np.array(signal)
     rhos=0.3 * np.ones(ntask)
@@ -977,7 +977,7 @@ def main():
     # plt.title('SNR 3.0-5.0')
     # plt.savefig("boxplot25.png")
 
-    length_path = 10
+    length_path = 20
 
     #Coverage, length, and pivot plots
     coverage = {i:[[],[],[],[],[]] for i in range(length_path)}
