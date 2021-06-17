@@ -35,7 +35,7 @@ for task_sparsity in task_sparsity_list:
 
     for i in range(len(feature_weight_list)):
 
-        sims = test_coverage(feature_weight_list[i],[3.0,5.0],task_sparsity,100)
+        sims = test_coverage(feature_weight_list[i],[3.0,5.0],ts=task_sparsity,nsim=3)
         sensitivity[i][0].append(sims[13])
         sensitivity[i][1].append(sims[14])
         sensitivity[i][2].append(sims[15])

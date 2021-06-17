@@ -602,7 +602,7 @@ def test_one_lasso_posi(predictor_vars_train,
 
 
 def test_coverage(weight,signal,ts = 0.25,nsim=100):
-    np.random.seed(10)
+    np.random.seed(5)
     cov = []
     len = []
     pivots = []

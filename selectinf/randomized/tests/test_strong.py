@@ -602,7 +602,7 @@ def test_one_lasso_posi(predictor_vars_train,
 
 
 def test_coverage(weight,signal,nsim=100):
-    np.random.seed(10)
+    np.random.seed(5)
     cov = []
     len = []
     pivots = []
@@ -867,7 +867,7 @@ def test_coverage(weight,signal,nsim=100):
 
 def main():
 
-    random.seed(5)
+    #random.seed(5)
 
     #signals = [[0.2,0.5],[1.0,3.0],[3.0,5.0],[5.0,8.0]]
     #tuning = {0: [], 1: [], 2: [], 3: []}
@@ -977,7 +977,7 @@ def main():
     # plt.title('SNR 3.0-5.0')
     # plt.savefig("boxplot25.png")
 
-    length_path = 20
+    length_path = 10
 
     #Coverage, length, and pivot plots
     coverage = {i:[[],[],[],[],[]] for i in range(length_path)}
@@ -1074,7 +1074,7 @@ def main():
     set_box_color(fourth, '#c51b8a')
     set_box_color(fifth, '#feb24c')
     plt.plot([], c='#D7191C', label='Randomized Multi-Task Lasso')
-    plt.plot([], c='#2b8cbe', label='Naive Multi-Task Lasso')
+    plt.plot([], c='#2b8cbe', label='Multi-Task Lasso')
     plt.plot([], c='#31a354', label='Data Splitting')
     plt.plot([], c='#c51b8a', label='K Randomized Lassos')
     plt.plot([], c='#feb24c', label='One Randomized Lasso')
@@ -1098,7 +1098,7 @@ def main():
     set_box_color(fourth, '#c51b8a')
     set_box_color(fifth, '#feb24c')
     plt.plot([], c='#D7191C', label='Randomized Multi-Task Lasso')
-    plt.plot([], c='#2b8cbe', label='Naive Multi-Task Lasso')
+    plt.plot([], c='#2b8cbe', label='Multi-Task Lasso')
     plt.plot([], c='#31a354', label='Data Splitting')
     plt.plot([], c='#c51b8a', label='K Randomized Lassos')
     plt.plot([], c='#feb24c', label='One Randomized Lasso')
@@ -1119,7 +1119,7 @@ def main():
     plt.plot(feature_weight_list, single_task_sensitivity, c='#c51b8a')
     plt.plot(feature_weight_list, one_lasso_sensitivity, c='#feb24c')
     plt.plot([], c='#D7191C', label='Randomized Multi-Task Lasso')
-    plt.plot([], c='#2b8cbe', label='Naive Multi-Task Lasso')
+    plt.plot([], c='#2b8cbe', label='Multi-Task Lasso')
     plt.plot([], c='#31a354', label='Data Splitting')
     plt.plot([], c='#c51b8a', label='K Randomized Lassos')
     plt.plot([], c='#feb24c', label='One Randomized Lasso')
@@ -1135,7 +1135,7 @@ def main():
     plt.plot(feature_weight_list, single_task_specifity, c='#c51b8a')
     plt.plot(feature_weight_list, one_lasso_specifity, c='#feb24c')
     plt.plot([], c='#D7191C', label='Randomized Multi-Task Lasso')
-    plt.plot([], c='#2b8cbe', label='Naive Multi-Task Lasso')
+    plt.plot([], c='#2b8cbe', label='Multi-Task Lasso')
     plt.plot([], c='#31a354', label='Data Splitting')
     plt.plot([], c='#c51b8a', label='K Randomized Lassos')
     plt.plot([], c='#feb24c', label='One Randomized Lasso')
@@ -1154,7 +1154,7 @@ def main():
     plt.plot(feature_weight_list, single_selective_error, c='#c51b8a')
     plt.plot(feature_weight_list, one_lasso_error, c='#feb24c')
     plt.plot([], c='#D7191C', label='Randomized Multi-Task Lasso')
-    plt.plot([], c='#2b8cbe', label='Naive Multi-Task Lasso')
+    plt.plot([], c='#2b8cbe', label='Multi-Task Lasso')
     plt.plot([], c='#31a354', label='Data Splitting')
     plt.plot([], c='#c51b8a', label='K Randomized Lassos')
     plt.plot([], c='#feb24c', label='One Randomized Lasso')
