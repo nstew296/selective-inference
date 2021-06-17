@@ -25,7 +25,7 @@ data_splitting_specificity = []
 k_random_lasso_specificity = []
 one_random_lasso_specificity = []
 
-task_sparsity_list = [0.0, 0.25, 0.5]
+task_sparsity_list = [0.0, 0.2, 0.4, 0.6, 0.8]
 for task_sparsity in task_sparsity_list:
     print(task_sparsity)
 
@@ -35,7 +35,7 @@ for task_sparsity in task_sparsity_list:
 
     for i in range(len(feature_weight_list)):
 
-        sims = test_coverage(feature_weight_list[i],[2.0,3.0],task_sparsity,15)
+        sims = test_coverage(feature_weight_list[i],[2.0,3.0],task_sparsity,100)
         sensitivity[i][0].append(sims[13])
         sensitivity[i][1].append(sims[14])
         sensitivity[i][2].append(sims[15])
