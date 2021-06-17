@@ -640,7 +640,7 @@ def test_coverage(weight,signal,nsim=100):
     nsamples= 2000 * np.ones(ntask)
     p=50
     global_sparsity=0.9
-    task_sparsity= 0.25
+    task_sparsity=0.25
     sigma=1. * np.ones(ntask)
     signal_fac=np.array(signal)
     rhos=0.3 * np.ones(ntask)
@@ -867,7 +867,7 @@ def test_coverage(weight,signal,nsim=100):
 
 def main():
 
-    #random.seed(5)
+    random.seed(5)
 
     #signals = [[0.2,0.5],[1.0,3.0],[3.0,5.0],[5.0,8.0]]
     #tuning = {0: [], 1: [], 2: [], 3: []}
@@ -995,7 +995,7 @@ def main():
     print(feature_weight_list)
 
     for i in range(len(feature_weight_list)):
-        sims = test_coverage(feature_weight_list[i],[3.0,5.0],150)
+        sims = test_coverage(feature_weight_list[i],[1.0,5.0],150)
         pivot[i][0].extend(sims[0])
         pivot[i][1].extend(sims[1])
         pivot[i][2].extend(sims[2])
@@ -1042,7 +1042,6 @@ def main():
     ds_sensitivity = [sensitivity[i][2] for i in range(length_path)]
     single_task_sensitivity = [sensitivity[i][3] for i in range(length_path)]
     one_lasso_sensitivity = [sensitivity[i][4] for i in range(length_path)]
-    print(one_lasso_sensitivity)
 
     selective_specificity = [specificity[i][0] for i in range(length_path)]
     naive_specificity = [specificity[i][1] for i in range(length_path)]
@@ -1074,23 +1073,25 @@ def main():
     set_box_color(fourth, '#c51b8a')
     set_box_color(fifth, '#feb24c')
     plt.plot([], c='#D7191C', label='Randomized Multi-Task Lasso')
-    plt.plot([], c='#2b8cbe', label='Multi-Task Lasso')
+    plt.plot([], c='#2b8cbe', label='Naive Multi-Task Lasso')
     plt.plot([], c='#31a354', label='Data Splitting')
     plt.plot([], c='#c51b8a', label='K Randomized Lassos')
     plt.plot([], c='#feb24c', label='One Randomized Lasso')
     plt.legend()
-    plt.xticks(xrange(1, (length_path) * 3 + 1, 3), feature_weight_list)
-    plt.xlim(-1, (length_path - 1) * 3 + 3)
-    max_length = np.max(np.concatenate((np.concatenate(selective_lengths),np.concatenate(naive_lengths),np.concatenate(ds_lengths),np.concatenate(single_selective_lengths),np.concatenate(one_lasso_lengths))))
-    plt.plot(np.argmin(selective_error)*3, max_length, 'ro',c='#D7191C')
-    plt.plot(np.argmin(naive_error)* 3+.3, max_length, 'ro', c='#2b8cbe')
+    max_length = np.max(np.concatenate((np.concatenate(selective_lengths), np.concatenate(naive_lengths),
+                                        np.concatenate(ds_lengths), np.concatenate(single_selective_lengths),
+                                        np.concatenate(one_lasso_lengths))))
+    plt.plot(np.argmin(selective_error) * 3, max_length, 'ro', c='#D7191C')
+    plt.plot(np.argmin(naive_error) * 3 + .3, max_length, 'ro', c='#2b8cbe')
     plt.plot(np.argmin(ds_error) * 3 + .6, max_length, 'ro', c='#31a354')
     plt.plot(np.argmin(single_selective_error) * 3 + 0.9, max_length, 'ro', c='#c51b8a')
     plt.plot(np.argmin(one_lasso_error) * 3 + 1.2, max_length, 'ro', c='#feb24c')
+    plt.xticks(xrange(1, (length_path) * 3 + 1, 3), feature_weight_list)
+    plt.xlim(-1, (length_path - 1) * 3 + 3)
     plt.tight_layout()
     plt.ylabel('Interval Length')
     plt.title('Interval Length Along Lambda Path')
-    plt.savefig('lengthcompare_strong.png', bbox_inches='tight')
+    plt.savefig('lengthcompare_mixed.png', bbox_inches='tight')
 
     fig = plt.figure(figsize=(25, 10))
     first = plt.boxplot(selective_coverage, positions=np.array(xrange(length_path)) * 3, sym='', widths=0.3)
@@ -1104,7 +1105,7 @@ def main():
     set_box_color(fourth, '#c51b8a')
     set_box_color(fifth, '#feb24c')
     plt.plot([], c='#D7191C', label='Randomized Multi-Task Lasso')
-    plt.plot([], c='#2b8cbe', label='Multi-Task Lasso')
+    plt.plot([], c='#2b8cbe', label='Naive Multi-Task Lasso')
     plt.plot([], c='#31a354', label='Data Splitting')
     plt.plot([], c='#c51b8a', label='K Randomized Lassos')
     plt.plot([], c='#feb24c', label='One Randomized Lasso')
@@ -1119,7 +1120,7 @@ def main():
     plt.tight_layout()
     plt.ylabel('Coverage')
     plt.title('Coverage Along Lambda Path')
-    plt.savefig('coveragecompare_strong.png', bbox_inches='tight')
+    plt.savefig('coveragecompare_mixed.png', bbox_inches='tight')
 
     fig = plt.figure(figsize=(25, 10))
     fig.tight_layout()
@@ -1130,7 +1131,7 @@ def main():
     plt.plot(feature_weight_list, single_task_sensitivity, c='#c51b8a')
     plt.plot(feature_weight_list, one_lasso_sensitivity, c='#feb24c')
     plt.plot([], c='#D7191C', label='Randomized Multi-Task Lasso')
-    plt.plot([], c='#2b8cbe', label='Multi-Task Lasso')
+    plt.plot([], c='#2b8cbe', label='Naive Multi-Task Lasso')
     plt.plot([], c='#31a354', label='Data Splitting')
     plt.plot([], c='#c51b8a', label='K Randomized Lassos')
     plt.plot([], c='#feb24c', label='One Randomized Lasso')
@@ -1146,7 +1147,7 @@ def main():
     plt.plot(feature_weight_list, single_task_specifity, c='#c51b8a')
     plt.plot(feature_weight_list, one_lasso_specifity, c='#feb24c')
     plt.plot([], c='#D7191C', label='Randomized Multi-Task Lasso')
-    plt.plot([], c='#2b8cbe', label='Multi-Task Lasso')
+    plt.plot([], c='#2b8cbe', label='Naive Multi-Task Lasso')
     plt.plot([], c='#31a354', label='Data Splitting')
     plt.plot([], c='#c51b8a', label='K Randomized Lassos')
     plt.plot([], c='#feb24c', label='One Randomized Lasso')
@@ -1155,7 +1156,7 @@ def main():
     plt.ylabel('Average Specificity')
     plt.xlabel('Lambda Value')
     plt.title('Specificity Along Lambda Path')
-    plt.savefig('specificitycompare_strong.png')
+    plt.savefig('specificitycompare_mixed.png')
 
 
     fig = plt.figure(figsize=(8, 10))
@@ -1165,7 +1166,7 @@ def main():
     plt.plot(feature_weight_list, single_selective_error, c='#c51b8a')
     plt.plot(feature_weight_list, one_lasso_error, c='#feb24c')
     plt.plot([], c='#D7191C', label='Randomized Multi-Task Lasso')
-    plt.plot([], c='#2b8cbe', label='Multi-Task Lasso')
+    plt.plot([], c='#2b8cbe', label='Naive Multi-Task Lasso')
     plt.plot([], c='#31a354', label='Data Splitting')
     plt.plot([], c='#c51b8a', label='K Randomized Lassos')
     plt.plot([], c='#feb24c', label='One Randomized Lasso')
@@ -1174,7 +1175,7 @@ def main():
     plt.ylabel('Average MSE')
     plt.xlabel('Lambda Value')
     plt.title('Error Along Lambda Path')
-    plt.savefig('errcompare_strong.png',bbox_inches='tight')
+    plt.savefig('errcompare_mixed.png',bbox_inches='tight')
 
 
 
