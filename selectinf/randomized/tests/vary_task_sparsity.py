@@ -35,7 +35,7 @@ for task_sparsity in task_sparsity_list:
 
     for i in range(len(feature_weight_list)):
 
-        sims = test_coverage(feature_weight_list[i],[3.0,5.0],ts=task_sparsity,nsim=3)
+        sims = test_coverage(feature_weight_list[i],[1.0,5.0],ts=task_sparsity,nsim=100)
         sensitivity[i][0].append(sims[13])
         sensitivity[i][1].append(sims[14])
         sensitivity[i][2].append(sims[15])
@@ -130,4 +130,4 @@ plt.tight_layout()
 plt.ylabel('Average Specificity')
 plt.xlabel('Task Sparsity')
 plt.title('Specificity by Task Sparsity')
-plt.savefig('model_selection_compare_strong.png')
+plt.savefig('model_selection_compare_mixed.png')
