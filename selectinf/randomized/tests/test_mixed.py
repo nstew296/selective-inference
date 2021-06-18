@@ -995,7 +995,7 @@ def main():
     print(feature_weight_list)
 
     for i in range(len(feature_weight_list)):
-        sims = test_coverage(feature_weight_list[i],[0.5,5.0],5)
+        sims = test_coverage(feature_weight_list[i],[0.5,5.0],150)
         pivot[i][0].extend(sims[0])
         pivot[i][1].extend(sims[1])
         pivot[i][2].extend(sims[2])
