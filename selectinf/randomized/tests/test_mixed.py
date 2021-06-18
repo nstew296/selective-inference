@@ -532,7 +532,7 @@ def test_one_lasso_posi(predictor_vars_train,
                                            responses_train,
                                            W,
                                            sigma=np.std(responses_train),
-                                           randomizer_scale=1.0)
+                                           randomizer_scale=0.7)
 
         signs = single_task_lasso.fit()
         nonzero = signs != 0
@@ -995,7 +995,7 @@ def main():
     print(feature_weight_list)
 
     for i in range(len(feature_weight_list)):
-        sims = test_coverage(feature_weight_list[i],[0.5,5.0],150)
+        sims = test_coverage(feature_weight_list[i],[0.5,5.0],15)
         pivot[i][0].extend(sims[0])
         pivot[i][1].extend(sims[1])
         pivot[i][2].extend(sims[2])
