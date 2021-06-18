@@ -279,7 +279,7 @@ def test_multitask_lasso_data_splitting(predictor_vars_train,
     p = np.shape(beta)[0]
 
     samples = np.arange(np.int(nsamples[0]))
-    selection = np.random.choice(samples, size=np.int(0.5 * nsamples[0]), replace=False)
+    selection = np.random.choice(samples, size=np.int(0.67 * nsamples[0]), replace=False)
     inference = np.setdiff1d(samples, selection)
     response_vars_selection = {j: response_vars_train[j][selection] for j in range(ntask)}
     predictor_vars_selection = {j: predictor_vars_train[j][selection] for j in range(ntask)}
@@ -747,7 +747,7 @@ def test_coverage(weight,signal,nsim=100):
                                                                              sigma,
                                                                              link="identity",
                                                                              weight=weight,
-                                                                             randomizer_scale= 1.0)
+                                                                             randomizer_scale= 0.7)
 
         if coverage != []:
             cov.append(np.mean(np.asarray(coverage)))
@@ -821,7 +821,7 @@ def test_coverage(weight,signal,nsim=100):
                                                                              sigma,
                                                                              link="identity",
                                                                              weight=weight,
-                                                                             randomizer_scale=1.0)
+                                                                             randomizer_scale=0.7)
 
         if coverage_one_lasso != []:
             cov_one_lasso.append(np.mean(np.asarray(coverage_one_lasso)))
