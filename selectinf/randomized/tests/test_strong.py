@@ -434,7 +434,7 @@ def test_single_task_lasso_posi_hetero(predictor_vars_train,
                      response_vars_train[i],
                      W,
                      sigma=sigma[i],
-                     randomizer_scale=1.0)
+                     randomizer_scale=0.7)
 
         signs = single_task_lasso.fit()
         nonzero = signs != 0
@@ -532,7 +532,7 @@ def test_one_lasso_posi(predictor_vars_train,
                                            responses_train,
                                            W,
                                            sigma=np.std(responses_train),
-                                           randomizer_scale=1.0)
+                                           randomizer_scale=0.7)
 
         signs = single_task_lasso.fit()
         nonzero = signs != 0
@@ -637,7 +637,7 @@ def test_coverage(weight,signal,nsim=100):
     one_lasso_test_error_list = []
 
     ntask = 5
-    nsamples= 2000 * np.ones(ntask)
+    nsamples= 1000 * np.ones(ntask)
     p=50
     global_sparsity=0.9
     task_sparsity= 0.25
@@ -683,7 +683,7 @@ def test_coverage(weight,signal,nsim=100):
                                                                                           signal,
                                                                                           rhos,
                                                                                           random_signs=True,
-                                                                                         equicorrelated=True)[:4]
+                                                                                          equicorrelated=True)[:4]
 
 
     for n in range(nsim):
@@ -747,7 +747,7 @@ def test_coverage(weight,signal,nsim=100):
                                                                              sigma,
                                                                              link="identity",
                                                                              weight=weight,
-                                                                             randomizer_scale= 1.0)
+                                                                             randomizer_scale= 0.7)
 
         if coverage != []:
             cov.append(np.mean(np.asarray(coverage)))
@@ -821,7 +821,7 @@ def test_coverage(weight,signal,nsim=100):
                                                                              sigma,
                                                                              link="identity",
                                                                              weight=weight,
-                                                                             randomizer_scale=1.0)
+                                                                             randomizer_scale=0.7)
 
         if coverage_one_lasso != []:
             cov_one_lasso.append(np.mean(np.asarray(coverage_one_lasso)))

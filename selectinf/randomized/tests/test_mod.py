@@ -23,7 +23,7 @@ def test_multitask_lasso_hetero(predictor_vars_train,
                                 sigma,
                                 link = "identity",
                                 weight = 1.0,
-                                randomizer_scale = 1.0):
+                                randomizer_scale = 0.7):
 
     ntask = len(predictor_vars_train.keys())
     nsamples_test = np.asarray([np.shape(predictor_vars_test[i])[0] for i in range(ntask)])
@@ -444,7 +444,7 @@ def test_single_task_lasso_posi_hetero(predictor_vars_train,
                      response_vars_train[i],
                      W,
                      sigma=sigma[i],
-                     randomizer_scale=1.0)
+                     randomizer_scale=0.7)
 
         signs = single_task_lasso.fit()
         nonzero = signs != 0
@@ -516,7 +516,7 @@ def test_one_lasso_posi(predictor_vars_train,
                                       sigma,
                                       weight,
                                       link = "identity",
-                                      randomizer_scale=1.0):
+                                      randomizer_scale=0.7):
 
     ntask = len(predictor_vars_train.keys())
     nsamples_test = np.asarray([np.shape(predictor_vars_test[i])[0] for i in range(ntask)])
@@ -542,7 +542,7 @@ def test_one_lasso_posi(predictor_vars_train,
                                            responses_train,
                                            W,
                                            sigma=np.std(responses_train),
-                                           randomizer_scale=1.0)
+                                           randomizer_scale=0.7)
 
         signs = single_task_lasso.fit()
         nonzero = signs != 0
@@ -647,7 +647,7 @@ def test_coverage(weight,signal,nsim=100):
     one_lasso_test_error_list = []
 
     ntask = 5
-    nsamples= 2000 * np.ones(ntask)
+    nsamples= 1000 * np.ones(ntask)
     p=50
     global_sparsity=0.9
     task_sparsity=0.25
@@ -757,7 +757,7 @@ def test_coverage(weight,signal,nsim=100):
                                                                              sigma,
                                                                              link="identity",
                                                                              weight=weight,
-                                                                             randomizer_scale= 1.0)
+                                                                             randomizer_scale= 0.7)
 
         if coverage != []:
             cov.append(np.mean(np.asarray(coverage)))
@@ -831,7 +831,7 @@ def test_coverage(weight,signal,nsim=100):
                                                                              sigma,
                                                                              link="identity",
                                                                              weight=weight,
-                                                                             randomizer_scale=1.0)
+                                                                             randomizer_scale=0.7)
 
         if coverage_one_lasso != []:
             cov_one_lasso.append(np.mean(np.asarray(coverage_one_lasso)))
@@ -1005,7 +1005,7 @@ def main():
     print(feature_weight_list)
 
     for i in range(len(feature_weight_list)):
-        sims = test_coverage(feature_weight_list[i],[2.0,3.0],150)
+        sims = test_coverage(feature_weight_list[i],[1.0,3.0],150)
         pivot[i][0].extend(sims[0])
         pivot[i][1].extend(sims[1])
         pivot[i][2].extend(sims[2])
