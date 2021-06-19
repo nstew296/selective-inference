@@ -7,7 +7,7 @@ from selectinf.randomized.tests.test_multitask_lasso_2 import test_coverage
 length_path = 10
 
 lambdamin = 0.5
-lambdamax = 4.0
+lambdamax = 3.75
 #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
 #feature_weight_list = np.exp(weights)
 feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
@@ -35,7 +35,7 @@ for task_sparsity in task_sparsity_list:
 
     for i in range(len(feature_weight_list)):
 
-        sims = test_coverage(feature_weight_list[i],[3.0,5.0],ts=task_sparsity,nsim=100)
+        sims = test_coverage(feature_weight_list[i],[1.0,3.0],ts=task_sparsity,nsim=100)
         sensitivity[i][0].append(sims[13])
         sensitivity[i][1].append(sims[14])
         sensitivity[i][2].append(sims[15])
@@ -130,4 +130,4 @@ plt.tight_layout()
 plt.ylabel('Average Specificity')
 plt.xlabel('Task Sparsity')
 plt.title('Specificity by Task Sparsity')
-plt.savefig('model_selection_compare_strong.png')
+plt.savefig('model_selection_compare_weak.png')
