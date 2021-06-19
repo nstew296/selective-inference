@@ -289,7 +289,7 @@ def test_multitask_lasso_data_splitting(predictor_vars_train,
     p = np.shape(beta)[0]
 
     samples = np.arange(np.int(nsamples[0]))
-    selection = np.random.choice(samples, size=np.int(0.5 * nsamples[0]), replace=False)
+    selection = np.random.choice(samples, size=np.int(0.67 * nsamples[0]), replace=False)
     inference = np.setdiff1d(samples, selection)
     response_vars_selection = {j: response_vars_train[j][selection] for j in range(ntask)}
     predictor_vars_selection = {j: predictor_vars_train[j][selection] for j in range(ntask)}
