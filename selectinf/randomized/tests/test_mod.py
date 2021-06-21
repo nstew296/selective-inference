@@ -650,7 +650,7 @@ def test_coverage(weight,signal,nsim=100):
     nsamples= 1000 * np.ones(ntask)
     p=100
     global_sparsity=0.9
-    task_sparsity= 0.25
+    task_sparsity= 0.40
     sigma=1. * np.ones(ntask)
     signal_fac=np.array(signal)
     rhos=0.3 * np.ones(ntask)
@@ -1064,7 +1064,7 @@ def main():
     plt.tight_layout()
     plt.ylabel('Interval Length')
     plt.title('Interval Length Along Lambda Path')
-    plt.savefig('lengthcompare_mod.png', bbox_inches='tight')
+    plt.savefig('lengthcompare_mod_ts40.png', bbox_inches='tight')
 
     fig = plt.figure(figsize=(25, 10))
     first = plt.boxplot(selective_coverage, positions=np.array(xrange(length_path)) * 3, sym='', widths=0.3)
@@ -1089,7 +1089,7 @@ def main():
     plt.tight_layout()
     plt.ylabel('Coverage')
     plt.title('Coverage Along Lambda Path')
-    plt.savefig('coveragecompare_mod.png', bbox_inches='tight')
+    plt.savefig('coveragecompare_mod_ts40.png', bbox_inches='tight')
 
     fig = plt.figure(figsize=(25, 10))
     fig.tight_layout()
@@ -1141,7 +1141,7 @@ def main():
     plt.ylabel('Average Specificity')
     plt.xlabel('Lambda Value')
     plt.title('Specificity Along Lambda Path')
-    plt.savefig('specificitycompare_mod.png')
+    plt.savefig('specificitycompare_mod_ts40.png')
 
 
     fig = plt.figure(figsize=(8, 10))
@@ -1158,7 +1158,7 @@ def main():
     plt.ylabel('Average MSE')
     plt.xlabel('Lambda Value')
     plt.title('Error Along Lambda Path')
-    plt.savefig('errcompare_mod.png',bbox_inches='tight')
+    plt.savefig('errcompare_mod_ts40.png',bbox_inches='tight')
 
 
 
