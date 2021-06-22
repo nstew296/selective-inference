@@ -150,8 +150,8 @@ fig = plt.figure(figsize=(11,4))
 ax1 = fig.add_subplot(121)
 ax2 = fig.add_subplot(122)
 
-sns.pointplot(x="Task Sparsity", y="Coverage", hue_order=order, markers='o', hue="method", data=df, ax=ax1, palette=cols)
-sns.pointplot(x="Task Sparsity", y="Length",   hue_order=order,  markers='o', hue="method", data=df, ax=ax2, palette=cols)
+sns.pointplot(x="Task Sparsity", y="Coverage", hue_order=order, markers='o', hue="Method", data=df, ax=ax1, palette=cols)
+sns.pointplot(x="Task Sparsity", y="Length",   hue_order=order,  markers='o', hue="Method", data=df, ax=ax2, palette=cols)
 
 ax1.set_title("Coverage", y = 1.01)
 ax2.set_title("Length", y = 1.01)
