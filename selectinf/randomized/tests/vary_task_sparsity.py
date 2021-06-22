@@ -134,6 +134,9 @@ for task_sparsity in task_sparsity_list:
 
 print(df)
 
+cols = ['#2b8cbe', '#D7191C', '#31a354', '#feb24c']
+order = ['random_multitask','naive_multitask','data_splitting','k_random_lasso']
+
 sns.set(font_scale=2) # fond size
 sns.set_style("white", {'axes.facecolor': 'white',
                         'axes.grid': True,
@@ -150,8 +153,8 @@ ax2 = fig.add_subplot(132)
 sns.pointplot(x="num_true_sigs", y="coverage", hue_order=order, markers='o', hue="method", data=df, ax=ax1, palette=cols)
 sns.pointplot(x="num_true_sigs", y="length",   hue_order=order,  markers='o', hue="method", data=df, ax=ax2, palette=cols)
 
-ax1.set_title("coverage", y = 1.01)
-ax2.set_title("length", y = 1.01)
+ax1.set_title("Coverage", y = 1.01)
+ax2.set_title("Length", y = 1.01)
 
 ax1.legend_.remove()
 ax2.legend_.remove()
