@@ -117,25 +117,26 @@ for task_sparsity in task_sparsity_list:
     k_random_lasso_specificity.extend(single_task_specificity[idx_min_k_random_lasso])
     if random_multitask_coverage!=[]:
         print("here")
-        df = df.append(pd.DataFrame(np.array([[task_sparsity,'random_multitask',random_multitask_coverage[i],random_multitask_length[i]] for i in range(len(random_multitask_coverage))]),
+        df = df.append(pd.DataFrame(np.array([[task_sparsity,'Randomized Multitask Lasso',random_multitask_coverage[i],random_multitask_length[i]] for i in range(len(random_multitask_coverage))]),
                    columns=['Task Sparsity', 'Method', 'Coverage', 'Length']))
     if naive_multitask_coverage !=[]:
         df = df.append(pd.DataFrame(np.array(
-        [[task_sparsity, 'naive_multitask', naive_multitask_coverage[i], naive_multitask_length[i]] for i in
+        [[task_sparsity, 'Multitask Lasso', naive_multitask_coverage[i], naive_multitask_length[i]] for i in
          range(len(naive_multitask_coverage))]), columns=['Task Sparsity', 'Method', 'Coverage', 'Length']))
     if data_splitting_coverage!=[]:
         df = df.append(pd.DataFrame(np.array(
-        [[task_sparsity, 'data_splitting', data_splitting_coverage[i], data_splitting_length[i]] for i in
+        [[task_sparsity, 'Data Splitting', data_splitting_coverage[i], data_splitting_length[i]] for i in
          range(len(data_splitting_coverage))]), columns=['Task Sparsity', 'Method', 'Coverage', 'Length']))
     if k_random_lasso_coverage!=[]:
         df = df.append(pd.DataFrame(np.array(
-        [[task_sparsity, 'k_random_lasso', k_random_lasso_coverage[i], k_random_lasso_length[i]] for i in
+        [[task_sparsity, 'K Randomized Lassos', k_random_lasso_coverage[i], k_random_lasso_length[i]] for i in
          range(len(k_random_lasso_coverage))]), columns=['Task Sparsity', 'Method', 'Coverage', 'Length']))
 
-print(df)
+
+df = df.astype({"Task Sparsity": float, "Method": str, "Coverage":float,"Length":float})
 
 cols = ['#2b8cbe', '#D7191C', '#31a354', '#feb24c']
-order = ['random_multitask','naive_multitask','data_splitting','k_random_lasso']
+order = ['Randomized Multitask Lasso','Multitask Lasso','Data Splitting','K Randomized Lassos']
 
 sns.set(font_scale=2) # fond size
 sns.set_style("white", {'axes.facecolor': 'white',
@@ -146,7 +147,7 @@ sns.set_style("white", {'axes.facecolor': 'white',
                         'xtick.major.size': 5.0,
                        })
 
-fig = plt.figure(figsize=(11,4))
+fig = plt.figure(figsize=(15,5))
 ax1 = fig.add_subplot(121)
 ax2 = fig.add_subplot(122)
 
@@ -157,26 +158,25 @@ ax1.set_title("Coverage", y = 1.01)
 ax2.set_title("Length", y = 1.01)
 
 ax1.legend_.remove()
-ax2.legend_.remove()
+ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
-ax1.set_ylim(0,1)
+ax1.set_ylim(0,1.05)
 
 def common_format(ax):
     ax.grid(True, which='both')
-    ax.set_xlabel('', fontsize=22)
-    # ax.yaxis.label.set_size(22)
-    ax.set_ylabel('', fontsize=22)
+    ax.set_xlabel('', fontsize=10)
+    ax.set_ylabel('', fontsize=10)
     return ax
 
 common_format(ax1)
 common_format(ax2)
-fig.text(0.5, -0.04, 'Task Sparsity (Percentage)', fontsize=22, ha='center')
+fig.text(0.4, -0.04, 'Task Sparsity (Percentage)', fontsize=20, ha='center')
 
 # add target coverage on the first plot
 ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-plt.savefig('cov_len_by_ts.png', bbox_inches='tight')
+plt.savefig('cov_len_by_ts_test.png', bbox_inches='tight')
 
 
 fig = plt.figure(figsize=(25, 10))
