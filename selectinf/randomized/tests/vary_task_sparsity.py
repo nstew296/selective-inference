@@ -47,7 +47,7 @@ for task_sparsity in task_sparsity_list:
 
     for i in range(len(feature_weight_list)):
 
-        sims = test_coverage(feature_weight_list[i],[0.2,3.0],ts=task_sparsity,nsim=100)
+        sims = test_coverage(feature_weight_list[i],[1.0,3.0],ts=task_sparsity,nsim=100)
         coverage[i][0].extend(sims[3])
         coverage[i][1].extend(sims[4])
         coverage[i][2].extend(sims[5])
@@ -178,7 +178,7 @@ fig.text(0.4, -0.04, 'Task Sparsity (Percentage)', fontsize=20, ha='center')
 ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-plt.savefig('cov_len_by_ts_weak.png', bbox_inches='tight')
+plt.savefig('cov_len_by_ts_mod.png', bbox_inches='tight')
 
 
 fig = plt.figure(figsize=(25, 10))
