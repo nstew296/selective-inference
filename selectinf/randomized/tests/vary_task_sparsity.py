@@ -6,7 +6,7 @@ import pandas as pd
 import seaborn as sns
 from selectinf.randomized.tests.test_multitask_lasso_2 import test_coverage
 
-length_path = 10
+length_path = 5
 
 lambdamin = 1.5
 lambdamax = 3.75
@@ -47,7 +47,7 @@ for task_sparsity in task_sparsity_list:
 
     for i in range(len(feature_weight_list)):
 
-        sims = test_coverage(feature_weight_list[i],[1.0,3.0],ts=task_sparsity,nsim=2)
+        sims = test_coverage(feature_weight_list[i],[1.0,3.0],ts=task_sparsity,nsim=1)
         coverage[i][0].extend(sims[3])
         coverage[i][1].extend(sims[4])
         coverage[i][2].extend(sims[5])
@@ -117,23 +117,25 @@ for task_sparsity in task_sparsity_list:
     k_random_lasso_specificity.extend(single_task_specificity[idx_min_k_random_lasso])
     if random_multitask_coverage!=[]:
         print("here")
-        df = df.append(pd.DataFrame(np.array([[task_sparsity,'Randomized Multitask Lasso',random_multitask_coverage[i],random_multitask_length[i]] for i in range(len(random_multitask_coverage))]),
+        df = df.append(pd.DataFrame(np.array([[task_sparsity,'Randomized Multitask Lasso',random_multitask_coverage[i].astype(int),random_multitask_length[i]] for i in range(len(random_multitask_coverage))]),
                    columns=['Task Sparsity', 'Method', 'Coverage', 'Length']))
     if naive_multitask_coverage !=[]:
         df = df.append(pd.DataFrame(np.array(
-        [[task_sparsity, 'Multitask Lasso', naive_multitask_coverage[i], naive_multitask_length[i]] for i in
+        [[task_sparsity, 'Multitask Lasso', naive_multitask_coverage[i].astype(int), naive_multitask_length[i]] for i in
          range(len(naive_multitask_coverage))]), columns=['Task Sparsity', 'Method', 'Coverage', 'Length']))
     if data_splitting_coverage!=[]:
         df = df.append(pd.DataFrame(np.array(
-        [[task_sparsity, 'Data Splitting', data_splitting_coverage[i], data_splitting_length[i]] for i in
+        [[task_sparsity, 'Data Splitting', data_splitting_coverage[i].astype(int), data_splitting_length[i]] for i in
          range(len(data_splitting_coverage))]), columns=['Task Sparsity', 'Method', 'Coverage', 'Length']))
     if k_random_lasso_coverage!=[]:
         df = df.append(pd.DataFrame(np.array(
-        [[task_sparsity, 'K Randomized Lassos', k_random_lasso_coverage[i], k_random_lasso_length[i]] for i in
+        [[task_sparsity, 'K Randomized Lassos', k_random_lasso_coverage[i].astype(int), k_random_lasso_length[i]] for i in
          range(len(k_random_lasso_coverage))]), columns=['Task Sparsity', 'Method', 'Coverage', 'Length']))
 
 
-df = df.astype({"Task Sparsity": float, "Method": str, "Coverage":float,"Length":float})
+df = df.astype({"Task Sparsity": float, "Method": str, "Coverage":int,"Length":float})
+
+print(df)
 
 cols = ['#2b8cbe', '#D7191C', '#31a354', '#feb24c']
 order = ['Randomized Multitask Lasso','Multitask Lasso','Data Splitting','K Randomized Lassos']
