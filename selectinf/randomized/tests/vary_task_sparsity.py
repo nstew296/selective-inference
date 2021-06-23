@@ -8,7 +8,7 @@ from selectinf.randomized.tests.test_multitask_lasso_2 import test_coverage
 
 length_path = 10
 
-lambdamin = 1.5
+lambdamin = 0.5
 lambdamax = 3.75
 #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
 #feature_weight_list = np.exp(weights)
@@ -47,7 +47,7 @@ for task_sparsity in task_sparsity_list:
 
     for i in range(len(feature_weight_list)):
 
-        sims = test_coverage(feature_weight_list[i],[1.0,3.0],ts=task_sparsity,nsim=1)
+        sims = test_coverage(feature_weight_list[i],[0.2,3.0],ts=task_sparsity,nsim=100)
         coverage[i][0].extend(sims[3])
         coverage[i][1].extend(sims[4])
         coverage[i][2].extend(sims[5])
@@ -146,7 +146,7 @@ sns.set_style("white", {'axes.facecolor': 'white',
                         'axes.linewidth': 2.0,
                         'grid.linestyle': u'--',
                         'grid.linewidth': 4.0,
-                        'xtick.major.size': 5.0,
+                        'xtick.major.size': 3.0,
                        })
 
 fig = plt.figure(figsize=(15,5))
@@ -162,7 +162,7 @@ ax2.set_title("Length", y = 1.01)
 ax1.legend_.remove()
 ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
-ax1.set_ylim(0.6,1.05)
+ax1.set_ylim(0.5,1.05)
 
 def common_format(ax):
     ax.grid(True, which='both')
@@ -178,7 +178,7 @@ fig.text(0.4, -0.04, 'Task Sparsity (Percentage)', fontsize=20, ha='center')
 ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-plt.savefig('cov_len_by_ts_test.png', bbox_inches='tight')
+plt.savefig('cov_len_by_ts_weak.png', bbox_inches='tight')
 
 
 fig = plt.figure(figsize=(25, 10))
