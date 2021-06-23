@@ -6,7 +6,7 @@ import pandas as pd
 import seaborn as sns
 from selectinf.randomized.tests.test_multitask_lasso_2 import test_coverage
 
-length_path = 5
+length_path = 10
 
 lambdamin = 1.5
 lambdamax = 3.75
@@ -162,12 +162,12 @@ ax2.set_title("Length", y = 1.01)
 ax1.legend_.remove()
 ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
-ax1.set_ylim(0,1.05)
+ax1.set_ylim(0.6,1.05)
 
 def common_format(ax):
     ax.grid(True, which='both')
-    ax.set_xlabel('', fontsize=10)
-    ax.set_ylabel('', fontsize=10)
+    ax.set_xlabel('', fontsize=5)
+    ax.set_ylabel('', fontsize=5)
     return ax
 
 common_format(ax1)
