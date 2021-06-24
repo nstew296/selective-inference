@@ -33,7 +33,7 @@ for j in range(len(task_sparsity_list)):
 
     for i in range(len(feature_weight_list)):
         print((i,j),"(i,j)")
-        sims = test_coverage(feature_weight_list[i],[1.0,3.0],ts=task_sparsity_list[j],nsim=30)
+        sims = test_coverage(feature_weight_list[i],[3.0,5.0],ts=task_sparsity_list[j],nsim=30)
         coverage[i][0].extend(sims[3])
         coverage[i][1].extend(sims[4])
         coverage[i][2].extend(sims[5])
@@ -173,7 +173,7 @@ common_format(ax2)
 ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-plt.savefig('cov_len_by_ts_mod.png', bbox_inches='tight')
+plt.savefig('cov_len_by_ts_strong.png', bbox_inches='tight')
 
 
 #fig = plt.figure(figsize=(25, 10))
