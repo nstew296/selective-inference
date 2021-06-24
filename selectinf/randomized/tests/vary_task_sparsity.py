@@ -32,8 +32,8 @@ for j in range(len(task_sparsity_list)):
     error = {i: [[], [], [], []] for i in range(length_path)}
 
     for i in range(len(feature_weight_list)):
-
-        sims = test_coverage(feature_weight_list[i],[3.0,5.0],ts=task_sparsity_list[j],nsim=50)
+        print((i,j),"(i,j)")
+        sims = test_coverage(feature_weight_list[i],[1.0,3.0],ts=task_sparsity_list[j],nsim=30)
         coverage[i][0].extend(sims[3])
         coverage[i][1].extend(sims[4])
         coverage[i][2].extend(sims[5])
@@ -109,7 +109,7 @@ def set_box_color(bp, color):
     plt.setp(bp['caps'], color=color)
     plt.setp(bp['medians'], color=color)
 
-fig = plt.figure(figsize=(15,5))
+fig = plt.figure(figsize=(16,7))
 ax1 = fig.add_subplot(121)
 ax2 = fig.add_subplot(122)
 plt.sca(ax2)
@@ -129,7 +129,7 @@ plt.legend()
 plt.xticks(xrange(1, (length) * 3 + 1, 3), [round(num, 1) for num in task_sparsity_list])
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.tight_layout()
-plt.ylabel('Interval Length')
+plt.ylabel('Interval Length',fontsize=12)
 plt.xlabel('Lambda Value')
 plt.title('Interval Length Along Lambda Path')
 
@@ -151,31 +151,29 @@ plt.legend()
 plt.xticks(xrange(1, (length) * 3 + 1, 3), [round(num, 1) for num in task_sparsity_list])
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.tight_layout()
-plt.ylabel('Interval Length')
+plt.ylabel('Coverage',fontsize=12)
 plt.xlabel('Lambda Value')
 plt.title('Interval Length Along Lambda Path')
 
 ax1.set_title("Coverage", y = 1.01)
 ax2.set_title("Length", y = 1.01)
 
-ax1.legend_.remove()
-ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+ax2.legend_.remove()
+ax1.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.3))
 
 def common_format(ax):
     ax.grid(True, which='both',color='#f0f0f0')
-    ax.set_xlabel('', fontsize=5)
-    ax.set_ylabel('', fontsize=5)
+    ax.set_xlabel('Task Sparsity', fontsize=12)
     return ax
 
 common_format(ax1)
 common_format(ax2)
-fig.text(0.4, -0.04, 'Task Sparsity (Percentage)', fontsize=16, ha='center')
 
 # add target coverage on the first plot
 ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-plt.savefig('cov_len_by_ts_strong.png', bbox_inches='tight')
+plt.savefig('cov_len_by_ts_mod.png', bbox_inches='tight')
 
 
 #fig = plt.figure(figsize=(25, 10))
