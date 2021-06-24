@@ -750,7 +750,7 @@ def test_coverage(weight,signal,ts,nsim=100):
                                                                              randomizer_scale= 0.7)
 
         if coverage != []:
-            cov.extend(coverage)
+            cov.append(np.mean(np.asarray(coverage)))
             len.extend(length)
             pivots.extend(pivot)
         sensitivity_list.append(sns)
@@ -768,7 +768,7 @@ def test_coverage(weight,signal,ts,nsim=100):
                                                                              link="identity")
 
         if coverage_naive != []:
-            cov_naive.extend(coverage_naive)
+            cov_naive.append(np.mean(np.asarray(coverage_naive)))
             len_naive.extend(length_naive)
             pivots_naive.extend(pivot_naive)
         sensitivity_list_naive.append(naive_sensitivity)
@@ -788,7 +788,7 @@ def test_coverage(weight,signal,ts,nsim=100):
                                                                              link="identity")
 
         if coverage_data_splitting!=[]:
-            cov_data_splitting.extend(coverage_data_splitting)
+            cov_data_splitting.append(np.mean(np.asarray(coverage_data_splitting)))
             len_data_splitting.extend(length_data_splitting)
             pivots_data_splitting.extend(pivot_data_splitting)
         sensitivity_list_ds.append(sns_ds)
@@ -807,7 +807,7 @@ def test_coverage(weight,signal,ts,nsim=100):
 
 
         if coverage_single_task_selective!=[]:
-            cov_single_task_selective.extend(coverage_single_task_selective)
+            cov_single_task_selective.append(np.mean(np.asarray(coverage_single_task_selective)))
             len_single_task_selective.extend(length_single_task_selective)
         sensitivity_list_single_task_selective.append(sns_single_task)
         specificity_list_single_task_selective.append(spc_single_task)
