@@ -6,7 +6,7 @@ import pandas as pd
 import seaborn as sns
 from selectinf.randomized.tests.test_multitask_lasso_2 import test_coverage
 
-length_path = 10
+length_path = 5
 
 lambdamin = 0.5
 lambdamax = 3.75
@@ -47,7 +47,7 @@ for task_sparsity in task_sparsity_list:
 
     for i in range(len(feature_weight_list)):
 
-        sims = test_coverage(feature_weight_list[i],[1.0,3.0],ts=task_sparsity,nsim=10)
+        sims = test_coverage(feature_weight_list[i],[0.2,3.0],ts=task_sparsity,nsim=1)
         coverage[i][0].extend(sims[3])
         coverage[i][1].extend(sims[4])
         coverage[i][2].extend(sims[5])
@@ -140,7 +140,7 @@ print(df)
 cols = ['#2b8cbe', '#D7191C', '#31a354', '#feb24c']
 order = ['Randomized Multitask Lasso','Multitask Lasso','Data Splitting','K Randomized Lassos']
 
-sns.set(font_scale=2) # fond size
+sns.set(font_scale=1.5) # fond size
 sns.set_style("white", {'axes.facecolor': 'white',
                         'axes.grid': True,
                         'axes.linewidth': 2.0,
@@ -162,7 +162,7 @@ ax2.set_title("Length", y = 1.01)
 ax1.legend_.remove()
 ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
-ax1.set_ylim(0.5,1.05)
+ax1.set_ylim(0.7,1.05)
 
 def common_format(ax):
     ax.grid(True, which='both')
