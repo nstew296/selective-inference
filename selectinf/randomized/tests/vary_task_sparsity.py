@@ -6,7 +6,7 @@ import pandas as pd
 import seaborn as sns
 from selectinf.randomized.tests.test_multitask_lasso_2 import test_coverage
 
-length_path = 5
+length_path =10
 
 lambdamin = 0.5
 lambdamax = 3.75
@@ -47,7 +47,7 @@ for task_sparsity in task_sparsity_list:
 
     for i in range(len(feature_weight_list)):
 
-        sims = test_coverage(feature_weight_list[i],[0.2,3.0],ts=task_sparsity,nsim=1)
+        sims = test_coverage(feature_weight_list[i],[1.0,3.0],ts=task_sparsity,nsim=30)
         coverage[i][0].extend(sims[3])
         coverage[i][1].extend(sims[4])
         coverage[i][2].extend(sims[5])
