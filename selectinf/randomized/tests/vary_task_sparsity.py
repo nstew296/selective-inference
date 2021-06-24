@@ -6,9 +6,9 @@ import pandas as pd
 import seaborn as sns
 from selectinf.randomized.tests.test_multitask_lasso_2 import test_coverage
 
-length_path =10
+length_path =5
 
-lambdamin = 0.5
+lambdamin = 1.5
 lambdamax = 3.75
 #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
 #feature_weight_list = np.exp(weights)
@@ -47,7 +47,7 @@ for task_sparsity in task_sparsity_list:
 
     for i in range(len(feature_weight_list)):
 
-        sims = test_coverage(feature_weight_list[i],[1.0,3.0],ts=task_sparsity,nsim=30)
+        sims = test_coverage(feature_weight_list[i],[3.0,5.0],ts=task_sparsity,nsim=2)
         coverage[i][0].extend(sims[3])
         coverage[i][1].extend(sims[4])
         coverage[i][2].extend(sims[5])
@@ -153,8 +153,8 @@ fig = plt.figure(figsize=(15,5))
 ax1 = fig.add_subplot(121)
 ax2 = fig.add_subplot(122)
 
-sns.pointplot(x="Task Sparsity", y="Coverage", hue_order=order, markers='o', hue="Method", data=df, ax=ax1, palette=cols)
-sns.pointplot(x="Task Sparsity", y="Length",   hue_order=order,  markers='o', hue="Method", data=df, ax=ax2, palette=cols)
+sns.boxplot(x="Task Sparsity", y="Coverage", hue_order=order, hue="Method", data=df, ax=ax1, palette=cols)
+sns.boxplot(x="Task Sparsity", y="Length",   hue_order=order, hue="Method", data=df, ax=ax2, palette=cols)
 
 ax1.set_title("Coverage", y = 1.01)
 ax2.set_title("Length", y = 1.01)
