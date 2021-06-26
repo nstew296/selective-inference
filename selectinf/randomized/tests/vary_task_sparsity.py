@@ -6,9 +6,9 @@ import pandas as pd
 #import seaborn as sns
 from selectinf.randomized.tests.test_multitask_lasso_2 import test_coverage
 
-length_path = 10
+length_path = 8
 
-lambdamin = 0.5
+lambdamin = 0.75
 lambdamax = 4.0
 #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
 #feature_weight_list = np.exp(weights)
@@ -33,7 +33,7 @@ for j in range(len(task_sparsity_list)):
 
     for i in range(len(feature_weight_list)):
         print((i,j),"(i,j)")
-        sims = test_coverage(feature_weight_list[i],[0.2,3.0],ts=task_sparsity_list[j],nsim=30)
+        sims = test_coverage(feature_weight_list[i],[0.5,5.0],ts=task_sparsity_list[j],nsim=100)
         coverage[i][0].extend(sims[3])
         coverage[i][1].extend(sims[4])
         coverage[i][2].extend(sims[5])
@@ -42,14 +42,14 @@ for j in range(len(task_sparsity_list)):
         length[i][1].extend(sims[8])
         length[i][2].extend(sims[9])
         length[i][3].extend(sims[10])
-        sensitivity[i][0].append(sims[11])
-        sensitivity[i][1].append(sims[12])
-        sensitivity[i][2].append(sims[13])
-        sensitivity[i][3].append(sims[14])
-        specificity[i][0].append(sims[15])
-        specificity[i][1].append(sims[16])
-        specificity[i][2].append(sims[17])
-        specificity[i][3].append(sims[18])
+        sensitivity[i][0].extend(sims[11])
+        sensitivity[i][1].extend(sims[12])
+        sensitivity[i][2].extend(sims[13])
+        sensitivity[i][3].extend(sims[14])
+        specificity[i][0].extend(sims[15])
+        specificity[i][1].extend(sims[16])
+        specificity[i][2].extend(sims[17])
+        specificity[i][3].extend(sims[18])
         error[i][0].append(sims[19])
         error[i][1].append(sims[20])
         error[i][2].append(sims[21])
@@ -109,31 +109,12 @@ def set_box_color(bp, color):
     plt.setp(bp['caps'], color=color)
     plt.setp(bp['medians'], color=color)
 
-fig = plt.figure(figsize=(16,7))
-ax1 = fig.add_subplot(121)
-ax2 = fig.add_subplot(122)
-plt.sca(ax2)
-first = plt.boxplot([length_by_ts[j][0] for j in range(len(task_sparsity_list))], positions=np.array(xrange(length)) * 3, sym='', widths=0.3)
-second = plt.boxplot([length_by_ts[j][1] for j in range(len(task_sparsity_list))], positions=np.array(xrange(length)) * 3 + .3, sym='', widths=0.3)
-third = plt.boxplot([length_by_ts[j][2] for j in range(len(task_sparsity_list))], positions=np.array(xrange(length)) * 3 + .6, sym='', widths=0.3)
-fourth = plt.boxplot([length_by_ts[j][3] for j in range(len(task_sparsity_list))], positions=np.array(xrange(length)) * 3 + 0.9, sym='',widths=0.3)
-set_box_color(first, '#2b8cbe')  # colors are from http://colorbrewer2.org/
-set_box_color(second, '#D7191C')
-set_box_color(third, '#31a354')
-set_box_color(fourth, '#feb24c')
-plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso')
-plt.plot([], c='#D7191C', label='Multi-Task Lasso')
-plt.plot([], c='#31a354', label='Data Splitting')
-plt.plot([], c='#feb24c', label='K Randomized Lassos')
-plt.legend()
-plt.xticks(xrange(1, (length) * 3 + 1, 3), [round(num, 1) for num in task_sparsity_list])
-plt.xlim(-1, (length - 1) * 3 + 3)
-plt.tight_layout()
-plt.ylabel('Interval Length',fontsize=12)
-plt.xlabel('Lambda Value')
-plt.title('Interval Length Along Lambda Path')
+fig = plt.figure(figsize=(16,14))
+ax1 = fig.add_subplot(221)
+ax2 = fig.add_subplot(222)
+ax3 = fig.add_subplot(223)
+ax4 = fig.add_subplot(224)
 
-print(coverage_by_ts)
 plt.sca(ax1)
 first = plt.boxplot([coverage_by_ts[j][0] for j in range(len(task_sparsity_list))], positions=np.array(xrange(length)) * 3, sym='', widths=0.3)
 second = plt.boxplot([coverage_by_ts[j][1] for j in range(len(task_sparsity_list))], positions=np.array(xrange(length)) * 3 + .3, sym='', widths=0.3)
@@ -155,11 +136,57 @@ plt.ylabel('Coverage',fontsize=12)
 plt.xlabel('Lambda Value')
 plt.title('Interval Length Along Lambda Path')
 
+plt.sca(ax2)
+first = plt.boxplot([length_by_ts[j][0] for j in range(len(task_sparsity_list))], positions=np.array(xrange(length)) * 3, sym='', widths=0.3)
+second = plt.boxplot([length_by_ts[j][1] for j in range(len(task_sparsity_list))], positions=np.array(xrange(length)) * 3 + .3, sym='', widths=0.3)
+third = plt.boxplot([length_by_ts[j][2] for j in range(len(task_sparsity_list))], positions=np.array(xrange(length)) * 3 + .6, sym='', widths=0.3)
+fourth = plt.boxplot([length_by_ts[j][3] for j in range(len(task_sparsity_list))], positions=np.array(xrange(length)) * 3 + 0.9, sym='',widths=0.3)
+set_box_color(first, '#2b8cbe')  # colors are from http://colorbrewer2.org/
+set_box_color(second, '#D7191C')
+set_box_color(third, '#31a354')
+set_box_color(fourth, '#feb24c')
+plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso')
+plt.plot([], c='#D7191C', label='Multi-Task Lasso')
+plt.plot([], c='#31a354', label='Data Splitting')
+plt.plot([], c='#feb24c', label='K Randomized Lassos')
+plt.legend()
+plt.xticks(xrange(1, (length) * 3 + 1, 3), [round(num, 1) for num in task_sparsity_list])
+plt.xlim(-1, (length - 1) * 3 + 3)
+plt.tight_layout()
+plt.ylabel('Interval Length',fontsize=12)
+plt.xlabel('Lambda Value')
+plt.title('Interval Length Along Lambda Path')
+
+print([np.std(sensitivity_by_ts[j][0]) for j in range(len(task_sparsity_list))])
+plt.sca(ax3)
+plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][0]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][0]) for j in range(len(task_sparsity_list))] , c='#2b8cbe')
+plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][1]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][1]) for j in range(len(task_sparsity_list))] , c='#D7191C')
+plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][2]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][2]) for j in range(len(task_sparsity_list))] , c='#31a354')
+plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][3]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][3]) for j in range(len(task_sparsity_list))] , c='#feb24c')
+plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso')
+plt.plot([], c='#D7191C', label='Multi-Task Lasso')
+plt.plot([], c='#31a354', label='Data Splitting')
+plt.plot([], c='#feb24c', label='K Randomized Lassos')
+plt.legend()
+plt.tight_layout()
+plt.ylabel('Sensivity',fontsize=12)
+
+plt.sca(ax4)
+plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][0]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][0]) for j in range(len(task_sparsity_list))] , c='#2b8cbe')
+plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][1]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][1]) for j in range(len(task_sparsity_list))] , c='#D7191C')
+plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][2]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][2]) for j in range(len(task_sparsity_list))] , c='#31a354')
+plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][3]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][3]) for j in range(len(task_sparsity_list))] , c='#feb24c')
+plt.tight_layout()
+plt.ylabel('Specificty',fontsize=12)
+
 ax1.set_title("Coverage", y = 1.01)
 ax2.set_title("Length", y = 1.01)
+ax3.set_title("Sensivity", y = 1.01)
+ax4.set_title("Specificity", y = 1.01)
 
+ax1.legend_.remove()
 ax2.legend_.remove()
-ax1.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.3))
+ax3.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.3))
 
 def common_format(ax):
     ax.grid(True, which='both',color='#f0f0f0')
@@ -168,12 +195,14 @@ def common_format(ax):
 
 common_format(ax1)
 common_format(ax2)
+common_format(ax3)
+common_format(ax4)
 
 # add target coverage on the first plot
 ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-plt.savefig('cov_len_by_ts_weak.png', bbox_inches='tight')
+plt.savefig('cov_len_by_ts_mixed.png', bbox_inches='tight')
 
 
 #fig = plt.figure(figsize=(25, 10))
