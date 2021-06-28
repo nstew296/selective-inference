@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.linalg import block_diag
 from scipy.stats import norm as ndist
+import random
 
 import regreg.api as rr
 from .randomization import randomization
@@ -390,7 +391,7 @@ class multi_task_lasso():
 
         return initial_solns, initial_subgrads
 
-    def _solve_multitask_problem(self, perturbations=None, num_iter=1000, atol=1.e-5):
+    def _solve_multitask_problem(self, perturbations=None, num_iter=600, atol=1.e-2):
 
         if perturbations is not None:
             self._initial_omega = perturbations
