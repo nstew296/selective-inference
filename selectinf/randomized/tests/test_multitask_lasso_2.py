@@ -876,6 +876,23 @@ def test_coverage(weight,signal,ts,nsim=100):
         specificity_list_single_task_selective.append(spc_single_task)
         single_task_selective_test_error_list.append(err_single_selective)
 
+        coverage_single_task_selective2, length_single_task_selective2, pivot_single_task_selective2, sns_single_task2, spc_single_task2, err_single_selective2 = test_single_task_lasso_posi_hetero(
+            predictor_vars_train,
+            response_vars_train,
+            predictor_vars_test,
+            response_vars_test,
+            beta,
+            sigma,
+            weight,
+            randomizer_scale=1.0,
+            link="identity")
+
+        if coverage_single_task_selective2 != []:
+            cov_single_task_selective2.append(np.mean(np.asarray(coverage_single_task_selective2)))
+            len_single_task_selective2.extend(length_single_task_selective2)
+        sensitivity_list_single_task_selective2.append(sns_single_task2)
+        specificity_list_single_task_selective2.append(spc_single_task2)
+        single_task_selective_test_error_list2.append(err_single_selective2)
 
         print("iteration completed ", n)
         print("posi coverage so far ", np.mean(np.asarray(cov)))
@@ -897,6 +914,7 @@ def test_coverage(weight,signal,ts,nsim=100):
         print("median specificity data splitting", np.median(np.asarray(specificity_list_ds)))
         print("median sensitivity single lasso", np.median(np.asarray(sensitivity_list_single_task_selective)))
         print("median specificity signle lasso", np.median(np.asarray(specificity_list_single_task_selective)))
+        print("median sensitivity single lasso2", np.median(np.asarray(sensitivity_list_single_task_selective2)))
 
         print("error selective", np.median(np.asarray(test_error_list)))
         print("error naive", np.median(np.asarray(naive_test_error_list)))
@@ -904,8 +922,9 @@ def test_coverage(weight,signal,ts,nsim=100):
         print("error single task", np.median(np.asarray(single_task_selective_test_error_list)))
 
     return([pivots,pivots_naive,pivots_data_splitting,
-            np.asarray(cov), np.asarray(cov2), np.asarray(cov_naive), np.asarray(cov_data_splitting), np.asarray(cov_data_splitting2), np.asarray(cov_single_task_selective),
-            np.asarray(len),np.asarray(len2),np.asarray(len_naive),np.asarray(len_data_splitting),np.asarray(len_data_splitting2),np.asarray(len_single_task_selective),
+            np.asarray(cov), np.asarray(cov2), np.asarray(cov_naive), np.asarray(cov_data_splitting), np.asarray(cov_data_splitting2), np.asarray(cov_single_task_selective), np.asarray(cov_single_task_selective2),
+            np.asarray(len),np.asarray(len2),np.asarray(len_naive),np.asarray(len_data_splitting),np.asarray(len_data_splitting2),np.asarray(len_single_task_selective), np.asarray(len_single_task_selective2),
             np.asarray(sensitivity_list),np.asarray(sensitivity_list2),np.asarray(sensitivity_list_naive),np.asarray(sensitivity_list_ds),np.asarray(sensitivity_list_ds2),np.asarray(sensitivity_list_single_task_selective),
-            np.asarray(specificity_list),np.asarray(specificity_list2),np.asarray(specificity_list_naive),np.asarray(specificity_list_ds),np.asarray(specificity_list_ds2),np.asarray(specificity_list_single_task_selective), np.mean(np.asarray(test_error_list)),np.mean(np.asarray(test_error_list2)),np.mean(np.asarray(naive_test_error_list)),
-            np.mean(np.asarray(data_splitting_test_error_list)),np.mean(np.asarray(data_splitting_test_error_list2)),np.mean(np.asarray(single_task_selective_test_error_list))])
+            np.asarray(sensitivity_list_single_task_selective2),np.asarray(specificity_list),np.asarray(specificity_list2),np.asarray(specificity_list_naive),np.asarray(specificity_list_ds),np.asarray(specificity_list_ds2),np.asarray(specificity_list_single_task_selective),
+            np.asarray(specificity_list_single_task_selective2), np.mean(np.asarray(test_error_list)),np.mean(np.asarray(test_error_list2)),np.mean(np.asarray(naive_test_error_list)),
+            np.mean(np.asarray(data_splitting_test_error_list)),np.mean(np.asarray(data_splitting_test_error_list2)),np.mean(np.asarray(single_task_selective_test_error_list)),np.mean(np.asarray(single_task_selective_test_error_list2))])
