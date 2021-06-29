@@ -425,6 +425,7 @@ def test_single_task_lasso_posi_hetero(predictor_vars_train,
                                       beta,
                                       sigma,
                                       weight,
+                                      randomizer_scale = 1.0,
                                       link = "identity"):
 
     ntask = len(predictor_vars_train.keys())
@@ -445,7 +446,7 @@ def test_single_task_lasso_posi_hetero(predictor_vars_train,
                      response_vars_train[i],
                      W,
                      sigma=sigma[i],
-                     randomizer_scale=0.7)
+                     randomizer_scale=randomizer_scale)
 
         signs = single_task_lasso.fit()
         nonzero = signs != 0
@@ -621,6 +622,13 @@ def test_coverage(weight,signal,ts,nsim=100):
     specificity_list = []
     test_error_list = []
 
+    cov2 = []
+    len2 = []
+    pivots2 = []
+    sensitivity_list2 = []
+    specificity_list2 = []
+    test_error_list2 = []
+
     cov_naive = []
     len_naive = []
     pivots_naive = []
@@ -647,6 +655,12 @@ def test_coverage(weight,signal,ts,nsim=100):
     sensitivity_list_single_task_selective = []
     specificity_list_single_task_selective = []
     single_task_selective_test_error_list = []
+
+    cov_single_task_selective2 = []
+    len_single_task_selective2 = []
+    sensitivity_list_single_task_selective2 = []
+    specificity_list_single_task_selective2 = []
+    single_task_selective_test_error_list2 = []
 
     ntask = 5
     nsamples= 1000 * np.ones(ntask)
@@ -769,6 +783,25 @@ def test_coverage(weight,signal,ts,nsim=100):
         specificity_list.append(spc)
         test_error_list.append(err)
 
+        coverage2, length2, pivot2, sns2, spc2, err2 = test_multitask_lasso_hetero(predictor_vars_train,
+                                                                             response_vars_train,
+                                                                             predictor_vars_test,
+                                                                             response_vars_test,
+                                                                             beta,
+                                                                             gaussian_noise,
+                                                                             sigma,
+                                                                             link="identity",
+                                                                             weight=weight,
+                                                                             randomizer_scale=1.0)
+
+        if coverage2 != []:
+            cov2.append(np.mean(np.asarray(coverage2)))
+            len2.extend(length2)
+            pivots2.extend(pivot2)
+        sensitivity_list2.append(sns2)
+        specificity_list2.append(spc2)
+        test_error_list2.append(err2)
+
 
         coverage_naive, length_naive, pivot_naive, naive_sensitivity, naive_specificity, naive_err = test_multitask_lasso_naive_hetero(predictor_vars_train,
                                                                              response_vars_train,
@@ -832,6 +865,7 @@ def test_coverage(weight,signal,ts,nsim=100):
                                       beta,
                                       sigma,
                                       weight,
+                                      randomizer_scale = 0.7,
                                       link="identity")
 
 
@@ -856,7 +890,10 @@ def test_coverage(weight,signal,ts,nsim=100):
 
         print("median sensitivity posi", np.median(np.asarray(sensitivity_list)))
         print("median specificity posi", np.median(np.asarray(specificity_list)))
+        print("median sensitivity posi2", np.median(np.asarray(sensitivity_list2)))
+        print("median specificity posi2", np.median(np.asarray(specificity_list2)))
         print("median sensitivity data splitting", np.median(np.asarray(sensitivity_list_ds)))
+        print("median sensitivity data splitting2", np.median(np.asarray(sensitivity_list_ds2)))
         print("median specificity data splitting", np.median(np.asarray(specificity_list_ds)))
         print("median sensitivity single lasso", np.median(np.asarray(sensitivity_list_single_task_selective)))
         print("median specificity signle lasso", np.median(np.asarray(specificity_list_single_task_selective)))
@@ -867,8 +904,8 @@ def test_coverage(weight,signal,ts,nsim=100):
         print("error single task", np.median(np.asarray(single_task_selective_test_error_list)))
 
     return([pivots,pivots_naive,pivots_data_splitting,
-            np.asarray(cov), np.asarray(cov_naive), np.asarray(cov_data_splitting), np.asarray(cov_data_splitting2), np.asarray(cov_single_task_selective),
-            np.asarray(len),np.asarray(len_naive),np.asarray(len_data_splitting),np.asarray(len_data_splitting2),np.asarray(len_single_task_selective),
-            np.asarray(sensitivity_list),np.asarray(sensitivity_list_naive),np.asarray(sensitivity_list_ds),np.asarray(sensitivity_list_ds2),np.asarray(sensitivity_list_single_task_selective),
-            np.asarray(specificity_list),np.asarray(specificity_list_naive),np.asarray(specificity_list_ds),np.asarray(specificity_list_ds2),np.asarray(specificity_list_single_task_selective), np.mean(np.asarray(test_error_list)),np.mean(np.asarray(naive_test_error_list)),
+            np.asarray(cov), np.asarray(cov2), np.asarray(cov_naive), np.asarray(cov_data_splitting), np.asarray(cov_data_splitting2), np.asarray(cov_single_task_selective),
+            np.asarray(len),np.asarray(len2),np.asarray(len_naive),np.asarray(len_data_splitting),np.asarray(len_data_splitting2),np.asarray(len_single_task_selective),
+            np.asarray(sensitivity_list),np.asarray(sensitivity_list2),np.asarray(sensitivity_list_naive),np.asarray(sensitivity_list_ds),np.asarray(sensitivity_list_ds2),np.asarray(sensitivity_list_single_task_selective),
+            np.asarray(specificity_list),np.asarray(specificity_list2),np.asarray(specificity_list_naive),np.asarray(specificity_list_ds),np.asarray(specificity_list_ds2),np.asarray(specificity_list_single_task_selective), np.mean(np.asarray(test_error_list)),np.mean(np.asarray(test_error_list2)),np.mean(np.asarray(naive_test_error_list)),
             np.mean(np.asarray(data_splitting_test_error_list)),np.mean(np.asarray(data_splitting_test_error_list2)),np.mean(np.asarray(single_task_selective_test_error_list))])
