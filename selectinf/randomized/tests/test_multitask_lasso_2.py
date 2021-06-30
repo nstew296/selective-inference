@@ -765,15 +765,15 @@ def test_coverage(weight,signal,ts,nsim=100):
 
 
         coverage, length, pivot, sns, spc, err = test_multitask_lasso_hetero(predictor_vars_train,
-                                                                             response_vars_train,
-                                                                             predictor_vars_test,
-                                                                             response_vars_test,
-                                                                             beta,
-                                                                             gaussian_noise,
-                                                                             sigma,
-                                                                             link="identity",
-                                                                             weight=weight,
-                                                                             randomizer_scale= 0.7)
+                                                                         response_vars_train,
+                                                                         predictor_vars_test,
+                                                                         response_vars_test,
+                                                                         beta,
+                                                                         gaussian_noise,
+                                                                         sigma,
+                                                                         link="identity",
+                                                                         weight=weight,
+                                                                         randomizer_scale= 0.7)
 
         if coverage != []:
             cov.append(np.mean(np.asarray(coverage)))

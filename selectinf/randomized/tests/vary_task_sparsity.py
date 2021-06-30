@@ -19,6 +19,8 @@ df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
 task_sparsity_list = [0.0, 0.2, 0.4, 0.6, 0.8]
+n_list = [100,100,100,400,400]
+#n_list = [5,5,5,20,20]
 coverage_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(task_sparsity_list))}
 length_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(task_sparsity_list))}
 sensitivity_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(task_sparsity_list))}
@@ -33,7 +35,7 @@ for j in range(len(task_sparsity_list)):
 
     for i in range(len(feature_weight_list)):
         print((i,j),"(i,j)")
-        sims = test_coverage(feature_weight_list[i],[2.0,5.0],ts=task_sparsity_list[j],nsim=200)
+        sims = test_coverage(feature_weight_list[i],[2.0,5.0],ts=task_sparsity_list[j],nsim=n_list[j])
         coverage[i][0].extend(sims[3])
         coverage[i][1].extend(sims[4])
         coverage[i][2].extend(sims[5])
@@ -202,13 +204,12 @@ plt.ylabel('Interval Length',fontsize=12)
 
 print([np.std(sensitivity_by_ts[j][0]) for j in range(len(task_sparsity_list))])
 plt.sca(ax3)
-plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][0]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][0])/14.0 for j in range(len(task_sparsity_list))] , c='#2b8cbe')
-plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][1]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][1])/14.0 for j in range(len(task_sparsity_list))] , c='#6baed6',linestyle='--')
-plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][2]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][2])/14.0 for j in range(len(task_sparsity_list))] , c='#D7191C')
-plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][3]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][3])/14.0 for j in range(len(task_sparsity_list))] , c='#238443')
-plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][4]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][4])/14.0 for j in range(len(task_sparsity_list))] , c='#31a354',linestyle='--')
-plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][5]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][5])/14.0 for j in range(len(task_sparsity_list))] , c='#fd8d3c')
-plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][6]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][6])/14.0 for j in range(len(task_sparsity_list))] , c='#feb24c',linestyle='--')
+plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][0]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][0])/np.sqrt(n_list[j]) for j in range(len(task_sparsity_list))] , c='#2b8cbe')
+plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][1]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][1])/np.sqrt(n_list[j]) for j in range(len(task_sparsity_list))] , c='#6baed6',linestyle='--')
+plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][3]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][3])/np.sqrt(n_list[j]) for j in range(len(task_sparsity_list))] , c='#238443')
+plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][4]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][4])/np.sqrt(n_list[j]) for j in range(len(task_sparsity_list))] , c='#31a354',linestyle='--')
+plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][5]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][5])/np.sqrt(n_list[j]) for j in range(len(task_sparsity_list))] , c='#fd8d3c')
+plt.errorbar(task_sparsity_list, [np.mean(sensitivity_by_ts[j][6]) for j in range(len(task_sparsity_list))], yerr=[np.std(sensitivity_by_ts[j][6])/np.sqrt(n_list[j]) for j in range(len(task_sparsity_list))] , c='#feb24c',linestyle='--')
 plt.plot([], c='#D7191C', label='Multi-Task Lasso',linewidth=2.5)
 plt.plot([], c='#fd8d3c', label='K Randomized Lassos 0.7',linewidth=2.5)
 plt.plot([], c='#feb24c', label='K Randomized Lassos 1.0',linestyle='--',linewidth=2.5)
@@ -221,13 +222,12 @@ plt.tight_layout()
 plt.ylabel('Mean Sensivity per Simulation',fontsize=12)
 
 plt.sca(ax4)
-plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][0]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][0])/14.0 for j in range(len(task_sparsity_list))] , c='#2b8cbe')
-plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][1]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][1])/14.0 for j in range(len(task_sparsity_list))] , c='#6baed6',linestyle='--')
-plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][2]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][2])/14.0 for j in range(len(task_sparsity_list))] , c='#D7191C')
-plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][3]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][3])/14.0 for j in range(len(task_sparsity_list))] , c='#238443')
-plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][4]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][4])/14.0 for j in range(len(task_sparsity_list))] , c='#31a354',linestyle='--')
-plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][5]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][5])/14.0 for j in range(len(task_sparsity_list))] , c='#fd8d3c')
-plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][6]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][6])/14.0 for j in range(len(task_sparsity_list))] , c='#feb24c')
+plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][0]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][0])/np.sqrt(n_list[j]) for j in range(len(task_sparsity_list))] , c='#2b8cbe')
+plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][1]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][1])/np.sqrt(n_list[j]) for j in range(len(task_sparsity_list))] , c='#6baed6',linestyle='--')
+plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][3]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][3])/np.sqrt(n_list[j]) for j in range(len(task_sparsity_list))] , c='#238443')
+plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][4]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][4])/np.sqrt(n_list[j]) for j in range(len(task_sparsity_list))] , c='#31a354',linestyle='--')
+plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][5]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][5])/np.sqrt(n_list[j]) for j in range(len(task_sparsity_list))] , c='#fd8d3c')
+plt.errorbar(task_sparsity_list, [np.mean(specificity_by_ts[j][6]) for j in range(len(task_sparsity_list))], yerr=[np.std(specificity_by_ts[j][6])/np.sqrt(n_list[j]) for j in range(len(task_sparsity_list))] , c='#feb24c')
 plt.ylim((.98,1.001))
 plt.tight_layout()
 plt.ylabel('Mean Specificty per Simulation',fontsize=12)
@@ -254,7 +254,7 @@ common_format(ax4)
 ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-plt.savefig('cov_len_by_ts_mixed_2_5_n200.png', bbox_inches='tight')
+plt.savefig('cov_len_by_ts_mixed_2_5_n100_400.png', bbox_inches='tight')
 
 
 #fig = plt.figure(figsize=(25, 10))
