@@ -254,7 +254,7 @@ common_format(ax4)
 ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-plt.savefig('cov_len_by_ts_mixed_2_5_n50.png', bbox_inches='tight')
+plt.savefig('cov_len_by_ts_mixed_2_5_n200.png', bbox_inches='tight')
 
 
 #fig = plt.figure(figsize=(25, 10))
