@@ -773,6 +773,7 @@ def test_coverage(weight,signal,ts,nsim=100):
                                                                          sigma,
                                                                          link="identity",
                                                                          weight=weight,
+
                                                                          randomizer_scale= 0.7)
 
         if coverage != []:
