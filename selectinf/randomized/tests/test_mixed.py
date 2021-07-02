@@ -23,7 +23,7 @@ def test_multitask_lasso_hetero(predictor_vars_train,
                                 sigma,
                                 link = "identity",
                                 weight = 1.0,
-                                randomizer_scale = 1.0):
+                                randomizer_scale = 0.7):
 
     ntask = len(predictor_vars_train.keys())
     nsamples_test = np.asarray([np.shape(predictor_vars_test[i])[0] for i in range(ntask)])
@@ -45,6 +45,11 @@ def test_multitask_lasso_hetero(predictor_vars_train,
 
             active_signs = multi_lasso.fit(perturbations=_initial_omega)
 
+            dispersions = sigma ** 2
+
+            estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(
+                dispersions=dispersions)
+
         except:
             active_signs = np.asarray([])
 
@@ -58,6 +63,11 @@ def test_multitask_lasso_hetero(predictor_vars_train,
 
             active_signs = multi_lasso.fit(perturbations=_initial_omega)
 
+            dispersions = sigma ** 2
+
+            estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(
+                dispersions=dispersions)
+
         except:
             active_signs=np.asarray([])
 
@@ -70,19 +80,18 @@ def test_multitask_lasso_hetero(predictor_vars_train,
                                                randomizer_scales=randomizer_scales)
             active_signs = multi_lasso.fit(perturbations=_initial_omega)
 
+            dispersions = sigma ** 2
+
+            estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(
+                dispersions=dispersions)
+
         except:
             active_signs= np.asarray([])
 
     coverage = []
     pivot = []
-    intervals = np.asarray([[np.nan,np.nan]])
 
     if (active_signs != 0).sum() > 0:
-
-        dispersions = sigma ** 2
-
-        estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(
-            dispersions=dispersions)
 
         beta_target = []
 
@@ -112,6 +121,7 @@ def test_multitask_lasso_hetero(predictor_vars_train,
         error=0
         for j in range(ntask):
             error += (0.5 * np.linalg.norm(response_vars_test[j], 2) ** 2)/nsamples_test[j]
+        intervals = np.asarray([[np.nan, np.nan]])
 
 
     # Compute snesitivity and specificity after selection
@@ -270,6 +280,7 @@ def test_multitask_lasso_data_splitting(predictor_vars_train,
                                       beta,
                                       sigma,
                                       weight = 1.0,
+                                      split = 0.5,
                                       link = "identity"):
 
 
@@ -279,7 +290,7 @@ def test_multitask_lasso_data_splitting(predictor_vars_train,
     p = np.shape(beta)[0]
 
     samples = np.arange(np.int(nsamples[0]))
-    selection = np.random.choice(samples, size=np.int(0.67 * nsamples[0]), replace=False)
+    selection = np.random.choice(samples, size=np.int(split * nsamples[0]), replace=False)
     inference = np.setdiff1d(samples, selection)
     response_vars_selection = {j: response_vars_train[j][selection] for j in range(ntask)}
     predictor_vars_selection = {j: predictor_vars_train[j][selection] for j in range(ntask)}
@@ -414,6 +425,7 @@ def test_single_task_lasso_posi_hetero(predictor_vars_train,
                                       beta,
                                       sigma,
                                       weight,
+                                      randomizer_scale = 1.0,
                                       link = "identity"):
 
     ntask = len(predictor_vars_train.keys())
@@ -434,7 +446,7 @@ def test_single_task_lasso_posi_hetero(predictor_vars_train,
                      response_vars_train[i],
                      W,
                      sigma=sigma[i],
-                     randomizer_scale=0.7)
+                     randomizer_scale=randomizer_scale)
 
         signs = single_task_lasso.fit()
         nonzero = signs != 0
@@ -610,6 +622,13 @@ def test_coverage(weight,signal,nsim=100):
     specificity_list = []
     test_error_list = []
 
+    cov2 = []
+    len2 = []
+    pivots2 = []
+    sensitivity_list2 = []
+    specificity_list2 = []
+    test_error_list2 = []
+
     cov_naive = []
     len_naive = []
     pivots_naive = []
@@ -624,22 +643,29 @@ def test_coverage(weight,signal,nsim=100):
     specificity_list_ds = []
     data_splitting_test_error_list = []
 
+    cov_data_splitting2 = []
+    len_data_splitting2 = []
+    pivots_data_splitting2 = []
+    sensitivity_list_ds2 = []
+    specificity_list_ds2 = []
+    data_splitting_test_error_list2 = []
+
     cov_single_task_selective = []
     len_single_task_selective = []
     sensitivity_list_single_task_selective = []
     specificity_list_single_task_selective = []
     single_task_selective_test_error_list = []
 
-    cov_one_lasso = []
-    len_one_lasso = []
-    sensitivity_one_lasso = []
-    specificity_one_lasso = []
-    one_lasso_test_error_list = []
+    cov_single_task_selective2 = []
+    len_single_task_selective2 = []
+    sensitivity_list_single_task_selective2 = []
+    specificity_list_single_task_selective2 = []
+    single_task_selective_test_error_list2 = []
 
     ntask = 5
     nsamples= 1000 * np.ones(ntask)
     p=100
-    global_sparsity=0.9
+    global_sparsity=0.95
     task_sparsity= 0.40
     sigma=1. * np.ones(ntask)
     signal_fac=np.array(signal)
@@ -739,15 +765,16 @@ def test_coverage(weight,signal,nsim=100):
 
 
         coverage, length, pivot, sns, spc, err = test_multitask_lasso_hetero(predictor_vars_train,
-                                                                             response_vars_train,
-                                                                             predictor_vars_test,
-                                                                             response_vars_test,
-                                                                             beta,
-                                                                             gaussian_noise,
-                                                                             sigma,
-                                                                             link="identity",
-                                                                             weight=weight,
-                                                                             randomizer_scale= 0.7)
+                                                                         response_vars_train,
+                                                                         predictor_vars_test,
+                                                                         response_vars_test,
+                                                                         beta,
+                                                                         gaussian_noise,
+                                                                         sigma,
+                                                                         link="identity",
+                                                                         weight=weight,
+
+                                                                         randomizer_scale= 0.7)
 
         if coverage != []:
             cov.append(np.mean(np.asarray(coverage)))
@@ -756,6 +783,25 @@ def test_coverage(weight,signal,nsim=100):
         sensitivity_list.append(sns)
         specificity_list.append(spc)
         test_error_list.append(err)
+
+        coverage2, length2, pivot2, sns2, spc2, err2 = test_multitask_lasso_hetero(predictor_vars_train,
+                                                                             response_vars_train,
+                                                                             predictor_vars_test,
+                                                                             response_vars_test,
+                                                                             beta,
+                                                                             gaussian_noise,
+                                                                             sigma,
+                                                                             link="identity",
+                                                                             weight=weight,
+                                                                             randomizer_scale=1.0)
+
+        if coverage2 != []:
+            cov2.append(np.mean(np.asarray(coverage2)))
+            len2.extend(length2)
+            pivots2.extend(pivot2)
+        sensitivity_list2.append(sns2)
+        specificity_list2.append(spc2)
+        test_error_list2.append(err2)
 
 
         coverage_naive, length_naive, pivot_naive, naive_sensitivity, naive_specificity, naive_err = test_multitask_lasso_naive_hetero(predictor_vars_train,
@@ -768,14 +814,12 @@ def test_coverage(weight,signal,nsim=100):
                                                                              link="identity")
 
         if coverage_naive != []:
-            cov_naive.append(np.mean(np.asarray((coverage_naive))))
+            cov_naive.append(np.mean(np.asarray(coverage_naive)))
             len_naive.extend(length_naive)
             pivots_naive.extend(pivot_naive)
         sensitivity_list_naive.append(naive_sensitivity)
         specificity_list_naive.append(naive_specificity)
         naive_test_error_list.append(naive_err)
-
-
 
 
         coverage_data_splitting, length_data_splitting, pivot_data_splitting, sns_ds, spc_ds, ds_error = test_multitask_lasso_data_splitting(predictor_vars_train,
@@ -785,6 +829,7 @@ def test_coverage(weight,signal,nsim=100):
                                                                              beta,
                                                                              sigma,
                                                                              weight,
+                                                                             split = 0.67,
                                                                              link="identity")
 
         if coverage_data_splitting!=[]:
@@ -795,6 +840,24 @@ def test_coverage(weight,signal,nsim=100):
         specificity_list_ds.append(spc_ds)
         data_splitting_test_error_list.append(ds_error)
 
+        coverage_data_splitting2, length_data_splitting2, pivot_data_splitting2, sns_ds2, spc_ds2, ds_error2 = test_multitask_lasso_data_splitting(
+                                                                            predictor_vars_train,
+                                                                            response_vars_train,
+                                                                            predictor_vars_test,
+                                                                            response_vars_test,
+                                                                            beta,
+                                                                            sigma,
+                                                                            weight,
+                                                                            split=0.5,
+                                                                            link="identity")
+
+        if coverage_data_splitting2 != []:
+            cov_data_splitting2.append(np.mean(np.asarray(coverage_data_splitting2)))
+            len_data_splitting2.extend(length_data_splitting2)
+            pivots_data_splitting2.extend(pivot_data_splitting2)
+        sensitivity_list_ds2.append(sns_ds2)
+        specificity_list_ds2.append(spc_ds2)
+        data_splitting_test_error_list2.append(ds_error2)
 
         coverage_single_task_selective, length_single_task_selective, pivot_single_task_selective, sns_single_task, spc_single_task, err_single_selective = test_single_task_lasso_posi_hetero(predictor_vars_train,
                                       response_vars_train,
@@ -803,6 +866,7 @@ def test_coverage(weight,signal,nsim=100):
                                       beta,
                                       sigma,
                                       weight,
+                                      randomizer_scale = 0.7,
                                       link="identity")
 
 
@@ -813,6 +877,23 @@ def test_coverage(weight,signal,nsim=100):
         specificity_list_single_task_selective.append(spc_single_task)
         single_task_selective_test_error_list.append(err_single_selective)
 
+        coverage_single_task_selective2, length_single_task_selective2, pivot_single_task_selective2, sns_single_task2, spc_single_task2, err_single_selective2 = test_single_task_lasso_posi_hetero(
+            predictor_vars_train,
+            response_vars_train,
+            predictor_vars_test,
+            response_vars_test,
+            beta,
+            sigma,
+            weight,
+            randomizer_scale=1.0,
+            link="identity")
+
+        if coverage_single_task_selective2 != []:
+            cov_single_task_selective2.append(np.mean(np.asarray(coverage_single_task_selective2)))
+            len_single_task_selective2.extend(length_single_task_selective2)
+        sensitivity_list_single_task_selective2.append(sns_single_task2)
+        specificity_list_single_task_selective2.append(spc_single_task2)
+        single_task_selective_test_error_list2.append(err_single_selective2)
 
         print("iteration completed ", n)
         print("posi coverage so far ", np.mean(np.asarray(cov)))
@@ -827,10 +908,14 @@ def test_coverage(weight,signal,nsim=100):
 
         print("median sensitivity posi", np.median(np.asarray(sensitivity_list)))
         print("median specificity posi", np.median(np.asarray(specificity_list)))
+        print("median sensitivity posi2", np.median(np.asarray(sensitivity_list2)))
+        print("median specificity posi2", np.median(np.asarray(specificity_list2)))
         print("median sensitivity data splitting", np.median(np.asarray(sensitivity_list_ds)))
+        print("median sensitivity data splitting2", np.median(np.asarray(sensitivity_list_ds2)))
         print("median specificity data splitting", np.median(np.asarray(specificity_list_ds)))
         print("median sensitivity single lasso", np.median(np.asarray(sensitivity_list_single_task_selective)))
         print("median specificity signle lasso", np.median(np.asarray(specificity_list_single_task_selective)))
+        print("median sensitivity single lasso2", np.median(np.asarray(sensitivity_list_single_task_selective2)))
 
         print("error selective", np.median(np.asarray(test_error_list)))
         print("error naive", np.median(np.asarray(naive_test_error_list)))
@@ -838,11 +923,12 @@ def test_coverage(weight,signal,nsim=100):
         print("error single task", np.median(np.asarray(single_task_selective_test_error_list)))
 
     return([pivots,pivots_naive,pivots_data_splitting,
-            np.asarray(cov), np.asarray(cov_naive), np.asarray(cov_data_splitting), np.asarray(cov_single_task_selective),
-            np.asarray(len),np.asarray(len_naive),np.asarray(len_data_splitting),np.asarray(len_single_task_selective),
-            np.mean(np.asarray(sensitivity_list)),np.mean(np.asarray(sensitivity_list_naive)),np.mean(np.asarray(sensitivity_list_ds)),np.mean(np.asarray(sensitivity_list_single_task_selective)),
-            np.mean(np.asarray(specificity_list)),np.mean(np.asarray(specificity_list_naive)),np.mean(np.asarray(specificity_list_ds)),np.mean(np.asarray(specificity_list_single_task_selective)), np.mean(np.asarray(test_error_list)),np.mean(np.asarray(naive_test_error_list)),
-            np.mean(np.asarray(data_splitting_test_error_list)),np.mean(np.asarray(single_task_selective_test_error_list))])
+            np.asarray(cov), np.asarray(cov2), np.asarray(cov_naive), np.asarray(cov_data_splitting), np.asarray(cov_data_splitting2), np.asarray(cov_single_task_selective), np.asarray(cov_single_task_selective2),
+            np.asarray(len),np.asarray(len2),np.asarray(len_naive),np.asarray(len_data_splitting),np.asarray(len_data_splitting2),np.asarray(len_single_task_selective), np.asarray(len_single_task_selective2),
+            np.asarray(sensitivity_list),np.asarray(sensitivity_list2),np.asarray(sensitivity_list_naive),np.asarray(sensitivity_list_ds),np.asarray(sensitivity_list_ds2),np.asarray(sensitivity_list_single_task_selective),
+            np.asarray(sensitivity_list_single_task_selective2),np.asarray(specificity_list),np.asarray(specificity_list2),np.asarray(specificity_list_naive),np.asarray(specificity_list_ds),np.asarray(specificity_list_ds2),np.asarray(specificity_list_single_task_selective),
+            np.asarray(specificity_list_single_task_selective2), np.mean(np.asarray(test_error_list)),np.mean(np.asarray(test_error_list2)),np.mean(np.asarray(naive_test_error_list)),
+            np.mean(np.asarray(data_splitting_test_error_list)),np.mean(np.asarray(data_splitting_test_error_list2)),np.mean(np.asarray(single_task_selective_test_error_list)),np.mean(np.asarray(single_task_selective_test_error_list2))])
 
 def main():
 
@@ -958,260 +1044,177 @@ def main():
 
     length_path = 10
 
-    #Coverage, length, and pivot plots
-    coverage = {i:[[],[],[],[]] for i in range(length_path)}
-    length = {i:[[],[],[],[]] for i in range(length_path)}
-    pivot = {i:[[],[],[]] for i in range(length_path)}
-    sensitivity = {i:[[],[],[],[]] for i in range(length_path)}
-    specificity = {i:[[],[],[],[]] for i in range(length_path)}
-    error = {i:[[],[],[],[]] for i in range(length_path)}
-
-    lambdamin = 0.75
-    lambdamax = 3.5
+    lambdamin = 0.5
+    lambdamax = 4.0
     #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
     #feature_weight_list = np.exp(weights)
     feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
     print(feature_weight_list)
 
+    coverage = {i: [[], [], [], [], [], [], []] for i in range(length_path)}
+    length = {i: [[], [], [], [], [], [], []] for i in range(length_path)}
+    sensitivity = {i: [[], [], [], [], [], [], []] for i in range(length_path)}
+    specificity = {i: [[], [], [], [], [], [], []] for i in range(length_path)}
+    error = {i: [[], [], [], [], [], [], []] for i in range(length_path)}
+
     for i in range(len(feature_weight_list)):
-        sims = test_coverage(feature_weight_list[i],[0.5,5.0],100)
-        pivot[i][0].extend(sims[0])
-        pivot[i][1].extend(sims[1])
-        pivot[i][2].extend(sims[2])
+        sims = test_coverage(feature_weight_list[i], [2.0, 5.0], nsim=100)
         coverage[i][0].extend(sims[3])
         coverage[i][1].extend(sims[4])
         coverage[i][2].extend(sims[5])
         coverage[i][3].extend(sims[6])
-        length[i][0].extend(sims[7])
-        length[i][1].extend(sims[8])
-        length[i][2].extend(sims[9])
-        length[i][3].extend(sims[10])
-        sensitivity[i][0].append(sims[11])
-        sensitivity[i][1].append(sims[12])
-        sensitivity[i][2].append(sims[13])
-        sensitivity[i][3].append(sims[14])
-        specificity[i][0].append(sims[15])
-        specificity[i][1].append(sims[16])
-        specificity[i][2].append(sims[17])
-        specificity[i][3].append(sims[18])
-        error[i][0].append(sims[19])
-        error[i][1].append(sims[20])
-        error[i][2].append(sims[21])
-        error[i][3].append(sims[22])
+        coverage[i][4].extend(sims[7])
+        coverage[i][5].extend(sims[8])
+        coverage[i][6].extend(sims[9])
+        length[i][0].extend(sims[10])
+        length[i][1].extend(sims[11])
+        length[i][2].extend(sims[12])
+        length[i][3].extend(sims[13])
+        length[i][4].extend(sims[14])
+        length[i][5].extend(sims[15])
+        length[i][6].extend(sims[16])
+        sensitivity[i][0].extend(sims[17])
+        sensitivity[i][1].extend(sims[18])
+        sensitivity[i][2].extend(sims[19])
+        sensitivity[i][3].extend(sims[20])
+        sensitivity[i][4].extend(sims[21])
+        sensitivity[i][5].extend(sims[22])
+        sensitivity[i][6].extend(sims[23])
+        specificity[i][0].extend(sims[24])
+        specificity[i][1].extend(sims[25])
+        specificity[i][2].extend(sims[26])
+        specificity[i][3].extend(sims[27])
+        specificity[i][4].extend(sims[28])
+        specificity[i][5].extend(sims[29])
+        specificity[i][6].extend(sims[30])
+        error[i][0].append(sims[31])
+        error[i][1].append(sims[32])
+        error[i][2].append(sims[33])
+        error[i][3].append(sims[34])
+        error[i][4].append(sims[35])
+        error[i][5].append(sims[36])
+        error[i][6].append(sims[37])
 
     selective_lengths = [length[i][0] for i in range(length_path)]
-    naive_lengths = [length[i][1] for i in range(length_path)]
-    ds_lengths = [length[i][2] for i in range(length_path)]
-    single_selective_lengths = [length[i][3] for i in range(length_path)]
+    selective_lengths2 = [length[i][1] for i in range(length_path)]
+    naive_lengths = [length[i][2] for i in range(length_path)]
+    ds_lengths = [length[i][3] for i in range(length_path)]
+    ds_lengths2 = [length[i][4] for i in range(length_path)]
+    single_selective_lengths = [length[i][5] for i in range(length_path)]
+    single_selective_lengths2 = [length[i][6] for i in range(length_path)]
 
     selective_coverage = [coverage[i][0] for i in range(length_path)]
-    naive_coverage = [coverage[i][1] for i in range(length_path)]
-    ds_coverage = [coverage[i][2] for i in range(length_path)]
-    single_selective_coverage = [coverage[i][3] for i in range(length_path)]
-
-    selective_sensitivity = [sensitivity[i][0] for i in range(length_path)]
-    naive_sensitivity = [sensitivity[i][1] for i in range(length_path)]
-    ds_sensitivity = [sensitivity[i][2] for i in range(length_path)]
-    single_task_sensitivity = [sensitivity[i][3] for i in range(length_path)]
-
-    selective_specificity = [specificity[i][0] for i in range(length_path)]
-    naive_specificity = [specificity[i][1] for i in range(length_path)]
-    ds_specifity = [specificity[i][2] for i in range(length_path)]
-    single_task_specifity = [specificity[i][3] for i in range(length_path)]
+    selective_coverage2 = [coverage[i][1] for i in range(length_path)]
+    naive_coverage = [coverage[i][2] for i in range(length_path)]
+    ds_coverage = [coverage[i][3] for i in range(length_path)]
+    ds_coverage2 = [coverage[i][4] for i in range(length_path)]
+    single_selective_coverage = [coverage[i][5] for i in range(length_path)]
+    single_selective_coverage2 = [coverage[i][6] for i in range(length_path)]
 
     selective_error = [error[i][0] for i in range(length_path)]
-    naive_error = [error[i][1] for i in range(length_path)]
-    ds_error = [error[i][2] for i in range(length_path)]
-    single_selective_error = [error[i][3] for i in range(length_path)]
+    selective_error2 = [error[i][1] for i in range(length_path)]
+    naive_error = [error[i][2] for i in range(length_path)]
+    ds_error = [error[i][3] for i in range(length_path)]
+    ds_error2 = [error[i][4] for i in range(length_path)]
+    single_selective_error = [error[i][5] for i in range(length_path)]
+    single_selective_error2 = [error[i][6] for i in range(length_path)]
 
-    def set_box_color(bp, color):
-        plt.setp(bp['boxes'], color=color)
-        plt.setp(bp['whiskers'], color=color)
+    def set_box_color(bp, color, linestyle):
+        plt.setp(bp['boxes'], color=color, linestyle=linestyle)
+        plt.setp(bp['whiskers'], color=color, linestyle=linestyle)
         plt.setp(bp['caps'], color=color)
         plt.setp(bp['medians'], color=color)
 
-    fig = plt.figure(figsize=(25, 10))
-    first = plt.boxplot(selective_lengths, positions=np.array(xrange(length_path)) * 3, sym='', widths=0.3)
-    second = plt.boxplot(naive_lengths, positions=np.array(xrange(length_path)) * 3 + .3, sym='', widths=0.3)
-    third = plt.boxplot(ds_lengths, positions=np.array(xrange(length_path)) * 3 + .6, sym='', widths=0.3)
-    fourth = plt.boxplot(single_selective_lengths, positions=np.array(xrange(length_path)) * 3 + 0.9, sym='',widths=0.3)
-    set_box_color(first, '#2b8cbe')  # colors are from http://colorbrewer2.org/
-    set_box_color(second, '#D7191C')
-    set_box_color(third, '#31a354')
-    set_box_color(fourth, '#feb24c')
-    plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso')
-    plt.plot([], c='#D7191C', label='Multi-Task Lasso')
-    plt.plot([], c='#31a354', label='Data Splitting')
-    plt.plot([], c='#feb24c', label='K Randomized Lassos')
-    plt.legend()
-    plt.xticks(xrange(1, (length_path) * 3 + 1, 3), feature_weight_list)
-    plt.xlim(-1, (length_path - 1) * 3 + 3)
-    max_length = np.max(np.concatenate((np.concatenate(selective_lengths),np.concatenate(naive_lengths),np.concatenate(ds_lengths),np.concatenate(single_selective_lengths))))
-    plt.plot(np.argmin(selective_error)*3, max_length, 'ro',c='#2b8cbe')
-    plt.plot(np.argmin(naive_error)* 3+.3, max_length, 'ro', c='#D7191C')
-    plt.plot(np.argmin(ds_error) * 3 + .6, max_length, 'ro', c='#31a354')
-    plt.plot(np.argmin(single_selective_error) * 3 + 0.9, max_length, 'ro', c='#feb24c')
-    plt.tight_layout()
-    plt.ylabel('Interval Length')
-    plt.title('Interval Length Along Lambda Path')
-    plt.savefig('lengthcompare_mixed_ts40.png', bbox_inches='tight')
+    length = len(feature_weight_list)
 
-    fig = plt.figure(figsize=(25, 10))
-    first = plt.boxplot(selective_coverage, positions=np.array(xrange(length_path)) * 3, sym='', widths=0.3)
-    second = plt.boxplot(naive_coverage, positions=np.array(xrange(length_path)) * 3 + .3, sym='', widths=0.3)
-    third = plt.boxplot(ds_coverage, positions=np.array(xrange(length_path)) * 3 + 0.6, sym='', widths=0.3)
-    fourth = plt.boxplot(single_selective_coverage, positions=np.array(xrange(length_path)) * 3 + 0.9, sym='',widths=0.3)
-    set_box_color(first, '#2b8cbe')  # colors are from http://colorbrewer2.org/
-    set_box_color(second, '#D7191C')
-    set_box_color(third, '#31a354')
-    set_box_color(fourth, '#feb24c')
-    plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso')
-    plt.plot([], c='#D7191C', label='Multi-Task Lasso')
-    plt.plot([], c='#31a354', label='Data Splitting')
-    plt.plot([], c='#feb24c', label='K Randomized Lassos')
-    plt.legend()
-    plt.xticks(xrange(1, (length_path) * 3 + 1, 3), feature_weight_list)
-    plt.xlim(-1, (length_path - 1) * 3 + 3)
+    fig = plt.figure(figsize=(17, 14))
+    ax1 = fig.add_subplot(211)
+    ax2 = fig.add_subplot(212)
+
+    plt.sca(ax1)
+    first = plt.boxplot(selective_coverage,positions=np.array(xrange(length)) * 3, sym='', widths=0.3)
+    second = plt.boxplot(selective_coverage2,positions=np.array(xrange(length)) * 3 + .3, sym='', widths=0.3)
+    third = plt.boxplot(naive_coverage, positions=np.array(xrange(length)) * 3 + .6, sym='', widths=0.3)
+    fourth = plt.boxplot(ds_coverage, positions=np.array(xrange(length)) * 3 + .9, sym='', widths=0.3)
+    fifth = plt.boxplot(ds_coverage2, positions=np.array(xrange(length)) * 3 + 1.2, sym='', widths=0.3)
+    sixth = plt.boxplot(single_selective_coverage, positions=np.array(xrange(length)) * 3 + 1.5, sym='', widths=0.3)
+    seventh = plt.boxplot(single_selective_coverage2, positions=np.array(xrange(length)) * 3 + 1.8, sym='', widths=0.3)
+    set_box_color(first, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
+    set_box_color(second, '#6baed6', '--')
+    set_box_color(third, '#D7191C', 'solid')
+    set_box_color(fourth, '#238443', 'solid')
+    set_box_color(fifth, '#31a354', '--')
+    set_box_color(sixth, '#fd8d3c', 'solid')
+    set_box_color(seventh, '#feb24c', '--')
+    plt.xticks(xrange(1, (length) * 3 + 1, 3), [round(num, 1) for num in feature_weight_list])
+    plt.xlim(-1, (length - 1) * 3 + 3)
     plt.plot(np.argmin(selective_error) * 3, 1.01, 'ro', c='#2b8cbe')
-    plt.plot(np.argmin(naive_error) * 3 + .3, 1.01, 'ro', c='#D7191C')
-    plt.plot(np.argmin(ds_error) * 3 + .6, 1.01, 'ro', c='#31a354')
-    plt.plot(np.argmin(single_selective_error) * 3 + 0.9, 1.01, 'ro', c='#feb24c')
+    plt.plot(np.argmin(selective_error2) * 3 + .3, 1.01, 'ro', c='#6baed6')
+    plt.plot(np.argmin(naive_error) * 3 + .6, 1.01, 'ro', c='#D7191C')
+    plt.plot(np.argmin(ds_error) * 3 + .9, 1.01, 'ro', c='#238443')
+    plt.plot(np.argmin(ds_error2) * 3 + 1.2, 1.01, 'ro', c='#31a354')
+    plt.plot(np.argmin(single_selective_error) * 3 + 1.5, 1.01, 'ro', c='#fd8d3c')
+    plt.plot(np.argmin(single_selective_error2) * 3 + 1.8, 1.01, 'ro', c='#feb24c')
     plt.tight_layout()
-    plt.ylabel('Coverage')
-    plt.title('Coverage Along Lambda Path')
-    plt.savefig('coveragecompare_mixed_ts40.png', bbox_inches='tight')
+    plt.ylabel('Mean Coverage per Simulation', fontsize=12)
 
-    fig = plt.figure(figsize=(25, 10))
-    fig.tight_layout()
-    fig.add_subplot(1, 2, 1)
-    plt.plot(feature_weight_list, selective_sensitivity, c='#2b8cbe')
-    plt.plot(feature_weight_list, naive_sensitivity, c='#D7191C')
-    plt.plot(feature_weight_list, ds_sensitivity, c='#31a354')
-    plt.plot(feature_weight_list, single_task_sensitivity, c='#feb24c')
-    plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso')
-    plt.plot([], c='#D7191C', label='Multi-Task Lasso')
-    plt.plot([], c='#31a354', label='Data Splitting')
-    plt.plot([], c='#feb24c', label='K Randomized Lassos')
+    plt.sca(ax2)
+    first = plt.boxplot(selective_lengths,positions=np.array(xrange(length)) * 3, sym='', widths=0.3)
+    second = plt.boxplot(selective_lengths2,positions=np.array(xrange(length)) * 3 + .3, sym='', widths=0.3)
+    third = plt.boxplot(naive_lengths,positions=np.array(xrange(length)) * 3 + .6, sym='', widths=0.3)
+    fourth = plt.boxplot(ds_lengths, positions=np.array(xrange(length)) * 3 + .9, sym='', widths=0.3)
+    fifth = plt.boxplot(ds_lengths2,positions=np.array(xrange(length)) * 3 + 1.2, sym='', widths=0.3)
+    sixth = plt.boxplot(single_selective_lengths,positions=np.array(xrange(length)) * 3 + 1.5, sym='', widths=0.3)
+    seventh = plt.boxplot(single_selective_lengths2, positions=np.array(xrange(length)) * 3 + 1.8, sym='', widths=0.3)
+    set_box_color(first, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
+    set_box_color(second, '#6baed6', '--')
+    set_box_color(third, '#D7191C', 'solid')
+    set_box_color(fourth, '#238443', 'solid')
+    set_box_color(fifth, '#31a354', '--')
+    set_box_color(sixth, '#fd8d3c', 'solid')
+    set_box_color(seventh, '#feb24c', '--')
+    plt.xticks(xrange(1, (length) * 3 + 1, 3), [round(num, 1) for num in feature_weight_list])
+    plt.xlim(-1, (length - 1) * 3 + 3)
+    max_length = np.max(np.concatenate(
+        (np.concatenate(selective_lengths), np.concatenate(selective_lengths2), np.concatenate(naive_lengths),
+         np.concatenate(ds_lengths), np.concatenate(ds_lengths2), np.concatenate(single_selective_lengths),
+         np.concatenate(single_selective_lengths2))))
+    plt.plot(np.argmin(selective_error) * 3, max_length, 'ro', c='#2b8cbe')
+    plt.plot(np.argmin(selective_error2) * 3 + .3, max_length, 'ro', c='#6baed6')
+    plt.plot(np.argmin(naive_error) * 3 + .6, max_length, 'ro', c='#D7191C')
+    plt.plot(np.argmin(ds_error) * 3 + .9, max_length, 'ro', c='#238443')
+    plt.plot(np.argmin(ds_error2) * 3 + 1.2, max_length, 'ro', c='#31a354')
+    plt.plot(np.argmin(single_selective_error) * 3 + 1.5, max_length, 'ro', c='#fd8d3c')
+    plt.plot(np.argmin(single_selective_error2) * 3 + 1.8, max_length, 'ro', c='#feb24c')
+    plt.tight_layout()
+    plt.plot([], c='#D7191C', label='Multi-Task Lasso', linewidth=2.5)
+    plt.plot([], c='#fd8d3c', label='K Randomized Lassos 0.7', linewidth=2.5)
+    plt.plot([], c='#feb24c', label='K Randomized Lassos 1.0', linestyle='--', linewidth=2.5)
+    plt.plot([], c='#238443', label='Data Splitting 67/33', linewidth=2.5)
+    plt.plot([], c='#31a354', label='Data Splitting 50/50', linestyle='--', linewidth=2.5)
+    plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso 0.7', linewidth=2.5)
+    plt.plot([], c='#6baed6', label='Randomized Multi-Task Lasso 1.0', linestyle='--', linewidth=2.5)
     plt.legend()
-    min_errors = [np.argmin(selective_error), np.argmin(naive_error), np.argmin(ds_error),
-                  np.argmin(single_selective_error)]
-    plt.plot(feature_weight_list[np.argmin(selective_error)]-0.03*np.sum([min_errors[0]==x for x in min_errors[1:]]), 1.0, 'ro', c='#2b8cbe')
-    min_errors.pop(0)
-    plt.plot(feature_weight_list[np.argmin(naive_error)]-0.03*np.sum([min_errors[0]==x for x in min_errors[1:]]), 1.0, 'ro', c='#D7191C')
-    min_errors.pop(0)
-    plt.plot(feature_weight_list[np.argmin(ds_error)]-0.03*np.sum([min_errors[0]==x for x in min_errors[1:]]), 1.0, 'ro', c='#31a354')
-    plt.plot(feature_weight_list[np.argmin(single_selective_error)], 1.0, 'ro', c='#feb24c')
-    plt.tight_layout()
-    plt.ylabel('Average Sensitivity')
-    plt.xlabel('Lambda Value')
-    plt.title('Sensitivity Along Lambda Path')
-    fig.add_subplot(1, 2, 2)
-    plt.plot(feature_weight_list, selective_specificity, c='#2b8cbe')
-    plt.plot(feature_weight_list, naive_specificity, c='#D7191C')
-    plt.plot(feature_weight_list, ds_specifity, c='#31a354')
-    plt.plot(feature_weight_list, single_task_specifity, c='#feb24c')
-    plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso')
-    plt.plot([], c='#D7191C', label='Multi-Task Lasso')
-    plt.plot([], c='#31a354', label='Data Splitting')
-    plt.plot([], c='#feb24c', label='K Randomized Lassos')
-    plt.legend()
-    min_errors = [np.argmin(selective_error), np.argmin(naive_error), np.argmin(ds_error),
-                  np.argmin(single_selective_error)]
-    plt.plot(
-        feature_weight_list[np.argmin(selective_error)] - 0.03 * np.sum([min_errors[0] == x for x in min_errors[1:]]),
-        1.0, 'ro', c='#2b8cbe')
-    min_errors.pop(0)
-    plt.plot(feature_weight_list[np.argmin(naive_error)] - 0.03 * np.sum([min_errors[0] == x for x in min_errors[1:]]),
-             1.0, 'ro', c='#D7191C')
-    min_errors.pop(0)
-    plt.plot(feature_weight_list[np.argmin(ds_error)] - 0.03 * np.sum([min_errors[0] == x for x in min_errors[1:]]),
-             1.0, 'ro', c='#31a354')
-    plt.plot(feature_weight_list[np.argmin(single_selective_error)], 1.0, 'ro', c='#feb24c')
-    plt.tight_layout()
-    plt.ylabel('Average Specificity')
-    plt.xlabel('Lambda Value')
-    plt.title('Specificity Along Lambda Path')
-    plt.savefig('specificitycompare_mixed_ts40.png')
+    plt.ylabel('Interval Length', fontsize=12)
 
+    ax1.set_title("Coverage", y=1.01)
+    ax2.set_title("Length", y=1.01)
 
-    fig = plt.figure(figsize=(8, 10))
-    plt.plot(feature_weight_list, selective_error, c='#2b8cbe')
-    plt.plot(feature_weight_list, naive_error, c='#D7191C')
-    plt.plot(feature_weight_list, ds_error, c='#31a354')
-    plt.plot(feature_weight_list, single_selective_error, c='#feb24c')
-    plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso')
-    plt.plot([], c='#D7191C', label='Multi-Task Lasso')
-    plt.plot([], c='#31a354', label='Data Splitting')
-    plt.plot([], c='#feb24c', label='K Randomized Lassos')
-    plt.legend()
-    plt.tight_layout()
-    plt.ylabel('Average MSE')
-    plt.xlabel('Lambda Value')
-    plt.title('Error Along Lambda Path')
-    plt.savefig('errcompare_mixed_ts40.png',bbox_inches='tight')
+    ax2.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.6), fontsize=14)
 
+    def common_format(ax):
+        ax.grid(True, which='both', color='#f0f0f0')
+        ax.set_xlabel('Lambda Value', fontsize=12)
+        return ax
 
+    common_format(ax1)
+    common_format(ax2)
 
-    #Plot distribution of pivots
-    #pivots = pivot[0]
-    #pivots_naive = pivot_naive[0]
-    #plt.clf()
-    #grid = np.linspace(0, 1, 101)
-   # points = [np.max(np.searchsorted(np.sort(np.asarray(pivots)), i, side='right')) / np.float(np.shape(pivots)[0]) for
-          #    i in np.linspace(0, 1, 101)]
-   # points_naive = [np.max(np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right')) / np.float(
-     #   np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
-    #fig = plt.figure(figsize=(32, 8))
-    #fig.tight_layout()
-    #fig.add_subplot(1, 4, 1)
-    #plt.plot(grid, points, c='blue', marker='^')
-    #plt.plot(grid, points_naive, c='red', marker='^')
-    #plt.plot(grid, grid, 'k--')
-   # plt.title('Task Sparsity 25%, SNR 0.2-0.5')
+    ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
-    #pivots = pivot[1]
-    #pivots_naive = pivot_naive[1]
-    #grid = np.linspace(0, 1, 101)
-    #points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in
-        #      np.linspace(0, 1, 101)]
-    #points_naive = [
-     #   np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i
-     #   in np.linspace(0, 1, 101)]
-    #fig.add_subplot(1, 4, 2)
-    #plt.plot(grid, points, c='blue', marker='^')
-    #plt.plot(grid, points_naive, c='red', marker='^')
-    #plt.plot(grid, grid, 'k--')
-    #plt.title('Task Sparsity 25%, SNR 0.5-1.0')
+    plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+    plt.savefig('cov_len_by_lambda.png', bbox_inches='tight')
 
-    #pivots = pivot[2]
-    #pivots_naive = pivot_naive[2]
-    #grid = np.linspace(0, 1, 101)
-    #points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in
-     #         np.linspace(0, 1, 101)]
-   # points_naive = [
-     #   np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i
-     #   in np.linspace(0, 1, 101)]
-    #fig.add_subplot(1, 4, 3)
-    #plt.plot(grid, points, c='blue', marker='^')
-    #plt.plot(grid, points_naive, c='red', marker='^')
-    #plt.plot(grid, grid, 'k--')
-   # plt.title('Task Sparsity 25%, SNR 1.0-3.0')
-
-    #pivots = pivot[3]
-    #pivots_naive = pivot_naive[3]
-   # grid = np.linspace(0, 1, 101)
-    #points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in
-    #          np.linspace(0, 1, 101)]
-    #points_naive = [
-    #    np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i
-    #    in np.linspace(0, 1, 101)]
-    #fig.add_subplot(1, 4, 4)
-    #plt.plot(grid, points, c='blue', marker='^')
-    #plt.plot(grid, points_naive, c='red', marker='^')
-    #plt.plot(grid, grid, 'k--')
-   # plt.title('Task Sparsity 25%, SNR 3.0-5.0')
-
-    #plt.savefig("25_p100.png")
 
 if __name__ == "__main__":
     main()
