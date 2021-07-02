@@ -19,7 +19,7 @@ df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
 task_sparsity_list = [0.0, 0.2, 0.4, 0.6, 0.8]
-n_list = [100,100,100,400,400]
+n_list = [200,200,200,200,800]
 ##n_list = [5,5,5,20,20]
 coverage_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(task_sparsity_list))}
 length_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(task_sparsity_list))}
@@ -254,7 +254,7 @@ common_format(ax4)
 ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-plt.savefig('cov_len_by_ts_mixed_2_5_n100_400.png', bbox_inches='tight')
+plt.savefig('cov_len_by_ts_mixed_2_5_n200_400.png', bbox_inches='tight')
 
 
 #fig = plt.figure(figsize=(25, 10))
