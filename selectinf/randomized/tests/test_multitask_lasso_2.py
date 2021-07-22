@@ -663,7 +663,7 @@ def test_coverage(weight,signal,ts,nsim=100):
     single_task_selective_test_error_list2 = []
 
     ntask = 5
-    nsamples= 500 * np.ones(ntask)
+    nsamples= 2000 * np.ones(ntask)
     p=100
     global_sparsity=0.95
     task_sparsity= ts
