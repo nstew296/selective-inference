@@ -268,7 +268,7 @@ for weight in weight_list:
 min_error = np.min(error_list)
 se_error = np.std(error_list) / np.sqrt(len(error_list))
 error_list = error_list[:np.argmin(error_list)]
-lambda_1se = np.argmin(np.abs(error_list - (min_error + se_error)))
+lambda_1se = np.argmin(np.abs(error_list - min_error))
 
 final_estimates = estimates_dict[weight_list[lambda_1se]]
 final_intervals = intervals_dict[weight_list[lambda_1se]][1:, ]
@@ -483,7 +483,7 @@ for weight in weight_list:
 min_error = np.min(error_list)
 se_error = np.std(error_list) / np.sqrt(len(error_list))
 error_list = error_list[:np.argmin(error_list)]
-lambda_1se = np.argmin(np.abs(error_list - (min_error + se_error)))
+lambda_1se = np.argmin(np.abs(error_list - min_error))
 
 final_estimates = estimates_dict[weight_list[lambda_1se]]
 final_intervals = intervals_dict[weight_list[lambda_1se]][1:, ]
