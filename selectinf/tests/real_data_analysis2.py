@@ -154,7 +154,7 @@ for weight in weight_list:
 min_error = np.min(error_list)
 se_error = np.std(error_list)/np.sqrt(len(error_list))
 error_list = error_list[:np.argmin(error_list)]
-lambda_1se = np.argmin(np.abs(error_list - (min_error+se_error)))
+lambda_1se = np.argmin(np.abs(error_list - min_error))
 
 final_estimates = estimates_dict[weight_list[lambda_1se]]
 final_intervals = intervals_dict[weight_list[lambda_1se]]
@@ -309,4 +309,221 @@ print(np.mean(final_intervals[:,1]-final_intervals[:,0]))
 print(np.sum(significant))
 print(all_variables)
 print(variables)
+
+sample_sizes = predictor_vars_train.shape[0]
+sample_sizes_validate = predictor_vars_validate.shape[0]
+sample_sizes_test = predictor_vars_test.shape[0]
+ridge_terms = np.zeros(ntask)
+nfeatures = predictor_vars_train.shape[1]
+estimates_dict = {}
+intervals_dict = {}
+active_dict = {}
+error_list = []
+
+#Post-selection intervals
+noise_levels = []
+for i in range(ntask):
+    noise_levels.append(np.sqrt(np.sum(np.array(response_train[i] - (predictor_vars_train).dot(
+        np.linalg.pinv((predictor_vars_train)).dot(response_train[i]))) ** 2) / (sample_sizes - nfeatures)))
+dispersions = [noise_levels[i] ** 2 for i in range(len(noise_levels))]
+randomizer_scales = 0.7 * np.asarray([noise_levels[i] for i in range(ntask)])
+randomizers = {i: randomization.isotropic_gaussian((nfeatures,), randomizer_scales[i]) for i in range(ntask)}
+perturbations = np.array([randomizer_scales[i] * _noise(nfeatures) for i in range(ntask)]).T
+weight_list = np.arange(30,50,2.5)
+
+#Perform inference for given tuning parameter
+for weight in weight_list:
+    feature_weight = weight * np.ones(nfeatures)
+    loglikes = {
+        i: rr.glm.gaussian(predictor_vars_train, response_train[i], coef=1., quadratic=None)
+        for i in range(ntask)}
+    multi_lasso = multi_task_lasso(loglikes, np.asarray(feature_weight), ridge_terms, randomizers, nfeatures, ntask, None)
+    active_signs = multi_lasso.fit(perturbations=perturbations)
+    estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(dispersions=dispersions)
+    estimates_dict[weight] = estimate
+    intervals_dict[weight] = intervals
+    active_dict[weight] = active_signs
+
+    #Caculate error on hold out data
+    if (active_signs != 0).sum() > 0:
+        error = 0
+        idx = 0
+        for j in range(ntask):
+            idx_new = np.sum(active_signs[:, j] != 0)
+            if idx_new == 0:
+                error += (0.5 * np.sum(np.square(response_validate[j]))) / sample_sizes_validate
+            else:
+                error += 0.5 * (np.sum(
+                    np.square((response_validate[j] - (predictor_vars_validate)[:, (active_signs[:, j] != 0)].dot(
+                        estimate[idx:idx + idx_new]))))) / sample_sizes_validate
+            idx = idx + idx_new
+
+    else:
+        error = 0
+        for j in range(ntask):
+            error += (0.5 * np.linalg.norm(response_validate[j], 2) ** 2) / sample_sizes_validate
+
+    error_list.append(error)
+    print(error)
+
+min_error = np.min(error_list)
+se_error = np.std(error_list)/np.sqrt(len(error_list))
+error_list = error_list[:np.argmin(error_list)]
+lambda_1se = np.argmin(np.abs(error_list - min_error))
+
+final_estimates = estimates_dict[weight_list[lambda_1se]]
+final_intervals = intervals_dict[weight_list[lambda_1se]]
+
+#Caculate final error on test set
+if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
+    final_error = 0
+    idx = 0
+    for j in range(ntask):
+        idx_new = np.sum(active_dict[weight_list[lambda_1se]][:, j] != 0)
+        if idx_new == 0:
+            final_error += (0.5 * np.sum(np.square(response_test[j]))) / sample_sizes_test
+        else:
+            final_error += 0.5 * (np.sum(
+                np.square((response_test[j] - (predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
+                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))))) / sample_sizes_test
+        idx = idx + idx_new
+
+else:
+    final_error = 0
+    for j in range(ntask):
+        final_error += (0.5 * np.linalg.norm(response_test[j], 2) ** 2) / sample_sizes_test
+
+significant = [final_intervals[j, 0] > 0 or final_intervals[j, 1] < 0 for j in range(np.shape(final_intervals)[0])]
+ordered_variables = {}
+all_variables = {}
+placeholder = 0
+for i in range(ntask):
+    active_ = active_dict[weight_list[lambda_1se]][:, i] != 0
+    new_placeholder = np.sum(active_)
+    all_variables[i] = np.nonzero(active_)[0]
+    ordered_variables[i] = np.nonzero(active_)[0][significant[placeholder:placeholder+new_placeholder]]
+    placeholder = placeholder + new_placeholder
+    variables = ordered_variables
+
+print(final_error)
+print(np.mean(final_intervals[:,1]-final_intervals[:,0]))
+print(np.sum(significant))
+print(all_variables)
+print(variables)
+
+#Data splitting
+
+samples = np.arange(np.int(sample_sizes))
+selection = np.random.choice(samples, size=np.int(0.67 * sample_sizes), replace=False)
+inference = np.setdiff1d(samples, selection)
+response_selection = {j: response_train[j][selection] for j in range(ntask)}
+predictor_vars_selection = predictor_vars_train[selection]
+response_inference = {j: response_train[j][inference] for j in range(ntask)}
+predictor_vars_inference = predictor_vars_train[inference]
+
+noise_levels = []
+for i in range(ntask):
+   noise_levels.append(np.sqrt(np.sum(np.asarray(response_selection[i] - predictor_vars_selection.dot(np.linalg.pinv(predictor_vars_selection).dot(response_selection[i])))**2)/(0.67*sample_sizes-nfeatures)))
+dispersions = [noise_levels[i]**2 for i in range(len(noise_levels))]
+
+weight_list = np.arange(20,45,2.5)
+estimates_dict = {}
+intervals_dict = {}
+active_dict = {}
+error_list = []
+
+#Perform inference for given tuning parameter
+for weight in weight_list:
+    feature_weight = weight * np.ones(nfeatures)
+    loglikes = {
+        i: rr.glm.gaussian(predictor_vars_selection, response_selection[i], coef=1., quadratic=None) for i in range(ntask)}
+    perturbations = np.zeros((nfeatures, ntask))
+    multi_lasso = multi_task_lasso(loglikes, np.asarray(feature_weight), ridge_terms, randomizers, nfeatures, ntask, perturbations)
+    active_signs = multi_lasso.fit(perturbations=perturbations)
+    CIs = [[0, 0]]
+    estimate = []
+
+    #Calculate error on holdout data
+    if (active_signs != 0).sum() > 0:
+        error = 0
+        for i in range(ntask):
+            X = predictor_vars_inference
+            y = response_inference[i]
+            Qfeat = np.linalg.inv(X[:, (active_signs[:, i] != 0)].T.dot(X[:, (active_signs[:, i] != 0)]))
+            observed_target = np.linalg.pinv(X[:, (active_signs[:, i] != 0)]).dot(y)
+            estimate = np.concatenate([estimate,observed_target])
+            cov_target = Qfeat * dispersions[i]
+            alpha = 1. - 0.90
+            quantile = ndist.ppf(1 - alpha / 2.)
+            intervals = np.vstack([observed_target - quantile * np.sqrt(np.diag(cov_target)),
+                                   observed_target + quantile * np.sqrt(np.diag(cov_target))]).T
+            CIs = np.vstack([CIs, intervals])
+
+            idx_new = np.sum(active_signs[:, i] != 0)
+            if idx_new == 0:
+                error += (0.5 * np.sum(np.square(response_validate[i]))) / sample_sizes_validate
+            else:
+                error += (0.5 * np.sum(np.square(
+                response_validate[i] - (predictor_vars_validate)[:, (active_signs[:, i] != 0)].dot(
+                    observed_target)))) / sample_sizes_validate
+
+
+    else:
+        error = 0
+        for j in range(ntask):
+            error += (0.5 * np.linalg.norm(response_validate[j], 2) ** 2) / sample_sizes_validate
+        CIs = np.asarray([[0, 0], [np.nan, np.nan]])
+
+    estimates_dict[weight] = estimate
+    intervals_dict[weight] = CIs
+    active_dict[weight] = active_signs
+    error_list.append(error)
+    print(error)
+
+min_error = np.min(error_list)
+se_error = np.std(error_list) / np.sqrt(len(error_list))
+error_list = error_list[:np.argmin(error_list)]
+lambda_1se = np.argmin(np.abs(error_list - (min_error + se_error)))
+
+final_estimates = estimates_dict[weight_list[lambda_1se]]
+final_intervals = intervals_dict[weight_list[lambda_1se]][1:, ]
+
+#Caculate final error on test set
+if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
+    final_error = 0
+    idx = 0
+    for j in range(ntask):
+        idx_new = np.sum(active_dict[weight_list[lambda_1se]][:, j] != 0)
+        if idx_new == 0:
+            final_error += (0.5 * np.sum(np.square(response_test[j]))) / sample_sizes_test
+        else:
+            final_error += 0.5 * (np.sum(
+                np.square((response_test[j] - (predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
+                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))))) / sample_sizes_test
+        idx = idx + idx_new
+
+else:
+    final_error = 0
+    for j in range(ntask):
+        final_error += (0.5 * np.linalg.norm(response_test[j], 2) ** 2) / sample_sizes_test
+
+significant = [final_intervals[j, 0] > 0 or final_intervals[j, 1] < 0 for j in range(np.shape(final_intervals)[0])]
+ordered_variables = {}
+all_variables = {}
+placeholder = 0
+for i in range(ntask):
+    active_ = active_dict[weight_list[lambda_1se]][:, i] != 0
+    new_placeholder = np.sum(active_)
+    all_variables[i] = np.nonzero(active_)[0]
+    ordered_variables[i] = np.nonzero(active_)[0][significant[placeholder:placeholder+new_placeholder]]
+    placeholder = placeholder + new_placeholder
+    variables = ordered_variables
+
+print(final_error)
+print(np.mean(final_intervals[:,1]-final_intervals[:,0]))
+print(np.sum(significant))
+print(all_variables)
+print(variables)
+
+
 
