@@ -117,7 +117,7 @@ dispersions = [noise_levels[i] ** 2 for i in range(len(noise_levels))]
 randomizer_scales = 1.0 * np.asarray([noise_levels[i] for i in range(ntask)])
 randomizers = {i: randomization.isotropic_gaussian((nfeatures,), randomizer_scales[i]) for i in range(ntask)}
 perturbations = np.array([randomizer_scales[i] * _noise(nfeatures) for i in range(ntask)]).T
-weight_list = np.arange(26,80,5)
+weight_list = np.arange(26,60,2.5)
 
 #Perform inference for given tuning parameter
 for weight in weight_list:
@@ -216,7 +216,7 @@ for i in range(ntask):
    noise_levels.append(np.sqrt(np.sum(np.asarray(response_selection[i] - predictor_vars_selection.dot(np.linalg.pinv(predictor_vars_selection).dot(response_selection[i])))**2)/(0.5*sample_sizes-nfeatures)))
 dispersions = [noise_levels[i]**2 for i in range(len(noise_levels))]
 
-weight_list = np.arange(12,42,2.5)
+weight_list = np.arange(12,37,2)
 estimates_dict = {}
 intervals_dict = {}
 active_dict = {}
@@ -548,10 +548,10 @@ fig = plt.figure(figsize=(17, 14))
 ax1 = fig.add_subplot(111)
 
 plt.sca(ax1)
-first = plt.boxplot([selective07_intervals], positions=1, sym='', widths=0.3)
-second = plt.boxplot([selective1_intervals], positions=1.3, sym='', widths=0.3)
-fourth = plt.boxplot([ds67_intervals], positions=1.5, sym='', widths=0.3)
-fifth = plt.boxplot([ds50_intervals], positions=1.8, sym='', widths=0.3)
+first = plt.boxplot([selective07_intervals], positions=np.asarray([1]), sym='', widths=0.3)
+second = plt.boxplot([selective1_intervals], positions=np.asarray([1.3]), sym='', widths=0.3)
+fourth = plt.boxplot([ds67_intervals], positions=np.asarray([1.5]), sym='', widths=0.3)
+fifth = plt.boxplot([ds50_intervals], positions=np.asarray([1.8]), sym='', widths=0.3)
 set_box_color(first, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
 set_box_color(second, '#6baed6', '--')
 set_box_color(fourth, '#238443', 'solid')
