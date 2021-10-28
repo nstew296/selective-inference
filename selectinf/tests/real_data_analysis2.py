@@ -117,7 +117,7 @@ dispersions = [noise_levels[i] ** 2 for i in range(len(noise_levels))]
 randomizer_scales = 1.0 * np.asarray([noise_levels[i] for i in range(ntask)])
 randomizers = {i: randomization.isotropic_gaussian((nfeatures,), randomizer_scales[i]) for i in range(ntask)}
 perturbations = np.array([randomizer_scales[i] * _noise(nfeatures) for i in range(ntask)]).T
-weight_list = np.arange(26,60,2.5)
+weight_list = np.arange(26,60,1.5)
 
 #Perform inference for given tuning parameter
 for weight in weight_list:
@@ -216,7 +216,7 @@ for i in range(ntask):
    noise_levels.append(np.sqrt(np.sum(np.asarray(response_selection[i] - predictor_vars_selection.dot(np.linalg.pinv(predictor_vars_selection).dot(response_selection[i])))**2)/(0.5*sample_sizes-nfeatures)))
 dispersions = [noise_levels[i]**2 for i in range(len(noise_levels))]
 
-weight_list = np.arange(12,37,2)
+weight_list = np.arange(12,37,1.5)
 estimates_dict = {}
 intervals_dict = {}
 active_dict = {}
@@ -336,7 +336,7 @@ dispersions = [noise_levels[i] ** 2 for i in range(len(noise_levels))]
 randomizer_scales = 0.7 * np.asarray([noise_levels[i] for i in range(ntask)])
 randomizers = {i: randomization.isotropic_gaussian((nfeatures,), randomizer_scales[i]) for i in range(ntask)}
 perturbations = np.array([randomizer_scales[i] * _noise(nfeatures) for i in range(ntask)]).T
-weight_list = np.arange(30,57,2.5)
+weight_list = np.arange(30,57,1.5)
 
 #Perform inference for given tuning parameter
 for weight in weight_list:
@@ -435,7 +435,7 @@ for i in range(ntask):
    noise_levels.append(np.sqrt(np.sum(np.asarray(response_selection[i] - predictor_vars_selection.dot(np.linalg.pinv(predictor_vars_selection).dot(response_selection[i])))**2)/(0.67*sample_sizes-nfeatures)))
 dispersions = [noise_levels[i]**2 for i in range(len(noise_levels))]
 
-weight_list = np.arange(20,45,2.5)
+weight_list = np.arange(20,45,1.5)
 estimates_dict = {}
 intervals_dict = {}
 active_dict = {}
@@ -538,10 +538,10 @@ print(variables)
 
 
 def set_box_color(bp, color, linestyle):
-    plt.setp(bp['boxes'], color=color, linestyle=linestyle)
-    plt.setp(bp['whiskers'], color=color, linestyle=linestyle)
-    plt.setp(bp['caps'], color=color)
-    plt.setp(bp['medians'], color=color)
+    plt.setp(bp['boxes'], color=color, linestyle=linestyle, linewidth=2.5)
+    plt.setp(bp['whiskers'], color=color, linestyle=linestyle, linewidth=2.5)
+    plt.setp(bp['caps'], color=color, linewidth=2.5)
+    plt.setp(bp['medians'], color=color, linewidth=2.5)
 
 
 fig = plt.figure(figsize=(17, 14))
@@ -558,22 +558,22 @@ set_box_color(fourth, '#238443', 'solid')
 set_box_color(fifth, '#31a354', '--')
 plt.xlim(0.7, 2.4)
 plt.tight_layout()
-plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso 0.7', linewidth=2.5)
+plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso 0.7')
 plt.plot([], c='#6baed6', label='Randomized Multi-Task Lasso 1.0', linestyle='--', linewidth=2.5)
 plt.plot([], c='#238443', label='Data Splitting 67/33', linewidth=2.5)
 plt.plot([], c='#31a354', label='Data Splitting 50/50', linestyle='--', linewidth=2.5)
 plt.legend()
-plt.ylabel('Interval Length', fontsize=12)
+plt.ylabel('Interval Length', fontsize=20)
 
-ax1.set_title("Distribution of Interval Lengths", y=1.01)
-ax1.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.2), fontsize=14)
+ax1.set_title("Distribution of Interval Lengths", y=1.01 ,fontsize=24)
+ax1.legend(loc='lower left', bbox_to_anchor=(0.319, -0.225), fontsize=20)
 ax1.set_xticklabels([])
 ax1.set_xticks([])
 
 
 def common_format(ax):
     ax.grid(True, which='both', color='#f0f0f0')
-    ax.set_xlabel('Method', fontsize=12)
+    ax.set_xlabel('Method', fontsize=20)
     return ax
 
 common_format(ax1)

@@ -6,10 +6,10 @@ np.random.seed(5)
 
 
 def set_box_color(bp, color, linestyle):
-    plt.setp(bp['boxes'], color=color, linestyle=linestyle)
-    plt.setp(bp['whiskers'], color=color, linestyle=linestyle)
-    plt.setp(bp['caps'], color=color)
-    plt.setp(bp['medians'], color=color)
+    plt.setp(bp['boxes'], color=color, linestyle=linestyle, linewidth=2.5)
+    plt.setp(bp['whiskers'], color=color, linestyle=linestyle, linewidth=2.5)
+    plt.setp(bp['caps'], color=color, linewidth=2.5)
+    plt.setp(bp['medians'], color=color, linewidth=2.5)
 
 
 fig = plt.figure(figsize=(17, 14))
@@ -31,17 +31,17 @@ plt.plot([], c='#6baed6', label='Randomized Multi-Task Lasso 1.0', linestyle='--
 plt.plot([], c='#238443', label='Data Splitting 67/33', linewidth=2.5)
 plt.plot([], c='#31a354', label='Data Splitting 50/50', linestyle='--', linewidth=2.5)
 plt.legend()
-plt.ylabel('Interval Length', fontsize=12)
+plt.ylabel('Interval Length', fontsize=20)
 
-ax1.set_title("Distribution of Interval Lengths", y=1.01)
-ax1.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.2), fontsize=14)
+ax1.set_title("Distribution of Interval Lengths", y=1.01, fontsize=24)
+ax1.legend(loc='lower left', bbox_to_anchor=(0.319, -0.225), fontsize=20)
 ax1.set_xticklabels([])
 ax1.set_xticks([])
 
 
 def common_format(ax):
     ax.grid(True, which='both', color='#f0f0f0')
-    ax.set_xlabel('Method', fontsize=12)
+    ax.set_xlabel('Method', fontsize=20)
     return ax
 
 common_format(ax1)
