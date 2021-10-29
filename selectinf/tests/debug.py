@@ -53,16 +53,16 @@ plt.savefig('real_data_lengths.png', bbox_inches='tight')
 intervals1 = {0:[1,2,3,4],1:[2,4,5],2:[1,2,4,5,7]}
 lengths1 = [1,2,1,2,3,1,3,2,4,1,2,1]
 intervals2 = {0:[1,2,3,4],1:[2,4,5],2:[1,2,4,5,7]}
-lengths2 = [2,3,2,3,4,2,4,3,5,2,3,2]
+lengths2 = [8,3,2,3,4,2,4,3,5,2,3,-7]
 match_length_indx = {}
 start = 0
 for i in range(3):
-    match_length_indx = {i:lengths1[start:start+len(intervals1[i])]}
+    match_length_indx[i] = lengths1[start:start+len(intervals1[i])]
     start += len(intervals1[i])
 match_length_indx2 = {}
 start2 = 0
 for i in range(3):
-    match_length_indx2 = {i: lengths2[start2:start2 + len(intervals2[i])]}
+    match_length_indx2[i] = lengths2[start2:start2 + len(intervals2[i])]
     start2 += len(intervals2[i])
 
 common = {i:np.intersect1d(intervals1[i],intervals2[i]) for i in range(3)}
@@ -70,6 +70,6 @@ print(common)
 common_lengths = []
 for i in range(3):
     for predictor in common[i]:
-        diff_length = lengths2[np.argwhere(intervals2[i]==predictor)[0][0]]-lengths1[np.argwhere(intervals1[i]==predictor)[0][0]]
+        diff_length = match_length_indx2[i][np.argwhere(intervals2[i]==predictor)[0][0]]-match_length_indx[i][np.argwhere(intervals1[i]==predictor)[0][0]]
         common_lengths.append(diff_length)
 print(common_lengths)

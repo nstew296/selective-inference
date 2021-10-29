@@ -198,7 +198,7 @@ selective1_intervals = np.asarray(final_intervals[:,1]-final_intervals[:,0])
 match_length_indx = {}
 start = 0
 for i in range(ntask):
-    match_length_indx = {i:selective1_intervals[start:start+len(all_variables[i])]}
+    match_length_indx[i] = selective1_intervals[start:start+len(all_variables[i])]
     start += len(all_variables[i])
 
 print(final_error)
@@ -326,15 +326,15 @@ print(variables)
 match_length_indx2 = {}
 start2 = 0
 for i in range(ntask):
-    match_length_indx2 = {i:ds50_intervals[start2:start2+len(all_variables[i])]}
+    match_length_indx2[i] = ds50_intervals[start2:start2+len(all_variables[i])]
     start2 += len(all_variables[i])
 
-common = {i:np.intersect1d(all_variables[i],all_variables_ds[i]) for i in range(3)}
+common = {i:np.intersect1d(all_variables[i],all_variables_ds[i]) for i in range(ntask)}
 print("common",common)
 common_lengths = []
 for i in range(ntask):
     for predictor in common[i]:
-        diff_length = ds50_intervals[np.argwhere(all_variables_ds[i]==predictor)[0][0]]-selective1_intervals[np.argwhere(all_variables[i]==predictor)[0][0]]
+        diff_length = match_length_indx2[i][np.argwhere(all_variables_ds[i]==predictor)[0][0]]-match_length_indx[np.argwhere(all_variables[i]==predictor)[0][0]]
         common_lengths.append(diff_length)
 print(common_lengths)
 fig1, ax1 = plt.subplots()
