@@ -73,3 +73,40 @@ for i in range(3):
         diff_length = match_length_indx2[i][np.argwhere(intervals2[i]==predictor)[0][0]]-match_length_indx[i][np.argwhere(intervals1[i]==predictor)[0][0]]
         common_lengths.append(diff_length)
 print(common_lengths)
+
+def set_box_color(bp, color, linestyle):
+    plt.setp(bp['boxes'], color=color, linestyle=linestyle, linewidth=2.5)
+    plt.setp(bp['whiskers'], color=color, linestyle=linestyle, linewidth=2.5)
+    plt.setp(bp['caps'], color=color, linewidth=2.5)
+    plt.setp(bp['medians'], color=color, linewidth=2.5)
+
+fig = plt.figure(figsize=(17, 14))
+ax1 = fig.add_subplot(111)
+
+plt.sca(ax1)
+first = plt.boxplot([common_lengths_67], positions=np.asarray([1]), sym='', widths=0.3)
+second = plt.boxplot([common_lengths], positions=np.asarray([1.6]), sym='', widths=0.3)
+set_box_color(first, '#2c7fb8', 'solid')  # colors are from http://colorbrewer2.org/
+set_box_color(second, '#2c7fb8', '--')
+plt.xlim(0.7, 1.9)
+plt.tight_layout()
+plt.plot([], c='#2c7fb8', label='57/33 Split')
+plt.plot([], c='#2c7fb8', label='50/50 Split', linestyle='--', linewidth=2.5)
+plt.legend()
+plt.ylabel('Difference in Interval Length', fontsize=20)
+
+ax1.set_title("Difference in Confidence Interval Length between Data Splitting and Selective Inference", y=1.01 ,fontsize=24)
+ax1.legend(loc='lower left', bbox_to_anchor=(0.41, -0.125), fontsize=20)
+ax1.set_xticklabels([])
+ax1.set_xticks([])
+
+
+def common_format(ax):
+    ax.grid(True, which='both', color='#f0f0f0')
+    ax.set_xlabel('Method', fontsize=20)
+    return ax
+
+common_format(ax1)
+
+plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+plt.savefig('real_data_lengths2.png', bbox_inches='tight')
