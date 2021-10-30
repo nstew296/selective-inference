@@ -84,14 +84,14 @@ fig = plt.figure(figsize=(17, 14))
 ax1 = fig.add_subplot(111)
 
 plt.sca(ax1)
-first = plt.boxplot([common_lengths_67], positions=np.asarray([1]), sym='', widths=0.3)
-second = plt.boxplot([common_lengths], positions=np.asarray([1.6]), sym='', widths=0.3)
-set_box_color(first, '#2c7fb8', 'solid')  # colors are from http://colorbrewer2.org/
-set_box_color(second, '#2c7fb8', '--')
+first = plt.boxplot([1,3,2,4,3,5,4,6], positions=np.asarray([1]), sym='', widths=0.3)
+second = plt.boxplot([3,1,4,2,5,3], positions=np.asarray([1.6]), sym='', widths=0.3)
+set_box_color(first, '#35978f', 'solid')  # colors are from http://colorbrewer2.org/
+set_box_color(second, '#35978f', '--')
 plt.xlim(0.7, 1.9)
 plt.tight_layout()
-plt.plot([], c='#2c7fb8', label='57/33 Split')
-plt.plot([], c='#2c7fb8', label='50/50 Split', linestyle='--', linewidth=2.5)
+plt.plot([], c='#35978f', label='67/33 Split', linewidth=2.5)
+plt.plot([], c='#35978f', label='50/50 Split', linestyle='--', linewidth=2.5)
 plt.legend()
 plt.ylabel('Difference in Interval Length', fontsize=20)
 
