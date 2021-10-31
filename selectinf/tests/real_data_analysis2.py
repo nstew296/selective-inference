@@ -104,6 +104,7 @@ sample_sizes_test = predictor_vars_test.shape[0]
 ridge_terms = np.zeros(ntask)
 nfeatures = predictor_vars_train.shape[1]
 estimates_dict = {}
+test_stat_dict = {}
 intervals_dict = {}
 active_dict = {}
 error_list = []
@@ -129,6 +130,7 @@ for weight in weight_list:
     active_signs = multi_lasso.fit(perturbations=perturbations)
     estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(dispersions=dispersions)
     estimates_dict[weight] = estimate
+    test_stat_dict[weight] = estimate / np.sqrt(np.diag(observed_info_mean))
     intervals_dict[weight] = intervals
     active_dict[weight] = active_signs
 
@@ -158,8 +160,8 @@ min_error = np.min(error_list)
 se_error = np.std(error_list)/np.sqrt(len(error_list))
 error_list = error_list[:np.argmin(error_list)]
 lambda_1se = np.argmin(np.abs(error_list - min_error))
-
 final_estimates = estimates_dict[weight_list[lambda_1se]]
+final_test_stats_selective1 = test_stat_dict[weight_list[lambda_1se]]
 final_intervals = intervals_dict[weight_list[lambda_1se]]
 
 #Caculate final error on test set
@@ -226,6 +228,7 @@ dispersions = [noise_levels[i]**2 for i in range(len(noise_levels))]
 weight_list = np.arange(12,37,1.5)
 estimates_dict = {}
 intervals_dict = {}
+test_stat_dict = {}
 active_dict = {}
 error_list = []
 
@@ -239,6 +242,7 @@ for weight in weight_list:
     active_signs = multi_lasso.fit(perturbations=perturbations)
     CIs = [[0, 0]]
     estimate = []
+    test_stat = []
 
     #Calculate error on holdout data
     if (active_signs != 0).sum() > 0:
@@ -250,6 +254,7 @@ for weight in weight_list:
             observed_target = np.linalg.pinv(X[:, (active_signs[:, i] != 0)]).dot(y)
             estimate = np.concatenate([estimate,observed_target])
             cov_target = Qfeat * dispersions[i]
+            test_stat = np.concatenate([test_stat,observed_target/np.sqrt(np.diag(cov_target))])
             alpha = 1. - 0.90
             quantile = ndist.ppf(1 - alpha / 2.)
             intervals = np.vstack([observed_target - quantile * np.sqrt(np.diag(cov_target)),
@@ -273,6 +278,7 @@ for weight in weight_list:
 
     estimates_dict[weight] = estimate
     intervals_dict[weight] = CIs
+    test_stat_dict[weight] = test_stat
     active_dict[weight] = active_signs
     error_list.append(error)
     print(error)
@@ -284,6 +290,7 @@ lambda_1se = np.argmin(np.abs(error_list - min_error))
 
 final_estimates = estimates_dict[weight_list[lambda_1se]]
 final_intervals = intervals_dict[weight_list[lambda_1se]][1:, ]
+final_test_stats_ds50 = test_stat_dict[weight_list[lambda_1se]]
 
 #Caculate final error on test set
 if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
@@ -336,7 +343,7 @@ print("common",common)
 common_lengths = []
 for i in range(ntask):
     for predictor in common[i]:
-        diff_length = match_length_indx2[i][np.argwhere(all_variables_ds[i]==predictor)[0][0]]-match_length_indx[i][np.argwhere(all_variables[i]==predictor)[0][0]]
+        diff_length = match_length_indx2[i][np.argwhere(all_variables_ds[i]==predictor)[0][0]]/match_length_indx[i][np.argwhere(all_variables[i]==predictor)[0][0]]
         common_lengths.append(diff_length)
 print(common_lengths)
 fig1, ax1 = plt.subplots()
@@ -351,6 +358,7 @@ ridge_terms = np.zeros(ntask)
 nfeatures = predictor_vars_train.shape[1]
 estimates_dict = {}
 intervals_dict = {}
+test_stat_dict = {}
 active_dict = {}
 error_list = []
 
@@ -375,6 +383,7 @@ for weight in weight_list:
     active_signs = multi_lasso.fit(perturbations=perturbations)
     estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(dispersions=dispersions)
     estimates_dict[weight] = estimate
+    test_stat_dict[weight] = estimate / np.sqrt(np.diag(observed_info_mean))
     intervals_dict[weight] = intervals
     active_dict[weight] = active_signs
 
@@ -407,6 +416,7 @@ lambda_1se = np.argmin(np.abs(error_list - min_error))
 
 final_estimates = estimates_dict[weight_list[lambda_1se]]
 final_intervals = intervals_dict[weight_list[lambda_1se]]
+final_test_stats_selective07 = test_stat_dict[weight_list[lambda_1se]]
 
 #Caculate final error on test set
 if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
@@ -472,6 +482,7 @@ dispersions = [noise_levels[i]**2 for i in range(len(noise_levels))]
 weight_list = np.arange(20,45,1.5)
 estimates_dict = {}
 intervals_dict = {}
+test_stat_dict = {}
 active_dict = {}
 error_list = []
 
@@ -485,6 +496,7 @@ for weight in weight_list:
     active_signs = multi_lasso.fit(perturbations=perturbations)
     CIs = [[0, 0]]
     estimate = []
+    test_stat = []
 
     #Calculate error on holdout data
     if (active_signs != 0).sum() > 0:
@@ -496,6 +508,7 @@ for weight in weight_list:
             observed_target = np.linalg.pinv(X[:, (active_signs[:, i] != 0)]).dot(y)
             estimate = np.concatenate([estimate,observed_target])
             cov_target = Qfeat * dispersions[i]
+            test_stat = np.concatenate([test_stat,observed_target/np.sqrt(np.diag(cov_target))])
             alpha = 1. - 0.90
             quantile = ndist.ppf(1 - alpha / 2.)
             intervals = np.vstack([observed_target - quantile * np.sqrt(np.diag(cov_target)),
@@ -518,6 +531,7 @@ for weight in weight_list:
         CIs = np.asarray([[0, 0], [np.nan, np.nan]])
 
     estimates_dict[weight] = estimate
+    test_stat_dict[weight] = test_stat
     intervals_dict[weight] = CIs
     active_dict[weight] = active_signs
     error_list.append(error)
@@ -530,6 +544,7 @@ lambda_1se = np.argmin(np.abs(error_list - min_error))
 
 final_estimates = estimates_dict[weight_list[lambda_1se]]
 final_intervals = intervals_dict[weight_list[lambda_1se]][1:, ]
+final_test_stats_ds67 = test_stat_dict[weight_list[lambda_1se]]
 
 #Caculate final error on test set
 if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
@@ -582,7 +597,7 @@ print("common",common)
 common_lengths_67 = []
 for i in range(ntask):
     for predictor in common[i]:
-        diff_length = match_length_indx2[i][np.argwhere(all_variables_ds[i]==predictor)[0][0]]-match_length_indx[i][np.argwhere(all_variables[i]==predictor)[0][0]]
+        diff_length = match_length_indx2[i][np.argwhere(all_variables_ds[i]==predictor)[0][0]]/match_length_indx[i][np.argwhere(all_variables[i]==predictor)[0][0]]
         common_lengths_67.append(diff_length)
 
 def set_box_color(bp, color, linestyle):
@@ -601,12 +616,12 @@ set_box_color(first, '#35978f', 'solid')  # colors are from http://colorbrewer2.
 set_box_color(second, '#35978f', '--')
 plt.xlim(0.7, 1.9)
 plt.tight_layout()
-plt.plot([], c='#35978f', label='67/33 Split', linewidth=2.5)
-plt.plot([], c='#35978f', label='50/50 Split', linestyle='--', linewidth=2.5)
+plt.plot([], c='#35978f', label='67/33 Split: Selective Inference', linewidth=2.5)
+plt.plot([], c='#35978f', label='50/50 Split: Selective Inference', linestyle='--', linewidth=2.5)
 plt.legend()
-plt.ylabel('Difference in Interval Length for Corresponding Parameters', fontsize=20)
+plt.ylabel('Ratio of Interval Lengths for Corresponding Parameters', fontsize=20)
 
-ax1.set_title("Difference in Confidence Interval Length between Data Splitting and Selective Inference", y=1.01 ,fontsize=24)
+ax1.set_title("Ratio of Data Splitting Interval Length to Selective Inference Interval Length", y=1.01 ,fontsize=24)
 ax1.legend(loc='lower left', bbox_to_anchor=(0.41, -0.125), fontsize=20)
 ax1.set_xticklabels([])
 ax1.set_xticks([])
@@ -659,4 +674,42 @@ common_format(ax1)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 plt.savefig('real_data_lengths.png', bbox_inches='tight')
+
+
+fig = plt.figure(figsize=(17, 14))
+ax1 = fig.add_subplot(111)
+
+plt.sca(ax1)
+first = plt.boxplot([final_test_stats_selective07], positions=np.asarray([1]), sym='', widths=0.3)
+second = plt.boxplot([final_test_stats_selective1], positions=np.asarray([1.3]), sym='', widths=0.3)
+fourth = plt.boxplot([final_test_stats_ds67], positions=np.asarray([1.8]), sym='', widths=0.3)
+fifth = plt.boxplot([final_test_stats_ds50], positions=np.asarray([2.1]), sym='', widths=0.3)
+set_box_color(first, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
+set_box_color(second, '#6baed6', '--')
+set_box_color(fourth, '#238443', 'solid')
+set_box_color(fifth, '#31a354', '--')
+plt.xlim(0.7, 2.4)
+plt.tight_layout()
+plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso 0.7')
+plt.plot([], c='#6baed6', label='Randomized Multi-Task Lasso 1.0', linestyle='--', linewidth=2.5)
+plt.plot([], c='#238443', label='Data Splitting 67/33', linewidth=2.5)
+plt.plot([], c='#31a354', label='Data Splitting 50/50', linestyle='--', linewidth=2.5)
+plt.legend()
+plt.ylabel('Coefficient of Variation', fontsize=20)
+
+ax1.set_title("Coefficient of Variation for Estimated Model Parameters", y=1.01 ,fontsize=24)
+ax1.legend(loc='lower left', bbox_to_anchor=(0.319, -0.225), fontsize=20)
+ax1.set_xticklabels([])
+ax1.set_xticks([])
+
+
+def common_format(ax):
+    ax.grid(True, which='both', color='#f0f0f0')
+    ax.set_xlabel('Method', fontsize=20)
+    return ax
+
+common_format(ax1)
+
+plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+plt.savefig('real_data_cv.png', bbox_inches='tight')
 
