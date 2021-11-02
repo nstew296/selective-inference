@@ -75,8 +75,8 @@ for i in range(3):
 print(common_lengths)
 
 def set_box_color(bp, color, linestyle):
-    plt.setp(bp['boxes'], color=color, linestyle=linestyle, linewidth=2.5)
-    plt.setp(bp['whiskers'], color=color, linestyle=linestyle, linewidth=2.5)
+    plt.setp(bp['boxes'], color=color, linestyle=linestyle, linewidth=3.5)
+    plt.setp(bp['whiskers'], color=color, linestyle=linestyle, linewidth=3.5)
     plt.setp(bp['caps'], color=color, linewidth=2.5)
     plt.setp(bp['medians'], color=color, linewidth=2.5)
 
@@ -84,19 +84,20 @@ fig = plt.figure(figsize=(17, 14))
 ax1 = fig.add_subplot(111)
 
 plt.sca(ax1)
-first = plt.boxplot([1,3,2,4,3,5,4,6], positions=np.asarray([1]), sym='', widths=0.3)
-second = plt.boxplot([3,1,4,2,5,3], positions=np.asarray([1.6]), sym='', widths=0.3)
+first = plt.boxplot([1.3,1.3,1.2,1.4,1.3,1.5,1.4,1.6], positions=np.asarray([1]), sym='', widths=0.3)
+second = plt.boxplot([1.3,1.1,1.4,1.2,1.5,1.3], positions=np.asarray([1.6]), sym='', widths=0.3)
 set_box_color(first, '#35978f', 'solid')  # colors are from http://colorbrewer2.org/
 set_box_color(second, '#35978f', '--')
 plt.xlim(0.7, 1.9)
 plt.tight_layout()
-plt.plot([], c='#35978f', label='67/33 Split', linewidth=2.5)
-plt.plot([], c='#35978f', label='50/50 Split', linestyle='--', linewidth=2.5)
+plt.plot([], c='#35978f', label='67/33 Split: Selective Inference', linewidth=2.5)
+plt.plot([], c='#35978f', label='50/50 Split: Selective Inference', linestyle='--', linewidth=2.5)
 plt.legend()
-plt.ylabel('Difference in Interval Length', fontsize=20)
+plt.ylabel('Ratio of Interval Lengths for Common Parameters', fontsize=24)
+plt.yticks(fontsize=20)
 
-ax1.set_title("Difference in Confidence Interval Length between Data Splitting and Selective Inference", y=1.01 ,fontsize=24)
-ax1.legend(loc='lower left', bbox_to_anchor=(0.41, -0.125), fontsize=20)
+ax1.set_title("Ratio of Confidence Interval Lengths", y=1.01 ,fontsize=32)
+ax1.legend(loc='lower left', bbox_to_anchor=(0.3225, -0.125), fontsize=20)
 ax1.set_xticklabels([])
 ax1.set_xticks([])
 
@@ -107,6 +108,7 @@ def common_format(ax):
     return ax
 
 common_format(ax1)
+ax1.axhline(y=1.0, color='k', linestyle='--', linewidth=2.5)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 plt.savefig('real_data_lengths2.png', bbox_inches='tight')

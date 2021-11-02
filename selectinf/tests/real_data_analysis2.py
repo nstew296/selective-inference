@@ -130,7 +130,7 @@ for weight in weight_list:
     active_signs = multi_lasso.fit(perturbations=perturbations)
     estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(dispersions=dispersions)
     estimates_dict[weight] = estimate
-    test_stat_dict[weight] = estimate / np.sqrt(np.diag(observed_info_mean))
+    test_stat_dict[weight] = np.sqrt(np.diag(observed_info_mean)) / np.abs(estimate)
     intervals_dict[weight] = intervals
     active_dict[weight] = active_signs
 
@@ -141,19 +141,19 @@ for weight in weight_list:
         for j in range(ntask):
             idx_new = np.sum(active_signs[:, j] != 0)
             if idx_new == 0:
-                error += (0.5 * np.sum(np.square(response_validate[j]))) / sample_sizes_validate
+                error += np.sqrt(np.sum(np.square(response_validate[j])) / sample_sizes_validate)
             else:
-                error += 0.5 * (np.sum(
+                error += np.sqrt(np.sum(
                     np.square((response_validate[j] - (predictor_vars_validate)[:, (active_signs[:, j] != 0)].dot(
-                        estimate[idx:idx + idx_new]))))) / sample_sizes_validate
+                        estimate[idx:idx + idx_new])))) / sample_sizes_validate)
             idx = idx + idx_new
 
     else:
         error = 0
         for j in range(ntask):
-            error += (0.5 * np.linalg.norm(response_validate[j], 2) ** 2) / sample_sizes_validate
+            error += np.qrt((np.linalg.norm(response_validate[j], 2) ** 2) / sample_sizes_validate)
 
-    error_list.append(error)
+    error_list.append(error/ntask)
     print(error)
 
 min_error = np.min(error_list)
@@ -167,21 +167,28 @@ final_intervals = intervals_dict[weight_list[lambda_1se]]
 #Caculate final error on test set
 if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
     final_error = 0
+    average_predictive_rsquared = 0
     idx = 0
     for j in range(ntask):
         idx_new = np.sum(active_dict[weight_list[lambda_1se]][:, j] != 0)
         if idx_new == 0:
-            final_error += (0.5 * np.sum(np.square(response_test[j]))) / sample_sizes_test
+            final_error += np.sqrt(np.sum(np.square(response_test[j])) / sample_sizes_test)
         else:
-            final_error += 0.5 * (np.sum(
+            final_error += np.sqrt(np.sum(
                 np.square((response_test[j] - (predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
-                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))))) / sample_sizes_test
+                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new])))) / sample_sizes_test)
+            average_predictive_rsquared += np.corrcoef(response_test[j],(predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
+                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))
         idx = idx + idx_new
 
 else:
     final_error = 0
+    average_predictive_rsquared = 0
     for j in range(ntask):
-        final_error += (0.5 * np.linalg.norm(response_test[j], 2) ** 2) / sample_sizes_test
+        final_error += np.sqrt(np.linalg.norm(response_test[j], 2) ** 2 / sample_sizes_test)
+
+final_error = final_error/ntask
+average_predictive_rsquared = average_predictive_rsquared/ntask
 
 significant = [final_intervals[j, 0] > 0 or final_intervals[j, 1] < 0 for j in range(np.shape(final_intervals)[0])]
 ordered_variables = {}
@@ -204,6 +211,7 @@ for i in range(ntask):
     start += len(all_variables[i])
 
 print(final_error)
+print(average_predictive_rsquared)
 print(np.mean(final_intervals[:,1]-final_intervals[:,0]))
 print(np.std(final_intervals[:,1]-final_intervals[:,0]))
 print(np.sum(significant))
@@ -254,7 +262,7 @@ for weight in weight_list:
             observed_target = np.linalg.pinv(X[:, (active_signs[:, i] != 0)]).dot(y)
             estimate = np.concatenate([estimate,observed_target])
             cov_target = Qfeat * dispersions[i]
-            test_stat = np.concatenate([test_stat,observed_target/np.sqrt(np.diag(cov_target))])
+            test_stat = np.concatenate([test_stat,np.sqrt(np.diag(cov_target))/np.abs(observed_target)])
             alpha = 1. - 0.90
             quantile = ndist.ppf(1 - alpha / 2.)
             intervals = np.vstack([observed_target - quantile * np.sqrt(np.diag(cov_target)),
@@ -263,24 +271,24 @@ for weight in weight_list:
 
             idx_new = np.sum(active_signs[:, i] != 0)
             if idx_new == 0:
-                error += (0.5 * np.sum(np.square(response_validate[i]))) / sample_sizes_validate
+                error += np.sqrt(np.sum(np.square(response_validate[i])) / sample_sizes_validate)
             else:
-                error += (0.5 * np.sum(np.square(
+                error += np.sqrt(np.sum(np.square(
                 response_validate[i] - (predictor_vars_validate)[:, (active_signs[:, i] != 0)].dot(
-                    observed_target)))) / sample_sizes_validate
+                    observed_target))) / sample_sizes_validate)
 
 
     else:
         error = 0
         for j in range(ntask):
-            error += (0.5 * np.linalg.norm(response_validate[j], 2) ** 2) / sample_sizes_validate
+            error += np.sqrt(np.linalg.norm(response_validate[j], 2) ** 2 / sample_sizes_validate)
         CIs = np.asarray([[0, 0], [np.nan, np.nan]])
 
     estimates_dict[weight] = estimate
     intervals_dict[weight] = CIs
     test_stat_dict[weight] = test_stat
     active_dict[weight] = active_signs
-    error_list.append(error)
+    error_list.append(error/ntask)
     print(error)
 
 min_error = np.min(error_list)
@@ -295,21 +303,28 @@ final_test_stats_ds50 = test_stat_dict[weight_list[lambda_1se]]
 #Caculate final error on test set
 if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
     final_error = 0
+    average_predictive_rsquared = 0
     idx = 0
     for j in range(ntask):
         idx_new = np.sum(active_dict[weight_list[lambda_1se]][:, j] != 0)
         if idx_new == 0:
-            final_error += (0.5 * np.sum(np.square(response_test[j]))) / sample_sizes_test
+            final_error += np.sqrt(np.sum(np.square(response_test[j])) / sample_sizes_test)
         else:
-            final_error += 0.5 * (np.sum(
+            final_error += np.sqrt(np.sum(
                 np.square((response_test[j] - (predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
-                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))))) / sample_sizes_test
+                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new])))) / sample_sizes_test)
+            average_predictive_rsquared += np.corrcoef(response_test[j], (predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
+                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))
         idx = idx + idx_new
 
 else:
     final_error = 0
+    average_predictive_rsquared = 0
     for j in range(ntask):
-        final_error += (0.5 * np.linalg.norm(response_test[j], 2) ** 2) / sample_sizes_test
+        final_error += np.sqrt(np.linalg.norm(response_test[j], 2) ** 2 / sample_sizes_test)
+
+final_error = final_error / ntask
+average_predictive_rsquared = average_predictive_rsquared / ntask
 
 significant = [final_intervals[j, 0] > 0 or final_intervals[j, 1] < 0 for j in range(np.shape(final_intervals)[0])]
 ordered_variables = {}
@@ -326,6 +341,7 @@ for i in range(ntask):
 ds50_intervals = np.asarray(final_intervals[:,1]-final_intervals[:,0])
 
 print(final_error)
+print(average_predictive_rsquared)
 print(np.mean(final_intervals[:,1]-final_intervals[:,0]))
 print(np.std(final_intervals[:,1]-final_intervals[:,0]))
 print(np.sum(significant))
@@ -383,7 +399,7 @@ for weight in weight_list:
     active_signs = multi_lasso.fit(perturbations=perturbations)
     estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(dispersions=dispersions)
     estimates_dict[weight] = estimate
-    test_stat_dict[weight] = estimate / np.sqrt(np.diag(observed_info_mean))
+    test_stat_dict[weight] = np.sqrt(np.diag(observed_info_mean)) / np.abs(estimate)
     intervals_dict[weight] = intervals
     active_dict[weight] = active_signs
 
@@ -394,19 +410,19 @@ for weight in weight_list:
         for j in range(ntask):
             idx_new = np.sum(active_signs[:, j] != 0)
             if idx_new == 0:
-                error += (0.5 * np.sum(np.square(response_validate[j]))) / sample_sizes_validate
+                error += np.sqrt(np.sum(np.square(response_validate[j])) / sample_sizes_validate)
             else:
-                error += 0.5 * (np.sum(
+                error += np.sqrt(np.sum(
                     np.square((response_validate[j] - (predictor_vars_validate)[:, (active_signs[:, j] != 0)].dot(
-                        estimate[idx:idx + idx_new]))))) / sample_sizes_validate
+                        estimate[idx:idx + idx_new])))) / sample_sizes_validate)
             idx = idx + idx_new
 
     else:
         error = 0
         for j in range(ntask):
-            error += (0.5 * np.linalg.norm(response_validate[j], 2) ** 2) / sample_sizes_validate
+            error += np.sqrt(np.linalg.norm(response_validate[j], 2) ** 2 / sample_sizes_validate)
 
-    error_list.append(error)
+    error_list.append(error/ntask)
     print(error)
 
 min_error = np.min(error_list)
@@ -421,21 +437,28 @@ final_test_stats_selective07 = test_stat_dict[weight_list[lambda_1se]]
 #Caculate final error on test set
 if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
     final_error = 0
+    average_predictive_rsquared = 0
     idx = 0
     for j in range(ntask):
         idx_new = np.sum(active_dict[weight_list[lambda_1se]][:, j] != 0)
         if idx_new == 0:
-            final_error += (0.5 * np.sum(np.square(response_test[j]))) / sample_sizes_test
+            final_error += np.sqrt(np.sum(np.square(response_test[j])) / sample_sizes_test)
         else:
-            final_error += 0.5 * (np.sum(
+            final_error += np.sqrt(np.sum(
                 np.square((response_test[j] - (predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
-                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))))) / sample_sizes_test
+                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new])))) / sample_sizes_test)
+            average_predictive_rsquared += np.corrcoef(response_test[j],(predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
+                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))
         idx = idx + idx_new
 
 else:
     final_error = 0
+    average_predictive_rsquared = 0
     for j in range(ntask):
-        final_error += (0.5 * np.linalg.norm(response_test[j], 2) ** 2) / sample_sizes_test
+        final_error += np.sqrt(np.linalg.norm(response_test[j], 2) ** 2 / sample_sizes_test)
+
+final_error = final_error / ntask
+average_predictive_rsquared = average_predictive_rsquared / ntask
 
 significant = [final_intervals[j, 0] > 0 or final_intervals[j, 1] < 0 for j in range(np.shape(final_intervals)[0])]
 ordered_variables = {}
@@ -452,6 +475,7 @@ for i in range(ntask):
 selective07_intervals = np.asarray(final_intervals[:,1]-final_intervals[:,0])
 
 print(final_error)
+print(average_predictive_rsquared)
 print(np.mean(final_intervals[:,1]-final_intervals[:,0]))
 print(np.std(final_intervals[:,1]-final_intervals[:,0]))
 print(np.sum(significant))
@@ -508,7 +532,7 @@ for weight in weight_list:
             observed_target = np.linalg.pinv(X[:, (active_signs[:, i] != 0)]).dot(y)
             estimate = np.concatenate([estimate,observed_target])
             cov_target = Qfeat * dispersions[i]
-            test_stat = np.concatenate([test_stat,observed_target/np.sqrt(np.diag(cov_target))])
+            test_stat = np.concatenate([test_stat,np.sqrt(np.diag(cov_target))/np.abs(observed_target)])
             alpha = 1. - 0.90
             quantile = ndist.ppf(1 - alpha / 2.)
             intervals = np.vstack([observed_target - quantile * np.sqrt(np.diag(cov_target)),
@@ -517,24 +541,24 @@ for weight in weight_list:
 
             idx_new = np.sum(active_signs[:, i] != 0)
             if idx_new == 0:
-                error += (0.5 * np.sum(np.square(response_validate[i]))) / sample_sizes_validate
+                error += np.sqrt(np.sum(np.square(response_validate[i])) / sample_sizes_validate)
             else:
-                error += (0.5 * np.sum(np.square(
+                error += np.sqrt(np.sum(np.square(
                 response_validate[i] - (predictor_vars_validate)[:, (active_signs[:, i] != 0)].dot(
-                    observed_target)))) / sample_sizes_validate
+                    observed_target))) / sample_sizes_validate)
 
 
     else:
         error = 0
         for j in range(ntask):
-            error += (0.5 * np.linalg.norm(response_validate[j], 2) ** 2) / sample_sizes_validate
+            error += np.sqrt(np.linalg.norm(response_validate[j], 2) ** 2 / sample_sizes_validate)
         CIs = np.asarray([[0, 0], [np.nan, np.nan]])
 
     estimates_dict[weight] = estimate
     test_stat_dict[weight] = test_stat
     intervals_dict[weight] = CIs
     active_dict[weight] = active_signs
-    error_list.append(error)
+    error_list.append(error/ntask)
     print(error)
 
 min_error = np.min(error_list)
@@ -549,21 +573,28 @@ final_test_stats_ds67 = test_stat_dict[weight_list[lambda_1se]]
 #Caculate final error on test set
 if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
     final_error = 0
+    average_predictive_rsquared = 0
     idx = 0
     for j in range(ntask):
         idx_new = np.sum(active_dict[weight_list[lambda_1se]][:, j] != 0)
         if idx_new == 0:
-            final_error += (0.5 * np.sum(np.square(response_test[j]))) / sample_sizes_test
+            final_error += np.sqrt(np.sum(np.square(response_test[j])) / sample_sizes_test)
         else:
-            final_error += 0.5 * (np.sum(
+            final_error += np.sqrt(np.sum(
                 np.square((response_test[j] - (predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
-                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))))) / sample_sizes_test
+                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new])))) / sample_sizes_test)
+            average_predictive_rsquared += np.corrcoef(response_test[j],(predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
+                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))
         idx = idx + idx_new
 
 else:
     final_error = 0
+    average_predictive_rsquared = 0
     for j in range(ntask):
-        final_error += (0.5 * np.linalg.norm(response_test[j], 2) ** 2) / sample_sizes_test
+        final_error += np.sqrt(np.linalg.norm(response_test[j], 2) ** 2 / sample_sizes_test)
+
+final_error = final_error / ntask
+average_predictive_rsquared = average_predictive_rsquared / ntask
 
 significant = [final_intervals[j, 0] > 0 or final_intervals[j, 1] < 0 for j in range(np.shape(final_intervals)[0])]
 ordered_variables = {}
@@ -580,6 +611,7 @@ for i in range(ntask):
 ds67_intervals = np.asarray(final_intervals[:,1]-final_intervals[:,0])
 
 print(final_error)
+print(average_predictive_rsquared)
 print(np.mean(final_intervals[:,1]-final_intervals[:,0]))
 print(np.std(final_intervals[:,1]-final_intervals[:,0]))
 print(np.sum(significant))
@@ -601,8 +633,8 @@ for i in range(ntask):
         common_lengths_67.append(diff_length)
 
 def set_box_color(bp, color, linestyle):
-    plt.setp(bp['boxes'], color=color, linestyle=linestyle, linewidth=2.5)
-    plt.setp(bp['whiskers'], color=color, linestyle=linestyle, linewidth=2.5)
+    plt.setp(bp['boxes'], color=color, linestyle=linestyle, linewidth=3.5)
+    plt.setp(bp['whiskers'], color=color, linestyle=linestyle, linewidth=3.5)
     plt.setp(bp['caps'], color=color, linewidth=2.5)
     plt.setp(bp['medians'], color=color, linewidth=2.5)
 
@@ -619,10 +651,11 @@ plt.tight_layout()
 plt.plot([], c='#35978f', label='67/33 Split: Selective Inference', linewidth=2.5)
 plt.plot([], c='#35978f', label='50/50 Split: Selective Inference', linestyle='--', linewidth=2.5)
 plt.legend()
-plt.ylabel('Ratio of Interval Lengths for Corresponding Parameters', fontsize=20)
+plt.ylabel('Ratio of Interval Lengths for Common Parameters', fontsize=24)
+plt.yticks(fontsize=20)
 
-ax1.set_title("Ratio of Data Splitting Interval Length to Selective Inference Interval Length", y=1.01 ,fontsize=24)
-ax1.legend(loc='lower left', bbox_to_anchor=(0.41, -0.125), fontsize=20)
+ax1.set_title("Ratio of Confidence Interval Lengths", y=1.01 ,fontsize=32)
+ax1.legend(loc='lower left', bbox_to_anchor=(0.3225, -0.125), fontsize=20)
 ax1.set_xticklabels([])
 ax1.set_xticks([])
 
@@ -633,7 +666,7 @@ def common_format(ax):
     return ax
 
 common_format(ax1)
-
+ax1.axhline(y=1.0, color='k', linestyle='--', linewidth=2.5)
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 plt.savefig('real_data_lengths2.png', bbox_inches='tight')
 
@@ -643,8 +676,8 @@ ax1 = fig.add_subplot(111)
 
 plt.sca(ax1)
 first = plt.boxplot([selective07_intervals], positions=np.asarray([1]), sym='', widths=0.3)
-second = plt.boxplot([selective1_intervals], positions=np.asarray([1.3]), sym='', widths=0.3)
-fourth = plt.boxplot([ds67_intervals], positions=np.asarray([1.8]), sym='', widths=0.3)
+second = plt.boxplot([selective1_intervals], positions=np.asarray([1.8]), sym='', widths=0.3)
+fourth = plt.boxplot([ds67_intervals], positions=np.asarray([1.3]), sym='', widths=0.3)
 fifth = plt.boxplot([ds50_intervals], positions=np.asarray([2.1]), sym='', widths=0.3)
 set_box_color(first, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
 set_box_color(second, '#6baed6', '--')
@@ -652,12 +685,13 @@ set_box_color(fourth, '#238443', 'solid')
 set_box_color(fifth, '#31a354', '--')
 plt.xlim(0.7, 2.4)
 plt.tight_layout()
-plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso 0.7')
-plt.plot([], c='#6baed6', label='Randomized Multi-Task Lasso 1.0', linestyle='--', linewidth=2.5)
+plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso 0.7', linewidth=2.5)
 plt.plot([], c='#238443', label='Data Splitting 67/33', linewidth=2.5)
+plt.plot([], c='#6baed6', label='Randomized Multi-Task Lasso 1.0', linestyle='--', linewidth=2.5)
 plt.plot([], c='#31a354', label='Data Splitting 50/50', linestyle='--', linewidth=2.5)
 plt.legend()
 plt.ylabel('Interval Length', fontsize=20)
+plt.yticks(fontsize=18)
 
 ax1.set_title("Distribution of Interval Lengths", y=1.01 ,fontsize=24)
 ax1.legend(loc='lower left', bbox_to_anchor=(0.319, -0.225), fontsize=20)
@@ -681,8 +715,8 @@ ax1 = fig.add_subplot(111)
 
 plt.sca(ax1)
 first = plt.boxplot([final_test_stats_selective07], positions=np.asarray([1]), sym='', widths=0.3)
-second = plt.boxplot([final_test_stats_selective1], positions=np.asarray([1.3]), sym='', widths=0.3)
-fourth = plt.boxplot([final_test_stats_ds67], positions=np.asarray([1.8]), sym='', widths=0.3)
+second = plt.boxplot([final_test_stats_selective1], positions=np.asarray([1.8]), sym='', widths=0.3)
+fourth = plt.boxplot([final_test_stats_ds67], positions=np.asarray([1.3]), sym='', widths=0.3)
 fifth = plt.boxplot([final_test_stats_ds50], positions=np.asarray([2.1]), sym='', widths=0.3)
 set_box_color(first, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
 set_box_color(second, '#6baed6', '--')
@@ -690,12 +724,13 @@ set_box_color(fourth, '#238443', 'solid')
 set_box_color(fifth, '#31a354', '--')
 plt.xlim(0.7, 2.4)
 plt.tight_layout()
-plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso 0.7')
-plt.plot([], c='#6baed6', label='Randomized Multi-Task Lasso 1.0', linestyle='--', linewidth=2.5)
+plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso 0.7', linewidth=2.5)
 plt.plot([], c='#238443', label='Data Splitting 67/33', linewidth=2.5)
+plt.plot([], c='#6baed6', label='Randomized Multi-Task Lasso 1.0', linestyle='--', linewidth=2.5)
 plt.plot([], c='#31a354', label='Data Splitting 50/50', linestyle='--', linewidth=2.5)
 plt.legend()
 plt.ylabel('Coefficient of Variation', fontsize=20)
+plt.yticks(fontsize=18)
 
 ax1.set_title("Coefficient of Variation for Estimated Model Parameters", y=1.01 ,fontsize=24)
 ax1.legend(loc='lower left', bbox_to_anchor=(0.319, -0.225), fontsize=20)
