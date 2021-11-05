@@ -615,8 +615,8 @@ print("common",common)
 common_lengths_67 = []
 for i in range(ntask):
     for predictor in common[i]:
-        diff_length = match_length_indx2[i][np.argwhere(all_variables_ds[i]==predictor)[0][0]]/match_length_indx[i][np.argwhere(all_variables[i]==predictor)[0][0]]
-        common_lengths_67.append(diff_length)
+        ratio_length = match_length_indx2[i][np.argwhere(all_variables_ds[i]==predictor)[0][0]]/match_length_indx[i][np.argwhere(all_variables[i]==predictor)[0][0]]
+        common_lengths_67.append(ratio_length)
 
 def set_box_color(bp, color, linestyle):
     plt.setp(bp['boxes'], color=color, linestyle=linestyle, linewidth=3.5)
