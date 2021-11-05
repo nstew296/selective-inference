@@ -9,15 +9,13 @@ from selectinf.randomized.randomization import randomization
 from selectinf.randomized.multitask_lasso import multi_task_lasso
 np.random.seed(5)
 
-print("hi")
-
 response_train = {}
 response_validate = {}
 response_test = {}
 
 X1 = np.genfromtxt('task1.csv', delimiter=',')[1:,:-1]
 Y1 = np.genfromtxt('task1.csv', delimiter=',')[1:,-1]
-print(Y1)
+
 samples = np.arange(np.int(np.shape(X1)[0]))
 train = np.random.choice(samples, size=np.int(0.8*np.shape(X1)[0]), replace=False)
 validate = np.random.choice(np.setdiff1d(samples, train),size=np.int(0.1*np.shape(X1)[0]), replace=False)
@@ -30,7 +28,6 @@ response_validate[0] = Y1[validate]
 response_test[0] = Y1[test]
 
 Y2 = np.genfromtxt('task2.csv', delimiter=',')[1:,-1]
-print(Y2)
 response_train[1] = Y2[train]
 response_validate[1] = Y2[validate]
 response_test[1] = Y2[test]
@@ -42,49 +39,41 @@ response_validate[2] = Y3[validate]
 response_test[2] = Y3[test]
 
 Y4 = np.genfromtxt('task4.csv', delimiter=',')[1:,-1]
-print(Y4)
 response_train[3] = Y4[train]
 response_validate[3] = Y4[validate]
 response_test[3] = Y4[test]
 
 Y5 = np.genfromtxt('task5.csv', delimiter=',')[1:,-1]
-print(Y5)
 response_train[4] = Y5[train]
 response_validate[4] = Y5[validate]
 response_test[4] = Y5[test]
 
 Y6 = np.genfromtxt('task6.csv', delimiter=',')[1:,-1]
-print(Y6)
 response_train[5] = Y6[train]
 response_validate[5] = Y6[validate]
 response_test[5] = Y6[test]
 
 Y7 = np.genfromtxt('task7.csv', delimiter=',')[1:,-1]
-print(Y7)
 response_train[6] = Y7[train]
 response_validate[6] = Y7[validate]
 response_test[6] = Y7[test]
 
 Y8 = np.genfromtxt('task8.csv', delimiter=',')[1:,-1]
-print(Y8)
 response_train[7] = Y8[train]
 response_validate[7] = Y8[validate]
 response_test[7] = Y8[test]
 
 Y9 = np.genfromtxt('task9.csv', delimiter=',')[1:,-1]
-print(Y9)
 response_train[8] = Y9[train]
 response_validate[8] = Y9[validate]
 response_test[8] = Y9[test]
 
 Y10 = np.genfromtxt('task10.csv', delimiter=',')[1:,-1]
-print(Y10)
 response_train[9] = Y10[train]
 response_validate[9] = Y10[validate]
 response_test[9] = Y10[test]
 
 Y11 = np.genfromtxt('task11.csv', delimiter=',')[1:,-1]
-print(Y11)
 response_train[10] = Y11[train]
 response_validate[10] = Y11[validate]
 response_test[10] = Y11[test]
@@ -104,7 +93,7 @@ sample_sizes_test = predictor_vars_test.shape[0]
 ridge_terms = np.zeros(ntask)
 nfeatures = predictor_vars_train.shape[1]
 estimates_dict = {}
-test_stat_dict = {}
+coef_var_dict = {}
 intervals_dict = {}
 active_dict = {}
 error_list = []
@@ -113,7 +102,7 @@ error_list = []
 noise_levels = []
 for i in range(ntask):
     noise_levels.append(np.sqrt(np.sum(np.array(response_train[i] - (predictor_vars_train).dot(
-        np.linalg.pinv((predictor_vars_train)).dot(response_train[i]))) ** 2) / (sample_sizes - nfeatures)))
+        np.linalg.pinv((predictor_vars_train)).dot(response_train[i]))) ** 2) / (sample_sizes - nfeatures -1)))
 dispersions = [noise_levels[i] ** 2 for i in range(len(noise_levels))]
 randomizer_scales = 1.0 * np.asarray([noise_levels[i] for i in range(ntask)])
 randomizers = {i: randomization.isotropic_gaussian((nfeatures,), randomizer_scales[i]) for i in range(ntask)}
@@ -130,7 +119,7 @@ for weight in weight_list:
     active_signs = multi_lasso.fit(perturbations=perturbations)
     estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(dispersions=dispersions)
     estimates_dict[weight] = estimate
-    test_stat_dict[weight] = np.sqrt(np.diag(observed_info_mean)) / np.abs(estimate)
+    coef_var_dict[weight] = np.sqrt(np.diag(observed_info_mean)) / np.abs(estimate)
     intervals_dict[weight] = intervals
     active_dict[weight] = active_signs
 
@@ -157,11 +146,10 @@ for weight in weight_list:
     print(error)
 
 min_error = np.min(error_list)
-se_error = np.std(error_list)/np.sqrt(len(error_list))
-error_list = error_list[:np.argmin(error_list)]
+error_list = error_list[:np.argmin(error_list)+1]
 lambda_1se = np.argmin(np.abs(error_list - min_error))
 final_estimates = estimates_dict[weight_list[lambda_1se]]
-final_test_stats_selective1 = test_stat_dict[weight_list[lambda_1se]]
+final_test_stats_selective1 = coef_var_dict[weight_list[lambda_1se]]
 final_intervals = intervals_dict[weight_list[lambda_1se]]
 
 #Caculate final error on test set
@@ -230,13 +218,13 @@ predictor_vars_inference = predictor_vars_train[inference]
 
 noise_levels = []
 for i in range(ntask):
-   noise_levels.append(np.sqrt(np.sum(np.asarray(response_selection[i] - predictor_vars_selection.dot(np.linalg.pinv(predictor_vars_selection).dot(response_selection[i])))**2)/(0.5*sample_sizes-nfeatures)))
+   noise_levels.append(np.sqrt(np.sum(np.asarray(response_selection[i] - predictor_vars_selection.dot(np.linalg.pinv(predictor_vars_selection).dot(response_selection[i])))**2)/(np.int(0.5*sample_sizes)-nfeatures-1)))
 dispersions = [noise_levels[i]**2 for i in range(len(noise_levels))]
 
 weight_list = np.arange(12,37,1.5)
 estimates_dict = {}
 intervals_dict = {}
-test_stat_dict = {}
+coef_var_dict = {}
 active_dict = {}
 error_list = []
 
@@ -250,7 +238,7 @@ for weight in weight_list:
     active_signs = multi_lasso.fit(perturbations=perturbations)
     CIs = [[0, 0]]
     estimate = []
-    test_stat = []
+    CV = []
 
     #Calculate error on holdout data
     if (active_signs != 0).sum() > 0:
@@ -262,7 +250,7 @@ for weight in weight_list:
             observed_target = np.linalg.pinv(X[:, (active_signs[:, i] != 0)]).dot(y)
             estimate = np.concatenate([estimate,observed_target])
             cov_target = Qfeat * dispersions[i]
-            test_stat = np.concatenate([test_stat,np.sqrt(np.diag(cov_target))/np.abs(observed_target)])
+            CV = np.concatenate([CV,np.sqrt(np.diag(cov_target))/np.abs(observed_target)])
             alpha = 1. - 0.90
             quantile = ndist.ppf(1 - alpha / 2.)
             intervals = np.vstack([observed_target - quantile * np.sqrt(np.diag(cov_target)),
@@ -286,19 +274,18 @@ for weight in weight_list:
 
     estimates_dict[weight] = estimate
     intervals_dict[weight] = CIs
-    test_stat_dict[weight] = test_stat
+    coef_var_dict[weight] = CV
     active_dict[weight] = active_signs
     error_list.append(error/ntask)
     print(error)
 
 min_error = np.min(error_list)
-se_error = np.std(error_list) / np.sqrt(len(error_list))
-error_list = error_list[:np.argmin(error_list)]
+error_list = error_list[:np.argmin(error_list)+1]
 lambda_1se = np.argmin(np.abs(error_list - min_error))
 
 final_estimates = estimates_dict[weight_list[lambda_1se]]
 final_intervals = intervals_dict[weight_list[lambda_1se]][1:, ]
-final_test_stats_ds50 = test_stat_dict[weight_list[lambda_1se]]
+final_test_stats_ds50 = coef_var_dict[weight_list[lambda_1se]]
 
 #Caculate final error on test set
 if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
@@ -359,8 +346,8 @@ print("common",common)
 common_lengths = []
 for i in range(ntask):
     for predictor in common[i]:
-        diff_length = match_length_indx2[i][np.argwhere(all_variables_ds[i]==predictor)[0][0]]/match_length_indx[i][np.argwhere(all_variables[i]==predictor)[0][0]]
-        common_lengths.append(diff_length)
+        ratio_length = match_length_indx2[i][np.argwhere(all_variables_ds[i]==predictor)[0][0]]/match_length_indx[i][np.argwhere(all_variables[i]==predictor)[0][0]]
+        common_lengths.append(ratio_length)
 print(common_lengths)
 fig1, ax1 = plt.subplots()
 ax1.set_title('Basic Plot')
@@ -374,7 +361,7 @@ ridge_terms = np.zeros(ntask)
 nfeatures = predictor_vars_train.shape[1]
 estimates_dict = {}
 intervals_dict = {}
-test_stat_dict = {}
+coef_var_dict = {}
 active_dict = {}
 error_list = []
 
@@ -382,7 +369,7 @@ error_list = []
 noise_levels = []
 for i in range(ntask):
     noise_levels.append(np.sqrt(np.sum(np.array(response_train[i] - (predictor_vars_train).dot(
-        np.linalg.pinv((predictor_vars_train)).dot(response_train[i]))) ** 2) / (sample_sizes - nfeatures)))
+        np.linalg.pinv((predictor_vars_train)).dot(response_train[i]))) ** 2) / (sample_sizes - nfeatures-1)))
 dispersions = [noise_levels[i] ** 2 for i in range(len(noise_levels))]
 randomizer_scales = 0.7 * np.asarray([noise_levels[i] for i in range(ntask)])
 randomizers = {i: randomization.isotropic_gaussian((nfeatures,), randomizer_scales[i]) for i in range(ntask)}
@@ -399,7 +386,7 @@ for weight in weight_list:
     active_signs = multi_lasso.fit(perturbations=perturbations)
     estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(dispersions=dispersions)
     estimates_dict[weight] = estimate
-    test_stat_dict[weight] = np.sqrt(np.diag(observed_info_mean)) / np.abs(estimate)
+    coef_var_dict[weight] = np.sqrt(np.diag(observed_info_mean)) / np.abs(estimate)
     intervals_dict[weight] = intervals
     active_dict[weight] = active_signs
 
@@ -426,13 +413,12 @@ for weight in weight_list:
     print(error)
 
 min_error = np.min(error_list)
-se_error = np.std(error_list)/np.sqrt(len(error_list))
-error_list = error_list[:np.argmin(error_list)]
+error_list = error_list[:np.argmin(error_list)+1]
 lambda_1se = np.argmin(np.abs(error_list - min_error))
 
 final_estimates = estimates_dict[weight_list[lambda_1se]]
 final_intervals = intervals_dict[weight_list[lambda_1se]]
-final_test_stats_selective07 = test_stat_dict[weight_list[lambda_1se]]
+final_test_stats_selective07 = coef_var_dict[weight_list[lambda_1se]]
 
 #Caculate final error on test set
 if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
@@ -500,13 +486,13 @@ predictor_vars_inference = predictor_vars_train[inference]
 
 noise_levels = []
 for i in range(ntask):
-   noise_levels.append(np.sqrt(np.sum(np.asarray(response_selection[i] - predictor_vars_selection.dot(np.linalg.pinv(predictor_vars_selection).dot(response_selection[i])))**2)/(0.67*sample_sizes-nfeatures)))
+   noise_levels.append(np.sqrt(np.sum(np.asarray(response_selection[i] - predictor_vars_selection.dot(np.linalg.pinv(predictor_vars_selection).dot(response_selection[i])))**2)/(np.int(0.67*sample_sizes)-nfeatures-1)))
 dispersions = [noise_levels[i]**2 for i in range(len(noise_levels))]
 
 weight_list = np.arange(20,45,1.5)
 estimates_dict = {}
 intervals_dict = {}
-test_stat_dict = {}
+coef_var_dict = {}
 active_dict = {}
 error_list = []
 
@@ -520,7 +506,7 @@ for weight in weight_list:
     active_signs = multi_lasso.fit(perturbations=perturbations)
     CIs = [[0, 0]]
     estimate = []
-    test_stat = []
+    CV = []
 
     #Calculate error on holdout data
     if (active_signs != 0).sum() > 0:
@@ -532,7 +518,7 @@ for weight in weight_list:
             observed_target = np.linalg.pinv(X[:, (active_signs[:, i] != 0)]).dot(y)
             estimate = np.concatenate([estimate,observed_target])
             cov_target = Qfeat * dispersions[i]
-            test_stat = np.concatenate([test_stat,np.sqrt(np.diag(cov_target))/np.abs(observed_target)])
+            CV = np.concatenate([CV,np.sqrt(np.diag(cov_target))/np.abs(observed_target)])
             alpha = 1. - 0.90
             quantile = ndist.ppf(1 - alpha / 2.)
             intervals = np.vstack([observed_target - quantile * np.sqrt(np.diag(cov_target)),
@@ -555,20 +541,20 @@ for weight in weight_list:
         CIs = np.asarray([[0, 0], [np.nan, np.nan]])
 
     estimates_dict[weight] = estimate
-    test_stat_dict[weight] = test_stat
+    coef_var_dict[weight] = CV
     intervals_dict[weight] = CIs
     active_dict[weight] = active_signs
     error_list.append(error/ntask)
     print(error)
 
 min_error = np.min(error_list)
-se_error = np.std(error_list) / np.sqrt(len(error_list))
-error_list = error_list[:np.argmin(error_list)]
+se_error = np.std(error_list)
+error_list = error_list[:np.argmin(error_list)+1]
 lambda_1se = np.argmin(np.abs(error_list - min_error))
 
 final_estimates = estimates_dict[weight_list[lambda_1se]]
 final_intervals = intervals_dict[weight_list[lambda_1se]][1:, ]
-final_test_stats_ds67 = test_stat_dict[weight_list[lambda_1se]]
+final_test_stats_ds67 = coef_var_dict[weight_list[lambda_1se]]
 
 #Caculate final error on test set
 if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
@@ -747,4 +733,3 @@ common_format(ax1)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 plt.savefig('real_data_cv.png', bbox_inches='tight')
-
