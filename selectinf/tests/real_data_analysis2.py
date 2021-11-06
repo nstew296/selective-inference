@@ -107,7 +107,7 @@ dispersions = [noise_levels[i] ** 2 for i in range(len(noise_levels))]
 randomizer_scales = 1.0 * np.asarray([noise_levels[i] for i in range(ntask)])
 randomizers = {i: randomization.isotropic_gaussian((nfeatures,), randomizer_scales[i]) for i in range(ntask)}
 perturbations = np.array([randomizer_scales[i] * _noise(nfeatures) for i in range(ntask)]).T
-weight_list = np.arange(26,60,1.5)
+weight_list = np.arange(26,56,1.0)
 
 #Perform inference for given tuning parameter
 for weight in weight_list:
