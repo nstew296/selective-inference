@@ -155,7 +155,7 @@ final_intervals = intervals_dict[weight_list[lambda_1se]]
 #Caculate final error on test set
 if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
     final_error = 0
-    average_predictive_rsquared = 0
+    average_predictive_rsquared = []
     idx = 0
     for j in range(ntask):
         idx_new = np.sum(active_dict[weight_list[lambda_1se]][:, j] != 0)
@@ -165,8 +165,8 @@ if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
             final_error += np.sqrt(np.sum(
                 np.square((response_test[j] - (predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
                     estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new])))) / sample_sizes_test)
-            average_predictive_rsquared += np.corrcoef(response_test[j],(predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
-                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))
+            average_predictive_rsquared.append(np.corrcoef(response_test[j],(predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
+                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))[0,1])
         idx = idx + idx_new
 
 else:
@@ -176,7 +176,7 @@ else:
         final_error += np.sqrt(np.linalg.norm(response_test[j], 2) ** 2 / sample_sizes_test)
 
 final_error = final_error/ntask
-average_predictive_rsquared = average_predictive_rsquared/ntask
+#average_predictive_rsquared = average_predictive_rsquared/ntask
 
 significant = [final_intervals[j, 0] > 0 or final_intervals[j, 1] < 0 for j in range(np.shape(final_intervals)[0])]
 ordered_variables = {}
@@ -290,7 +290,7 @@ final_test_stats_ds50 = coef_var_dict[weight_list[lambda_1se]]
 #Caculate final error on test set
 if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
     final_error = 0
-    average_predictive_rsquared = 0
+    average_predictive_rsquared = []
     idx = 0
     for j in range(ntask):
         idx_new = np.sum(active_dict[weight_list[lambda_1se]][:, j] != 0)
@@ -300,8 +300,8 @@ if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
             final_error += np.sqrt(np.sum(
                 np.square((response_test[j] - (predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
                     estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new])))) / sample_sizes_test)
-            average_predictive_rsquared += np.corrcoef(response_test[j], (predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
-                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))
+            average_predictive_rsquared.append(np.corrcoef(response_test[j], (predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
+                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))[0,1])
         idx = idx + idx_new
 
 else:
@@ -311,7 +311,7 @@ else:
         final_error += np.sqrt(np.linalg.norm(response_test[j], 2) ** 2 / sample_sizes_test)
 
 final_error = final_error / ntask
-average_predictive_rsquared = average_predictive_rsquared / ntask
+#average_predictive_rsquared = average_predictive_rsquared / ntask
 
 significant = [final_intervals[j, 0] > 0 or final_intervals[j, 1] < 0 for j in range(np.shape(final_intervals)[0])]
 ordered_variables = {}
@@ -423,7 +423,7 @@ final_test_stats_selective07 = coef_var_dict[weight_list[lambda_1se]]
 #Caculate final error on test set
 if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
     final_error = 0
-    average_predictive_rsquared = 0
+    average_predictive_rsquared = []
     idx = 0
     for j in range(ntask):
         idx_new = np.sum(active_dict[weight_list[lambda_1se]][:, j] != 0)
@@ -433,8 +433,8 @@ if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
             final_error += np.sqrt(np.sum(
                 np.square((response_test[j] - (predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
                     estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new])))) / sample_sizes_test)
-            average_predictive_rsquared += np.corrcoef(response_test[j],(predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
-                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))
+            average_predictive_rsquared.append(np.corrcoef(response_test[j],(predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
+                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))[0,1])
         idx = idx + idx_new
 
 else:
@@ -444,7 +444,7 @@ else:
         final_error += np.sqrt(np.linalg.norm(response_test[j], 2) ** 2 / sample_sizes_test)
 
 final_error = final_error / ntask
-average_predictive_rsquared = average_predictive_rsquared / ntask
+#average_predictive_rsquared = average_predictive_rsquared / ntask
 
 significant = [final_intervals[j, 0] > 0 or final_intervals[j, 1] < 0 for j in range(np.shape(final_intervals)[0])]
 ordered_variables = {}
@@ -559,7 +559,7 @@ final_test_stats_ds67 = coef_var_dict[weight_list[lambda_1se]]
 #Caculate final error on test set
 if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
     final_error = 0
-    average_predictive_rsquared = 0
+    average_predictive_rsquared = []
     idx = 0
     for j in range(ntask):
         idx_new = np.sum(active_dict[weight_list[lambda_1se]][:, j] != 0)
@@ -569,8 +569,8 @@ if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
             final_error += np.sqrt(np.sum(
                 np.square((response_test[j] - (predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
                     estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new])))) / sample_sizes_test)
-            average_predictive_rsquared += np.corrcoef(response_test[j],(predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
-                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))
+            average_predictive_rsquared.append(np.corrcoef(response_test[j],(predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
+                    estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))[0,1])
         idx = idx + idx_new
 
 else:
@@ -580,7 +580,7 @@ else:
         final_error += np.sqrt(np.linalg.norm(response_test[j], 2) ** 2 / sample_sizes_test)
 
 final_error = final_error / ntask
-average_predictive_rsquared = average_predictive_rsquared / ntask
+#average_predictive_rsquared = average_predictive_rsquared / ntask
 
 significant = [final_intervals[j, 0] > 0 or final_intervals[j, 1] < 0 for j in range(np.shape(final_intervals)[0])]
 ordered_variables = {}
