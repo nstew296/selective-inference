@@ -213,6 +213,7 @@ all_active_predictors = np.asarray([])
 for i in range(ntask):
     all_active_predictors = np.union1d(all_active_predictors,all_variables[i])
 print(all_active_predictors)
+all_active_predictors = np.asarray([np.int(all_active_predictors[i]) for i in range(len(all_active_predictors))])
 
 #Estimate coefficients
 X = predictor_vars_train
@@ -376,6 +377,7 @@ plt.savefig('real_data_lengths2.png', bbox_inches='tight')
 all_active_predictors = np.asarray([])
 for i in range(ntask):
     all_active_predictors = np.union1d(all_active_predictors,all_variables_ds[i])
+all_active_predictors = np.asarray([np.int(all_active_predictors[i]) for i in range(len(all_active_predictors))])
 
 #Estimate coefficients
 X = predictor_vars_selection
@@ -512,6 +514,7 @@ all_active_predictors = np.asarray([])
 for i in range(ntask):
     all_active_predictors = np.union1d(all_active_predictors,all_variables[i])
 print(all_active_predictors)
+all_active_predictors = np.asarray([np.int(all_active_predictors[i]) for i in range(len(all_active_predictors))])
 
 #Estimate coefficients
 X = predictor_vars_train
@@ -657,6 +660,7 @@ print(variables)
 all_active_predictors = np.asarray([])
 for i in range(ntask):
     all_active_predictors = np.union1d(all_active_predictors,all_variables_ds[i])
+all_active_predictors = np.asarray([np.int(all_active_predictors[i]) for i in range(len(all_active_predictors))])
 
 #Estimate coefficients
 X = predictor_vars_selection
