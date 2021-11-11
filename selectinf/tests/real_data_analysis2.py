@@ -78,6 +78,8 @@ response_train[10] = Y11[train]
 response_validate[10] = Y11[validate]
 response_test[10] = Y11[test]
 
+glavaan = np.genfromtxt('general_g.csv', delimiter=',')[1:]
+
 ntask = 11
 
 def _noise(n, df=np.inf):
@@ -205,6 +207,22 @@ print(np.std(final_intervals[:,1]-final_intervals[:,0]))
 print(np.sum(significant))
 print(all_variables)
 print(variables)
+
+#Predict g
+all_active_predictors = np.asarray([])
+for i in range(ntask):
+    all_active_predictors = np.union1d(all_active_predictors,all_variables[i])
+print(all_active_predictors)
+
+#Estimate coefficients
+X = predictor_vars_train
+y = glavaan[train]
+observed_target = np.linalg.pinv(X[:, all_active_predictors]).dot(y)
+
+#Predicted g
+pred_y = predictor_vars_test[:, all_active_predictors].dot(observed_target)
+pred_r_general = np.corrcoef(glavaan[test],pred_y)
+print("general pred r",pred_r_general)
 
 #Data splitting
 
@@ -354,6 +372,21 @@ ax1.set_title('Basic Plot')
 ax1.boxplot(common_lengths)
 plt.savefig('real_data_lengths2.png', bbox_inches='tight')
 
+#Predict g
+all_active_predictors = np.asarray([])
+for i in range(ntask):
+    all_active_predictors = np.union1d(all_active_predictors,all_variables_ds[i])
+
+#Estimate coefficients
+X = predictor_vars_selection
+y = glavaan[selection]
+observed_target = np.linalg.pinv(X[:, all_active_predictors]).dot(y)
+
+#Predicted g
+pred_y = predictor_vars_test[:, all_active_predictors].dot(observed_target)
+pred_r_general = np.corrcoef(glavaan[test],pred_y)
+print("general pred r",pred_r_general)
+
 sample_sizes = predictor_vars_train.shape[0]
 sample_sizes_validate = predictor_vars_validate.shape[0]
 sample_sizes_test = predictor_vars_test.shape[0]
@@ -473,6 +506,22 @@ start = 0
 for i in range(ntask):
     match_length_indx[i] = selective07_intervals[start:start+len(all_variables[i])]
     start += len(all_variables[i])
+
+#Predict g
+all_active_predictors = np.asarray([])
+for i in range(ntask):
+    all_active_predictors = np.union1d(all_active_predictors,all_variables[i])
+print(all_active_predictors)
+
+#Estimate coefficients
+X = predictor_vars_train
+y = glavaan[train]
+observed_target = np.linalg.pinv(X[:, all_active_predictors]).dot(y)
+
+#Predicted g
+pred_y = predictor_vars_test[:, all_active_predictors].dot(observed_target)
+pred_r_general = np.corrcoef(glavaan[test],pred_y)
+print("general pred r",pred_r_general)
 
 #Data splitting
 
@@ -603,6 +652,21 @@ print(np.std(final_intervals[:,1]-final_intervals[:,0]))
 print(np.sum(significant))
 print(all_variables)
 print(variables)
+
+#Predict g
+all_active_predictors = np.asarray([])
+for i in range(ntask):
+    all_active_predictors = np.union1d(all_active_predictors,all_variables_ds[i])
+
+#Estimate coefficients
+X = predictor_vars_selection
+y = glavaan[selection]
+observed_target = np.linalg.pinv(X[:, all_active_predictors]).dot(y)
+
+#Predicted g
+pred_y = predictor_vars_test[:, all_active_predictors].dot(observed_target)
+pred_r_general = np.corrcoef(glavaan[test],pred_y)
+print("general pred r",pred_r_general)
 
 match_length_indx2 = {}
 start2 = 0
