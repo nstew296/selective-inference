@@ -16,9 +16,9 @@ responses_test = {}
 X = np.genfromtxt('task1.csv', delimiter=',')[1:,:-1]
 Y1 = np.genfromtxt('task1.csv', delimiter=',')[1:,-1]
 
-samples = np.arange(np.int(np.shape(X1)[0]))
-train = np.random.choice(samples, size=np.int(0.8*np.shape(X1)[0]), replace=False)
-validate = np.random.choice(np.setdiff1d(samples, train),size=np.int(0.1*np.shape(X1)[0]), replace=False)
+samples = np.arange(np.int(np.shape(X)[0]))
+train = np.random.choice(samples, size=np.int(0.8*np.shape(X)[0]), replace=False)
+validate = np.random.choice(np.setdiff1d(samples, train),size=np.int(0.1*np.shape(X)[0]), replace=False)
 test = np.setdiff1d(np.setdiff1d(samples, train),validate)
 print(np.intersect1d(train,validate))
 print(np.intersect1d(train,test))
