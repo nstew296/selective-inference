@@ -7,7 +7,7 @@ from scipy.stats import norm as ndist
 import regreg.api as rr
 from selectinf.randomized.randomization import randomization
 from selectinf.randomized.multitask_lasso import multi_task_lasso
-np.random.seed(5)
+np.random.seed(10)
 
 response_train = {}
 response_validate = {}
