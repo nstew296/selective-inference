@@ -231,9 +231,9 @@ samples = np.arange(np.int(sample_sizes))
 selection = np.random.choice(samples, size=np.int(0.5 * sample_sizes), replace=False)
 inference = np.setdiff1d(samples, selection)
 response_selection = {j: response_train[j][selection] for j in range(ntask)}
-predictor_vars_selection = predictor_vars_train[selection]
+predictor_vars_selection = predictor_vars_train[selection,:]
 response_inference = {j: response_train[j][inference] for j in range(ntask)}
-predictor_vars_inference = predictor_vars_train[inference]
+predictor_vars_inference = predictor_vars_train[inference,:]
 
 noise_levels = []
 for i in range(ntask):
@@ -378,6 +378,7 @@ all_active_predictors = np.asarray([])
 for i in range(ntask):
     all_active_predictors = np.union1d(all_active_predictors,all_variables_ds[i])
 all_active_predictors = np.asarray([np.int(all_active_predictors[i]) for i in range(len(all_active_predictors))])
+print(all_active_predictors)
 
 #Estimate coefficients
 X = predictor_vars_selection
@@ -532,9 +533,9 @@ samples = np.arange(np.int(sample_sizes))
 selection = np.random.choice(samples, size=np.int(0.67 * sample_sizes), replace=False)
 inference = np.setdiff1d(samples, selection)
 response_selection = {j: response_train[j][selection] for j in range(ntask)}
-predictor_vars_selection = predictor_vars_train[selection]
+predictor_vars_selection = predictor_vars_train[selection,:]
 response_inference = {j: response_train[j][inference] for j in range(ntask)}
-predictor_vars_inference = predictor_vars_train[inference]
+predictor_vars_inference = predictor_vars_train[inference,:]
 
 noise_levels = []
 for i in range(ntask):
@@ -661,6 +662,7 @@ all_active_predictors = np.asarray([])
 for i in range(ntask):
     all_active_predictors = np.union1d(all_active_predictors,all_variables_ds[i])
 all_active_predictors = np.asarray([np.int(all_active_predictors[i]) for i in range(len(all_active_predictors))])
+print(all_active_predictors)
 
 #Estimate coefficients
 X = predictor_vars_selection
