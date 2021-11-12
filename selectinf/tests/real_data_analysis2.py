@@ -7,7 +7,7 @@ from scipy.stats import norm as ndist
 import regreg.api as rr
 from selectinf.randomized.randomization import randomization
 from selectinf.randomized.multitask_lasso import multi_task_lasso
-np.random.seed(10)
+np.random.seed(5)
 
 response_train = {}
 response_validate = {}
@@ -20,6 +20,9 @@ samples = np.arange(np.int(np.shape(X1)[0]))
 train = np.random.choice(samples, size=np.int(0.8*np.shape(X1)[0]), replace=False)
 validate = np.random.choice(np.setdiff1d(samples, train),size=np.int(0.1*np.shape(X1)[0]), replace=False)
 test = np.setdiff1d(np.setdiff1d(samples, train),validate)
+print(train)
+print(validate)
+print(test)
 predictor_vars_train = X1[train,:]
 predictor_vars_validate = X1[validate,:]
 predictor_vars_test = X1[test,:]
@@ -230,6 +233,8 @@ print("general pred r",pred_r_general)
 samples = np.arange(np.int(sample_sizes))
 selection = np.random.choice(samples, size=np.int(0.5 * sample_sizes), replace=False)
 inference = np.setdiff1d(samples, selection)
+print(selection)
+print(inference)
 response_selection = {j: response_train[j][selection] for j in range(ntask)}
 predictor_vars_selection = predictor_vars_train[selection,:]
 response_inference = {j: response_train[j][inference] for j in range(ntask)}
@@ -381,8 +386,8 @@ all_active_predictors = np.asarray([np.int(all_active_predictors[i]) for i in ra
 print(all_active_predictors)
 
 #Estimate coefficients
-X = predictor_vars_selection
-y = glavaan[selection]
+X = predictor_vars_inference
+y = glavaan[inference]
 observed_target = np.linalg.pinv(X[:, all_active_predictors]).dot(y)
 
 #Predicted g
@@ -665,8 +670,8 @@ all_active_predictors = np.asarray([np.int(all_active_predictors[i]) for i in ra
 print(all_active_predictors)
 
 #Estimate coefficients
-X = predictor_vars_selection
-y = glavaan[selection]
+X = predictor_vars_inference
+y = glavaan[inference]
 observed_target = np.linalg.pinv(X[:, all_active_predictors]).dot(y)
 
 #Predicted g
