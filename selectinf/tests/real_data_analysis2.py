@@ -153,8 +153,9 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
     min_error = np.min(error_list)
     error_list = error_list[:np.argmin(error_list)+1]
     lambda_1se = np.argmin(np.abs(error_list - min_error))
-    final_coefs_var = coef_var_dict[weight_list[lambda_1se]]
+    final_estimates = estimates_dict[weight_list[lambda_1se]]
     final_intervals = intervals_dict[weight_list[lambda_1se]]
+    final_coefs_var = coef_var_dict[weight_list[lambda_1se]]
 
     #Caculate final error on test set
     if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
@@ -194,7 +195,7 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
 
     selective_interval_lengths = np.asarray(final_intervals[:,1]-final_intervals[:,0])
 
-    return(final_intervals,selective_interval_lengths,all_variables,significant_variables,
+    return(final_estimates, final_intervals,selective_interval_lengths,all_variables,significant_variables,
            final_avg_error,predictive_r,final_coefs_var)
 
 
@@ -314,10 +315,10 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
 
     ds_interval_lengths = np.asarray(final_intervals[:,1]-final_intervals[:,0])
 
-    return (final_intervals, ds_interval_lengths, all_variables_ds, significant_variables,
+    return (final_estimates, final_intervals, ds_interval_lengths, all_variables_ds, significant_variables,
             final_avg_error, predictive_r, final_coefs_var)
 
-final_intervals_rand1, selective1_intervals, all_variables_rand1, significant_variables_rand1, final_err_rand1, pred_r_rand1, coefs_var_rand1 = \
+final_estimates_rand1, final_intervals_rand1, selective1_intervals, all_variables_rand1, significant_variables_rand1, final_err_rand1, pred_r_rand1, coefs_var_rand1 = \
     rand_multi_task_selection_inference(predictors_train,predictors_validate,predictors_test, responses_train,
                                         responses_validate, responses_test,weight_list = np.arange(26,56,1.0),rand_scale=1.0)
 
@@ -336,20 +337,26 @@ for i in range(ntask):
     start += len(all_variables_rand1[i])
 
 #Predict g
-all_active_predictors = np.asarray([])
+#Task scores
+task_scores = []
+start = 0
 for i in range(ntask):
-    all_active_predictors = np.union1d(all_active_predictors,all_variables_rand1[i])
-print(all_active_predictors)
-all_active_predictors = np.asarray([np.int(all_active_predictors[i]) for i in range(len(all_active_predictors))])
+    task_scores.append(predictors_train[:, all_variables_rand1[i]].dot(final_estimates_rand1[start:start + len(all_variables_rand1[i])]))
+    start += len(all_variables_rand1[i])
 
 #Estimate coefficients
-X = predictors_train
 y = glavaan[train]
-observed_target = np.linalg.pinv(X[:, all_active_predictors]).dot(y)
+observed_target = np.linalg.pinv(task_scores).dot(y)
 
 #Predicted g
-pred_y = predictors_test[:, all_active_predictors].dot(observed_target)
-pred_r_general = np.corrcoef(glavaan[test],pred_y)
+test_task_scores = []
+start = 0
+for i in range(ntask):
+    test_task_scores.append(predictors_test[:, all_variables_rand1[i]].dot(final_estimates_rand1[start:start + len(all_variables_rand1[i])]))
+    start += len(all_variables_rand1[i])
+
+pred_g = test_task_scores.dot(observed_target)
+pred_r_general = np.corrcoef(glavaan[test],pred_g)
 print("general pred r, rand scale 1.0",pred_r_general)
 
 #Data splitting
@@ -365,7 +372,7 @@ responses_inference = {j: responses_train[j][inference] for j in range(ntask)}
 predictors_inference = predictors_train[inference,:]
 
 
-final_intervals_ds50, ds50_intervals, all_variables_ds50, significant_variables_ds50, final_err_ds50, pred_r_ds50, coefs_var_ds50 = \
+final_estimates_ds50, final_intervals_ds50, ds50_intervals, all_variables_ds50, significant_variables_ds50, final_err_ds50, pred_r_ds50, coefs_var_ds50 = \
     ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
                                         responses_validate, responses_test, weight_list = np.arange(12,37,1.5),split=0.5)
 
@@ -382,22 +389,28 @@ for i in range(ntask):
     match_length_indx2[i] = ds50_intervals[start2:start2+len(all_variables_ds50[i])]
     start2 += len(all_variables_ds50[i])
 
-# Predict g
-all_active_predictors = np.asarray([])
+#Predict g
+#Task scores
+task_scores = []
+start = 0
 for i in range(ntask):
-    all_active_predictors = np.union1d(all_active_predictors, all_variables_ds50[i])
-all_active_predictors = np.asarray([np.int(all_active_predictors[i]) for i in range(len(all_active_predictors))])
-print(all_active_predictors)
+    task_scores.append(predictors_train[:, all_variables_ds50[i]].dot(final_estimates_ds50[start:start + len(all_variables_ds50[i])]))
+    start += len(all_variables_ds50[i])
 
-# Estimate coefficients
-X = predictors_inference
-y = glavaan[inference]
-observed_target = np.linalg.pinv(X[:, all_active_predictors]).dot(y)
+#Estimate coefficients
+y = glavaan[train]
+observed_target = np.linalg.pinv(task_scores).dot(y)
 
-# Predicted g
-pred_y = predictors_test[:, all_active_predictors].dot(observed_target)
-pred_r_general = np.corrcoef(glavaan[test], pred_y)
-print("general pred r", pred_r_general)
+#Predicted g
+test_task_scores = []
+start = 0
+for i in range(ntask):
+    test_task_scores.append(predictors_test[:, all_variables_ds50[i]].dot(final_estimates_ds50[start:start + len(all_variables_ds50[i])]))
+    start += len(all_variables_ds50[i])
+
+pred_g = test_task_scores.dot(observed_target)
+pred_r_general = np.corrcoef(glavaan[test],pred_g)
+print("general pred r, data split 50/50",pred_r_general)
 
 common = {i:np.intersect1d(all_variables_rand1[i],all_variables_ds50[i]) for i in range(ntask)}
 print("common",common)
@@ -410,7 +423,7 @@ print(common_lengths)
 
 #----------------------------------------------------------------
 
-final_intervals_rand07, selective07_intervals, all_variables_rand07, significant_variables_rand07, final_err_rand07, pred_r_rand07, coefs_var_rand07 = \
+final_estimates_rand07, final_intervals_rand07, selective07_intervals, all_variables_rand07, significant_variables_rand07, final_err_rand07, pred_r_rand07, coefs_var_rand07 = \
     rand_multi_task_selection_inference(predictors_train,predictors_validate,predictors_test, responses_train,
                                         responses_validate, responses_test,weight_list = np.arange(30,57,1.5),rand_scale=0.7)
 
@@ -428,20 +441,26 @@ for i in range(ntask):
     start += len(all_variables_rand07[i])
 
 #Predict g
-all_active_predictors = np.asarray([])
+#Task scores
+task_scores = []
+start = 0
 for i in range(ntask):
-    all_active_predictors = np.union1d(all_active_predictors,all_variables_rand07[i])
-print(all_active_predictors)
-all_active_predictors = np.asarray([np.int(all_active_predictors[i]) for i in range(len(all_active_predictors))])
+    task_scores.append(predictors_train[:, all_variables_rand07[i]].dot(final_estimates_rand07[start:start + len(all_variables_rand07[i])]))
+    start += len(all_variables_rand07[i])
 
 #Estimate coefficients
-X = predictors_train
 y = glavaan[train]
-observed_target = np.linalg.pinv(X[:, all_active_predictors]).dot(y)
+observed_target = np.linalg.pinv(task_scores).dot(y)
 
 #Predicted g
-pred_y = predictors_test[:, all_active_predictors].dot(observed_target)
-pred_r_general = np.corrcoef(glavaan[test],pred_y)
+test_task_scores = []
+start = 0
+for i in range(ntask):
+    test_task_scores.append(predictors_test[:, all_variables_rand07[i]].dot(final_estimates_rand07[start:start + len(all_variables_rand07[i])]))
+    start += len(all_variables_rand07[i])
+
+pred_g = test_task_scores.dot(observed_target)
+pred_r_general = np.corrcoef(glavaan[test],pred_g)
 print("general pred r, rand scale 0.7",pred_r_general)
 
 samples = np.arange(np.int(sample_sizes))
@@ -452,7 +471,7 @@ predictor_vars_selection = predictors_train[selection,:]
 response_inference = {j: responses_train[j][inference] for j in range(ntask)}
 predictor_vars_inference = predictors_train[inference,:]
 
-final_intervals_ds67, ds67_intervals, all_variables_ds67, significant_variables_ds67, final_err_ds67, pred_r_ds67, coefs_var_ds67 = \
+final_estimates_ds67, final_intervals_ds67, ds67_intervals, all_variables_ds67, significant_variables_ds67, final_err_ds67, pred_r_ds67, coefs_var_ds67 = \
     ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_train,
                                         responses_validate, responses_test,weight_list = np.arange(20,45,1.5),split=0.67)
 
@@ -464,21 +483,27 @@ print(np.sum([len(all_variables_ds67[i]) for i in range(len(all_variables_ds67))
 print(np.sum([len(significant_variables_ds67[i]) for i in range(len(significant_variables_ds67))]),"Sum of significant across tasks")
 
 #Predict g
-all_active_predictors = np.asarray([])
+#Task scores
+task_scores = []
+start = 0
 for i in range(ntask):
-    all_active_predictors = np.union1d(all_active_predictors,all_variables_ds67[i])
-all_active_predictors = np.asarray([np.int(all_active_predictors[i]) for i in range(len(all_active_predictors))])
-print(all_active_predictors)
+    task_scores.append(predictors_train[:, all_variables_ds67[i]].dot(final_estimates_ds67[start:start + len(all_variables_ds67[i])]))
+    start += len(all_variables_ds67[i])
 
 #Estimate coefficients
-X = predictors_inference
-y = glavaan[inference]
-observed_target = np.linalg.pinv(X[:, all_active_predictors]).dot(y)
+y = glavaan[train]
+observed_target = np.linalg.pinv(task_scores).dot(y)
 
 #Predicted g
-pred_y = predictors_test[:, all_active_predictors].dot(observed_target)
-pred_r_general = np.corrcoef(glavaan[test],pred_y)
-print("general pred r",pred_r_general)
+test_task_scores = []
+start = 0
+for i in range(ntask):
+    test_task_scores.append(predictors_test[:, all_variables_ds67[i]].dot(final_estimates_ds67[start:start + len(all_variables_ds67[i])]))
+    start += len(all_variables_ds67[i])
+
+pred_g = test_task_scores.dot(observed_target)
+pred_r_general = np.corrcoef(glavaan[test],pred_g)
+print("general pred r, data split 67/33",pred_r_general)
 
 match_length_indx2 = {}
 start2 = 0
