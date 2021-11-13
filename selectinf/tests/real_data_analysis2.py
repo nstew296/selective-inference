@@ -110,7 +110,7 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
     for i in range(ntask):
         noise_levels.append(np.sqrt(np.sum(np.array(response_train[i] - (predictor_vars_train).dot(
             np.linalg.pinv((predictor_vars_train)).dot(response_train[i]))) ** 2) / (sample_sizes - nfeatures -1)))
-    dispersions = [noise_levels[i] ** 2 for i in range(len(noise_levels))]
+    dispersions = [noise_levels[i] ** 2 for i in range(np.len(noise_levels))]
     randomizer_scales = rand_scale * np.asarray([noise_levels[i] for i in range(ntask)])
     randomizers = {i: randomization.isotropic_gaussian((nfeatures,), randomizer_scales[i]) for i in range(ntask)}
     perturbations = np.array([randomizer_scales[i] * _noise(nfeatures) for i in range(ntask)]).T
@@ -201,6 +201,7 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
 def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_inference,predictor_vars_validate,
                                       predictor_vars_test,response_selection,response_inference,
                                         response_validate,response_test,weight_list,split=0.5):
+    sample_sizes = predictor_vars_selection.shape[0]
     sample_sizes_validate = predictor_vars_validate.shape[0]
     sample_sizes_test = predictor_vars_test.shape[0]
     ridge_terms = np.zeros(ntask)
@@ -208,7 +209,7 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
     noise_levels = []
     for i in range(ntask):
        noise_levels.append(np.sqrt(np.sum(np.asarray(response_selection[i] - predictor_vars_selection.dot(np.linalg.pinv(predictor_vars_selection).dot(response_selection[i])))**2)/(np.int(split*sample_sizes)-nfeatures-1)))
-    dispersions = [noise_levels[i]**2 for i in range(len(noise_levels))]
+    dispersions = [noise_levels[i]**2 for i in range(np.len(noise_levels))]
     randomizers = None
     estimates_dict = {}
     intervals_dict = {}
