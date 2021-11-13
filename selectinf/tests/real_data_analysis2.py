@@ -210,7 +210,7 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
     nfeatures = predictor_vars_selection.shape[1]
     noise_levels = []
     for i in range(ntask):
-       noise_levels.append(np.sqrt(np.sum(np.asarray(response_selection[i] - predictor_vars_selection.dot(np.linalg.pinv(predictor_vars_selection).dot(response_selection[i])))**2)/(np.int(split*sample_sizes)-nfeatures-1)))
+       noise_levels.append(np.sqrt(np.sum(np.asarray(response_selection[i] - predictor_vars_selection.dot(np.linalg.pinv(predictor_vars_selection).dot(response_selection[i])))**2)/(np.int(sample_sizes)-nfeatures-1)))
     dispersions = [noise_levels[i]**2 for i in range(len(noise_levels))]
     randomizers = None
     estimates_dict = {}
