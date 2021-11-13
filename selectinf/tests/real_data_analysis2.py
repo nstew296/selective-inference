@@ -361,13 +361,13 @@ print(selection)
 print(inference)
 responses_selection = {j: responses_train[j][selection] for j in range(ntask)}
 predictors_selection = predictors_train[selection,:]
-response_inference = {j: responses_train[j][inference] for j in range(ntask)}
+responses_inference = {j: responses_train[j][inference] for j in range(ntask)}
 predictors_inference = predictors_train[inference,:]
 
 
 final_intervals_ds50, ds50_intervals, all_variables_ds50, significant_variables_ds50, final_err_ds50, pred_r_ds50, coefs_var_ds50 = \
-    ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_train,
-                                        responses_validate, responses_test,weight_list = np.arange(12,37,1.5),split=0.5)
+    ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
+                                        responses_validate, responses_test, weight_list = np.arange(12,37,1.5),split=0.5)
 
 print(final_err_ds50, "Average testing error per task, data split 50/50")
 print(pred_r_ds50, "Predictive r, data split 50/50")
