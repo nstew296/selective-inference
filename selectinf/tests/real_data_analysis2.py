@@ -350,11 +350,12 @@ observed_target = (np.linalg.pinv(task_scores).T).dot(y)
 #c
 
 #Predicted g
-test_task_scores = np.asarray([])
+test_task_scores = []
 start = 0
 for i in range(ntask):
     test_task_scores.append(predictors_test[:, all_variables_rand1[i]].dot(final_estimates_rand1[start:start + len(all_variables_rand1[i])]))
     start += len(all_variables_rand1[i])
+test_task_scores = np.asarray(test_task_scores)
 
 pred_g = test_task_scores.dot(observed_target)
 pred_r_general = np.corrcoef(glavaan[test],pred_g)
@@ -403,11 +404,12 @@ y = np.asarray(glavaan[train])
 observed_target = (np.linalg.pinv(task_scores).T).dot(y)
 
 #Predicted g
-test_task_scores = np.asarray([])
+test_task_scores = []
 start = 0
 for i in range(ntask):
     test_task_scores.append(predictors_test[:, all_variables_ds50[i]].dot(final_estimates_ds50[start:start + len(all_variables_ds50[i])]))
     start += len(all_variables_ds50[i])
+test_task_scores = np.asarray(test_task_scores)
 
 pred_g = test_task_scores.dot(observed_target)
 pred_r_general = np.corrcoef(glavaan[test],pred_g)
@@ -454,11 +456,12 @@ y = np.asarray(glavaan[train])
 observed_target = (np.linalg.pinv(task_scores).T).dot(y)
 
 #Predicted g
-test_task_scores = np.asarray([])
+test_task_scores = []
 start = 0
 for i in range(ntask):
     test_task_scores.append(predictors_test[:, all_variables_rand07[i]].dot(final_estimates_rand07[start:start + len(all_variables_rand07[i])]))
     start += len(all_variables_rand07[i])
+test_task_scores = np.asarray(test_task_scores)
 
 pred_g = test_task_scores.dot(observed_target)
 pred_r_general = np.corrcoef(glavaan[test],pred_g)
@@ -496,11 +499,12 @@ y = np.asarray(glavaan[train])
 observed_target = (np.linalg.pinv(task_scores).T).dot(y)
 
 #Predicted g
-test_task_scores = np.asarray([])
+test_task_scores = []
 start = 0
 for i in range(ntask):
     test_task_scores.append(predictors_test[:, all_variables_ds67[i]].dot(final_estimates_ds67[start:start + len(all_variables_ds67[i])]))
     start += len(all_variables_ds67[i])
+test_task_scores = np.asarray(test_task_scores)
 
 pred_g = test_task_scores.dot(observed_target)
 pred_r_general = np.corrcoef(glavaan[test],pred_g)
