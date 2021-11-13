@@ -347,6 +347,7 @@ for i in range(ntask):
 #Estimate coefficients
 y = glavaan[train]
 observed_target = (np.linalg.pinv(task_scores).T).dot(y)
+#c
 
 #Predicted g
 test_task_scores = []
