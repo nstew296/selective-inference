@@ -345,12 +345,12 @@ for i in range(ntask):
     start += len(all_variables_rand1[i])
 
 #Estimate coefficients
-y = glavaan[train]
+y = np.asarray(glavaan[train])
 observed_target = (np.linalg.pinv(task_scores).T).dot(y)
 #c
 
 #Predicted g
-test_task_scores = []
+test_task_scores = np.asarray([])
 start = 0
 for i in range(ntask):
     test_task_scores.append(predictors_test[:, all_variables_rand1[i]].dot(final_estimates_rand1[start:start + len(all_variables_rand1[i])]))
@@ -399,11 +399,11 @@ for i in range(ntask):
     start += len(all_variables_ds50[i])
 
 #Estimate coefficients
-y = glavaan[train]
+y = np.asarray(glavaan[train])
 observed_target = (np.linalg.pinv(task_scores).T).dot(y)
 
 #Predicted g
-test_task_scores = []
+test_task_scores = np.asarray([])
 start = 0
 for i in range(ntask):
     test_task_scores.append(predictors_test[:, all_variables_ds50[i]].dot(final_estimates_ds50[start:start + len(all_variables_ds50[i])]))
@@ -450,11 +450,11 @@ for i in range(ntask):
     start += len(all_variables_rand07[i])
 
 #Estimate coefficients
-y = glavaan[train]
+y = np.asarray(glavaan[train])
 observed_target = (np.linalg.pinv(task_scores).T).dot(y)
 
 #Predicted g
-test_task_scores = []
+test_task_scores = np.asarray([])
 start = 0
 for i in range(ntask):
     test_task_scores.append(predictors_test[:, all_variables_rand07[i]].dot(final_estimates_rand07[start:start + len(all_variables_rand07[i])]))
@@ -492,11 +492,11 @@ for i in range(ntask):
     start += len(all_variables_ds67[i])
 
 #Estimate coefficients
-y = glavaan[train]
+y = np.asarray(glavaan[train])
 observed_target = (np.linalg.pinv(task_scores).T).dot(y)
 
 #Predicted g
-test_task_scores = []
+test_task_scores = np.asarray([])
 start = 0
 for i in range(ntask):
     test_task_scores.append(predictors_test[:, all_variables_ds67[i]].dot(final_estimates_ds67[start:start + len(all_variables_ds67[i])]))
