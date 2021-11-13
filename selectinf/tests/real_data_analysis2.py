@@ -110,7 +110,7 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
     for i in range(ntask):
         noise_levels.append(np.sqrt(np.sum(np.array(response_train[i] - (predictor_vars_train).dot(
             np.linalg.pinv((predictor_vars_train)).dot(response_train[i]))) ** 2) / (sample_sizes - nfeatures -1)))
-    dispersions = [noise_levels[i] ** 2 for i in range(np.len(noise_levels))]
+    dispersions = [noise_levels[i] ** 2 for i in range(len(noise_levels))]
     randomizer_scales = rand_scale * np.asarray([noise_levels[i] for i in range(ntask)])
     randomizers = {i: randomization.isotropic_gaussian((nfeatures,), randomizer_scales[i]) for i in range(ntask)}
     perturbations = np.array([randomizer_scales[i] * _noise(nfeatures) for i in range(ntask)]).T
@@ -210,7 +210,7 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
     noise_levels = []
     for i in range(ntask):
        noise_levels.append(np.sqrt(np.sum(np.asarray(response_selection[i] - predictor_vars_selection.dot(np.linalg.pinv(predictor_vars_selection).dot(response_selection[i])))**2)/(np.int(split*sample_sizes)-nfeatures-1)))
-    dispersions = [noise_levels[i]**2 for i in range(np.len(noise_levels))]
+    dispersions = [noise_levels[i]**2 for i in range(len(noise_levels))]
     randomizers = None
     estimates_dict = {}
     intervals_dict = {}
@@ -325,8 +325,8 @@ print(final_err_rand1, "Average testing error per task, rand scale 1.0")
 print(pred_r_rand1, "Predictive r, rand scale 1.0")
 print(np.mean(selective1_intervals),"Mean interval length, rand scale 1.0")
 print(np.std(selective1_intervals), "Sd interval length, rand scale 1.0")
-print(np.sum([np.len(all_variables_rand1[i]) for i in range(len(all_variables_rand1))]),"Sum of selected across tasks")
-print(np.sum([np.len(significant_variables_rand1[i]) for i in range(len(significant_variables_rand1))]),"Sum of significant across tasks")
+print(len(selective1_intervals),"Number selected")
+print(np.sum([len(significant_variables_rand1[i]) for i in range(len(significant_variables_rand1))]),"Sum of significant across tasks")
 
 
 match_length_indx = {}
@@ -373,8 +373,8 @@ print(final_err_ds50, "Average testing error per task, data split 50/50")
 print(pred_r_ds50, "Predictive r, data split 50/50")
 print(np.mean(ds50_intervals),"Mean interval length, data split 50/50")
 print(np.std(ds50_intervals), "Sd interval length, data split 50/50")
-print(np.sum([np.len(all_variables_ds50[i]) for i in range(len(all_variables_ds50))]),"Sum of selected across tasks")
-print(np.sum([np.len(significant_variables_ds50[i]) for i in range(len(significant_variables_ds50))]),"Sum of significant across tasks")
+print(len(ds50_intervals),"Number selected")
+print(np.sum([len(significant_variables_ds50[i]) for i in range(len(significant_variables_ds50))]),"Sum of significant across tasks")
 
 match_length_indx2 = {}
 start2 = 0
@@ -418,8 +418,8 @@ print(final_err_rand07, "Average testing error per task, rand scale 0.7")
 print(pred_r_rand07, "Predictive r, rand scale 0.7")
 print(np.mean(selective07_intervals),"Mean interval length, rand scale 0.7")
 print(np.std(selective07_intervals), "Sd interval length, rand scale 0.7")
-print(np.sum([np.len(all_variables_rand07[i]) for i in range(len(all_variables_rand1))]),"Sum of selected across tasks")
-print(np.sum([np.len(significant_variables_rand07[i]) for i in range(len(significant_variables_rand1))]),"Sum of "
+print(np.sum([len(all_variables_rand07[i]) for i in range(len(all_variables_rand1))]),"Sum of selected across tasks")
+print(np.sum([len(significant_variables_rand07[i]) for i in range(len(significant_variables_rand1))]),"Sum of "
                                                                                                          "significant across tasks")
 match_length_indx = {}
 start = 0
@@ -460,8 +460,8 @@ print(final_err_ds67, "Average testing error per task, data split 67/33")
 print(pred_r_ds67, "Predictive r, data split 67/33")
 print(np.mean(ds67_intervals),"Mean interval length, data split 67/33")
 print(np.std(ds67_intervals), "Sd interval length, data split 67/33")
-print(np.sum([np.len(all_variables_ds67[i]) for i in range(len(all_variables_ds67))]),"Sum of selected across tasks")
-print(np.sum([np.len(significant_variables_ds67[i]) for i in range(len(significant_variables_ds67))]),"Sum of significant across tasks")
+print(np.sum([len(all_variables_ds67[i]) for i in range(len(all_variables_ds67))]),"Sum of selected across tasks")
+print(np.sum([len(significant_variables_ds67[i]) for i in range(len(significant_variables_ds67))]),"Sum of significant across tasks")
 
 #Predict g
 all_active_predictors = np.asarray([])
