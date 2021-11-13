@@ -346,7 +346,7 @@ for i in range(ntask):
 
 #Estimate coefficients
 y = glavaan[train]
-observed_target = np.linalg.pinv(task_scores).dot(y)
+observed_target = (np.linalg.pinv(task_scores).T).dot(y)
 
 #Predicted g
 test_task_scores = []
@@ -399,7 +399,7 @@ for i in range(ntask):
 
 #Estimate coefficients
 y = glavaan[train]
-observed_target = np.linalg.pinv(task_scores).dot(y)
+observed_target = (np.linalg.pinv(task_scores).T).dot(y)
 
 #Predicted g
 test_task_scores = []
@@ -450,7 +450,7 @@ for i in range(ntask):
 
 #Estimate coefficients
 y = glavaan[train]
-observed_target = np.linalg.pinv(task_scores).dot(y)
+observed_target = (np.linalg.pinv(task_scores).T).dot(y)
 
 #Predicted g
 test_task_scores = []
@@ -492,7 +492,7 @@ for i in range(ntask):
 
 #Estimate coefficients
 y = glavaan[train]
-observed_target = np.linalg.pinv(task_scores).dot(y)
+observed_target = (np.linalg.pinv(task_scores).T).dot(y)
 
 #Predicted g
 test_task_scores = []
