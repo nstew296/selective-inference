@@ -476,7 +476,7 @@ response_inference = {j: responses_train[j][inference] for j in range(ntask)}
 predictor_vars_inference = predictors_train[inference,:]
 
 final_estimates_ds67, final_intervals_ds67, ds67_intervals, all_variables_ds67, significant_variables_ds67, final_err_ds67, pred_r_ds67, coefs_var_ds67 = \
-    ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_train,
+    ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
                                         responses_validate, responses_test,weight_list = np.arange(20,45,1.5),split=0.67)
 
 print(final_err_ds67, "Average testing error per task, data split 67/33")
