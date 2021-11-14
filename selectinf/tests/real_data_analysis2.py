@@ -357,7 +357,7 @@ for i in range(ntask):
     start += len(all_variables_rand1[i])
 test_task_scores = np.asarray(test_task_scores)
 
-pred_g = test_task_scores.dot(observed_target)
+pred_g = (test_task_scores.T).dot(observed_target)
 pred_r_general = np.corrcoef(glavaan[test],pred_g)
 print("general pred r, rand scale 1.0",pred_r_general)
 
@@ -411,7 +411,7 @@ for i in range(ntask):
     start += len(all_variables_ds50[i])
 test_task_scores = np.asarray(test_task_scores)
 
-pred_g = test_task_scores.dot(observed_target)
+pred_g = (test_task_scores.T).dot(observed_target)
 pred_r_general = np.corrcoef(glavaan[test],pred_g)
 print("general pred r, data split 50/50",pred_r_general)
 
@@ -463,7 +463,7 @@ for i in range(ntask):
     start += len(all_variables_rand07[i])
 test_task_scores = np.asarray(test_task_scores)
 
-pred_g = test_task_scores.dot(observed_target)
+pred_g = (test_task_scores.T).dot(observed_target)
 pred_r_general = np.corrcoef(glavaan[test],pred_g)
 print("general pred r, rand scale 0.7",pred_r_general)
 
@@ -506,7 +506,7 @@ for i in range(ntask):
     start += len(all_variables_ds67[i])
 test_task_scores = np.asarray(test_task_scores)
 
-pred_g = test_task_scores.dot(observed_target)
+pred_g = (test_task_scores.T).dot(observed_target)
 pred_r_general = np.corrcoef(glavaan[test],pred_g)
 print("general pred r, data split 67/33",pred_r_general)
 
