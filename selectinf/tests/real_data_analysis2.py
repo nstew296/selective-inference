@@ -212,7 +212,7 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
     for i in range(ntask):
        noise_levels.append(np.sqrt(np.sum(np.asarray(response_selection[i] - predictor_vars_selection.dot(np.linalg.pinv(predictor_vars_selection).dot(response_selection[i])))**2)/(np.int(sample_sizes)-nfeatures-1)))
     dispersions = [noise_levels[i]**2 for i in range(len(noise_levels))]
-    randomizers = {i: randomization.isotropic_gaussian((nfeatures,), 0) for i in range(ntask)}
+    randomizers = None
     estimates_dict = {}
     intervals_dict = {}
     coef_var_dict = {}
