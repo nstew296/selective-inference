@@ -422,7 +422,7 @@ for i in range(ntask):
         common_lengths.append(ratio_length)
 print(common_lengths)
 
-#----------------------------------------------------------------
+#-----------------------------------------------------------------
 
 final_estimates_rand07, final_intervals_rand07, selective07_intervals, all_variables_rand07, significant_variables_rand07, final_err_rand07, pred_r_rand07, coefs_var_rand07 = \
     rand_multi_task_selection_inference(predictors_train,predictors_validate,predictors_test, responses_train,
