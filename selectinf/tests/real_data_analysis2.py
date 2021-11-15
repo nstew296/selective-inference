@@ -426,7 +426,7 @@ print(common_lengths)
 
 final_estimates_rand07, final_intervals_rand07, selective07_intervals, all_variables_rand07, significant_variables_rand07, final_err_rand07, pred_r_rand07, coefs_var_rand07 = \
     rand_multi_task_selection_inference(predictors_train,predictors_validate,predictors_test, responses_train,
-                                        responses_validate, responses_test,weight_list = np.arange(30,57,1.5),rand_scale=0.7)
+                                        responses_validate, responses_test,weight_list = np.arange(30,52,1),rand_scale=0.7)
 
 print(final_err_rand07, "Average testing error per task, rand scale 0.7")
 print(pred_r_rand07, "Predictive r, rand scale 0.7")
@@ -476,7 +476,7 @@ predictor_vars_inference = predictors_train[inference,:]
 
 final_estimates_ds67, final_intervals_ds67, ds67_intervals, all_variables_ds67, significant_variables_ds67, final_err_ds67, pred_r_ds67, coefs_var_ds67 = \
     ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
-                                        responses_validate, responses_test,weight_list = np.arange(18,40,1.5),split=0.67)
+                                        responses_validate, responses_test,weight_list = np.arange(18,40,1),split=0.67)
 
 print(final_err_ds67, "Average testing error per task, data split 67/33")
 print(pred_r_ds67, "Predictive r, data split 67/33")
