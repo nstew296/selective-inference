@@ -613,7 +613,7 @@ def test_one_lasso_posi(predictor_vars_train,
 
 
 
-def test_coverage(weight,signal,gs,nsim=100):
+def test_coverage(weight,signal,ts,nsim=100):
     np.random.seed(5)
     cov = []
     len = []
@@ -664,9 +664,9 @@ def test_coverage(weight,signal,gs,nsim=100):
 
     ntask = 5
     nsamples= 2000 * np.ones(ntask)
-    p=250
-    global_sparsity= gs
-    task_sparsity= 0.4
+    p=100
+    global_sparsity= 0.95
+    task_sparsity= ts
     sigma=1. * np.ones(ntask)
     signal_fac=np.array(signal)
     rhos=0.3 * np.ones(ntask)
