@@ -7,12 +7,12 @@ import pandas as pd
 from selectinf.randomized.tests.test_multitask_lasso_2 import test_coverage
 
 k=5
-p=250
+p=100
 global_sparsity = 0.95
 
 length_path = 15
 lambdamin = 0
-lambdamax = 5.0
+lambdamax = 4.0
 #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
 #feature_weight_list = np.exp(weights)
 feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))

@@ -664,7 +664,7 @@ def test_coverage(weight,signal,ts,nsim=100):
 
     ntask = 5
     nsamples= 2000 * np.ones(ntask)
-    p=250
+    p=100
     global_sparsity=0.95
     task_sparsity= ts
     sigma=1. * np.ones(ntask)
