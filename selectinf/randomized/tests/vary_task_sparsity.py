@@ -8,11 +8,12 @@ from selectinf.randomized.tests.test_multitask_lasso_2 import test_coverage
 
 k=5
 p=100
-global_sparsity = 0.95
+#global_sparsity = 0.95
+task_sparsity = 0.4
 
 length_path = 15
 lambdamin = 0
-lambdamax = 4.0
+lambdamax = 4.5
 #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
 #feature_weight_list = np.exp(weights)
 feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
@@ -21,16 +22,18 @@ print(feature_weight_list)
 df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
-task_sparsity_list = [0.0,0.2,0.4,0.6]
+#task_sparsity_list = [0.0,0.2,0.4,0.6]
+sparsity_list = [0.85,0.90,0.95,0.99]
 n_list = [100,100,100,100]
 ##n_list = [5,5,5,20,20]
-coverage_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(task_sparsity_list))}
-length_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(task_sparsity_list))}
-f1_by_ts = {j: [[], [], [], [], [], []] for j in range(len(task_sparsity_list))}
+coverage_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(sparsity_list))}
+length_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(sparsity_list))}
+f1_by_ts = {j: [[], [], [], [], [], []] for j in range(len(sparsity_list))}
 
 
-for j in range(len(task_sparsity_list)):
-    positive = (1.-global_sparsity)*(1.-task_sparsity_list[j])*k*p
+for j in range(len(sparsity_list)):
+    #positive = (1.-global_sparsity)*(1.-sparsity_list[j])*k*p
+    positive = (1.-task_sparsity)*(1.-sparsity_list[j])*k*p
     negative = k*p - positive
 
     selective_lengths = []
@@ -75,7 +78,7 @@ for j in range(len(task_sparsity_list)):
 
     for i in range(len(feature_weight_list)):
         print((i,j),"(i,j)")
-        sims = test_coverage(feature_weight_list[i],[2.5,5.0],ts=task_sparsity_list[j],nsim=n_list[j])
+        sims = test_coverage(feature_weight_list[i],[2.5,5.0],gs=sparsity_list[j],nsim=n_list[j])
         selective_coverage.append(sims[3])
         selective_coverage2.append(sims[4])
         naive_coverage.append(sims[5])
@@ -214,7 +217,7 @@ for j in range(len(task_sparsity_list)):
     coverage_by_ts[j][6] = single_selective_coverage2[idx_min_k_random_lasso2]
     length_by_ts[j][6] = single_selective_lengths2[idx_min_k_random_lasso2]
 
-length = len(task_sparsity_list)
+length = len(sparsity_list)
 def set_box_color(bp, color,linestyle):
     plt.setp(bp['boxes'], color=color,linestyle=linestyle)
     plt.setp(bp['whiskers'], color=color,linestyle=linestyle)
@@ -226,13 +229,13 @@ ax1 = fig.add_subplot(131)
 ax2 = fig.add_subplot(132)
 ax3 = fig.add_subplot(133)
 plt.sca(ax1)
-first = plt.boxplot([coverage_by_ts[j][2] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
-second = plt.boxplot([coverage_by_ts[j][0] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 + .3, sym='', widths=0.3)
-third = plt.boxplot([coverage_by_ts[j][1] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 +.6, sym='', widths=0.3)
-fourth = plt.boxplot([coverage_by_ts[j][3] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 + .9, sym='', widths=0.3)
-fifth = plt.boxplot([coverage_by_ts[j][4] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 + 1.2, sym='', widths=0.3)
-sixth = plt.boxplot([coverage_by_ts[j][5] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 + 1.5, sym='',widths=0.3)
-seventh = plt.boxplot([coverage_by_ts[j][6] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 + 1.8, sym='',widths=0.3)
+first = plt.boxplot([coverage_by_ts[j][2] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
+second = plt.boxplot([coverage_by_ts[j][0] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + .3, sym='', widths=0.3)
+third = plt.boxplot([coverage_by_ts[j][1] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 +.6, sym='', widths=0.3)
+fourth = plt.boxplot([coverage_by_ts[j][3] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + .9, sym='', widths=0.3)
+fifth = plt.boxplot([coverage_by_ts[j][4] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.2, sym='', widths=0.3)
+sixth = plt.boxplot([coverage_by_ts[j][5] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.5, sym='',widths=0.3)
+seventh = plt.boxplot([coverage_by_ts[j][6] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.8, sym='',widths=0.3)
 set_box_color(first, '#D7191C','solid')
 set_box_color(second, '#2b8cbe','solid')  # colors are from http://colorbrewer2.org/
 set_box_color(third, '#6baed6','--')
@@ -240,7 +243,7 @@ set_box_color(fourth, '#238443','solid')
 set_box_color(fifth, '#31a354','--')
 set_box_color(sixth, '#fd8d3c','solid')
 set_box_color(seventh,'#feb24c','--')
-plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 1) for num in task_sparsity_list])
+plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in sparsity_list])
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.plot([], c='#D7191C', label='Naive',linewidth=2.5)
 plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso 0.7',linewidth=2.5)
@@ -254,37 +257,37 @@ plt.tight_layout()
 plt.ylabel('Coverage per Simulation',fontsize=12)
 
 plt.sca(ax2)
-first = plt.boxplot([length_by_ts[j][0] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
-second = plt.boxplot([length_by_ts[j][1] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 +.3, sym='', widths=0.3)
-fourth = plt.boxplot([length_by_ts[j][3] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 + .6, sym='', widths=0.3)
-fifth = plt.boxplot([length_by_ts[j][4] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 + 0.9, sym='', widths=0.3)
-sixth = plt.boxplot([length_by_ts[j][5] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 + 1.2, sym='',widths=0.3)
-seventh = plt.boxplot([length_by_ts[j][6] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 + 1.5, sym='',widths=0.3)
+first = plt.boxplot([length_by_ts[j][0] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
+second = plt.boxplot([length_by_ts[j][1] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 +.3, sym='', widths=0.3)
+fourth = plt.boxplot([length_by_ts[j][3] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + .6, sym='', widths=0.3)
+fifth = plt.boxplot([length_by_ts[j][4] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.9, sym='', widths=0.3)
+sixth = plt.boxplot([length_by_ts[j][5] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.2, sym='',widths=0.3)
+seventh = plt.boxplot([length_by_ts[j][6] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.5, sym='',widths=0.3)
 set_box_color(first, '#2b8cbe','solid')  # colors are from http://colorbrewer2.org/
 set_box_color(second, '#6baed6','--')
 set_box_color(fourth, '#238443','solid')
 set_box_color(fifth, '#31a354','--')
 set_box_color(sixth, '#fd8d3c','solid')
 set_box_color(seventh,'#feb24c','--')
-plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 1) for num in task_sparsity_list])
+plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in sparsity_list])
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.tight_layout()
 plt.ylabel('Interval Length',fontsize=12)
 
 plt.sca(ax3)
-first = plt.boxplot([f1_by_ts[j][0] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
-second = plt.boxplot([f1_by_ts[j][1] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 +.3, sym='', widths=0.3)
-fourth = plt.boxplot([f1_by_ts[j][2] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 + .6, sym='', widths=0.3)
-fifth = plt.boxplot([f1_by_ts[j][3] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 + 0.9, sym='', widths=0.3)
-sixth = plt.boxplot([f1_by_ts[j][4] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 + 1.2, sym='',widths=0.3)
-seventh = plt.boxplot([f1_by_ts[j][5] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 + 1.5, sym='',widths=0.3)
+first = plt.boxplot([f1_by_ts[j][0] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
+second = plt.boxplot([f1_by_ts[j][1] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 +.3, sym='', widths=0.3)
+fourth = plt.boxplot([f1_by_ts[j][2] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + .6, sym='', widths=0.3)
+fifth = plt.boxplot([f1_by_ts[j][3] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.9, sym='', widths=0.3)
+sixth = plt.boxplot([f1_by_ts[j][4] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.2, sym='',widths=0.3)
+seventh = plt.boxplot([f1_by_ts[j][5] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.5, sym='',widths=0.3)
 set_box_color(first, '#2b8cbe','solid')  # colors are from http://colorbrewer2.org/
 set_box_color(second, '#6baed6','--')
 set_box_color(fourth, '#238443','solid')
 set_box_color(fifth, '#31a354','--')
 set_box_color(sixth, '#fd8d3c','solid')
 set_box_color(seventh,'#feb24c','--')
-plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 1) for num in task_sparsity_list])
+plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in sparsity_list])
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.tight_layout()
 plt.ylabel('f1 per Simulation',fontsize=12)
@@ -293,12 +296,13 @@ plt.ylabel('f1 per Simulation',fontsize=12)
 ax1.set_title("Coverage", y = 1.01)
 ax2.set_title("Length", y = 1.01)
 ax3.set_title("Accuracy", y = 1.01)
-fig.suptitle("Regression Dimension p=250",fontsize=14)
+fig.suptitle("Regression Dimension p=100",fontsize=14)
 
 
 def common_format(ax):
     ax.grid(True, which='both',color='#f0f0f0')
-    ax.set_xlabel('Task Sparsity', fontsize=12)
+    #ax.set_xlabel('Task Sparsity', fontsize=12)
+    ax.set_xlabel('Global Sparsity', fontsize=12)
     return ax
 
 common_format(ax1)
@@ -310,7 +314,7 @@ ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 ax1.legend(loc='lower left', bbox_to_anchor=(0.6, -0.45),fontsize=14,ncol=3)
-plt.savefig('vary_task_sparsity_p100.png', bbox_inches='tight')
+plt.savefig('vary_global_sparsity_p100.png', bbox_inches='tight')
 
 
 #fig = plt.figure(figsize=(25, 10))
