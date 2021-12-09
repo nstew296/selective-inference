@@ -310,7 +310,7 @@ ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 ax1.legend(loc='lower left', bbox_to_anchor=(0.6, -0.45),fontsize=14,ncol=3)
-plt.savefig('vary_task_sparsity_p250.png', bbox_inches='tight')
+plt.savefig('vary_task_sparsity_p100.png', bbox_inches='tight')
 
 
 #fig = plt.figure(figsize=(25, 10))
