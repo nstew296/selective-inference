@@ -1,6 +1,4 @@
 import numpy as np
-import sklearn
-from sklearn import metrics
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -28,98 +26,95 @@ n_list = [100,100,100,100]
 ##n_list = [5,5,5,20,20]
 coverage_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(task_sparsity_list))}
 length_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(task_sparsity_list))}
-sensitivity_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(task_sparsity_list))}
-specificity_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(task_sparsity_list))}
 f1_by_ts = {j: [[], [], [], [], [], []] for j in range(len(task_sparsity_list))}
 
 
 for j in range(len(task_sparsity_list)):
     positive = (1.-global_sparsity)*(1.-task_sparsity_list[j])*k*p
     negative = k*p - positive
-    coverage = {i: [[], [], [], [], [], [], []] for i in range(length_path)}
-    length = {i: [[], [], [], [], [], [], []] for i in range(length_path)}
-    sensitivity = {i: [[], [], [], [], [], [], []] for i in range(length_path)}
-    specificity = {i: [[], [], [], [], [], [], []] for i in range(length_path)}
-    error = {i: [[], [], [], [], [], [], []] for i in range(length_path)}
+
+    selective_lengths = []
+    selective_lengths2 = []
+    naive_lengths = []
+    ds_lengths = []
+    ds_lengths2 = []
+    single_selective_lengths = []
+    single_selective_lengths2 = []
+
+    selective_coverage = []
+    selective_coverage2 = []
+    naive_coverage = []
+    ds_coverage = []
+    ds_coverage2 = []
+    single_selective_coverage = []
+    single_selective_coverage2 = []
+
+    selective_sensitivity = []
+    selective_sensitivity2 = []
+    naive_sensitivity = []
+    ds_sensitivity = []
+    ds_sensitivity2 = []
+    single_task_sensitivity = []
+    single_task_sensitivity2 = []
+
+    selective_specificity = []
+    selective_specificity2 = []
+    naive_specificity = []
+    ds_specificity = []
+    ds_specificity2 = []
+    single_task_specificity = []
+    single_task_specificity2 = []
+
+    selective_error = []
+    selective_error2 = []
+    naive_error = []
+    ds_error = []
+    ds_error2 = []
+    single_selective_error = []
+    single_selective_error2 = []
 
     for i in range(len(feature_weight_list)):
         print((i,j),"(i,j)")
         sims = test_coverage(feature_weight_list[i],[2.5,5.0],ts=task_sparsity_list[j],nsim=n_list[j])
-        coverage[i][0].extend(sims[3])
-        coverage[i][1].extend(sims[4])
-        coverage[i][2].extend(sims[5])
-        coverage[i][3].extend(sims[6])
-        coverage[i][4].extend(sims[7])
-        coverage[i][5].extend(sims[8])
-        coverage[i][6].extend(sims[9])
-        length[i][0].extend(sims[10])
-        length[i][1].extend(sims[11])
-        length[i][2].extend(sims[12])
-        length[i][3].extend(sims[13])
-        length[i][4].extend(sims[14])
-        length[i][5].extend(sims[15])
-        length[i][6].extend(sims[16])
-        sensitivity[i][0].extend(sims[17])
-        sensitivity[i][1].extend(sims[18])
-        sensitivity[i][2].extend(sims[19])
-        sensitivity[i][3].extend(sims[20])
-        sensitivity[i][4].extend(sims[21])
-        sensitivity[i][5].extend(sims[22])
-        sensitivity[i][6].extend(sims[23])
-        specificity[i][0].extend(sims[24])
-        specificity[i][1].extend(sims[25])
-        specificity[i][2].extend(sims[26])
-        specificity[i][3].extend(sims[27])
-        specificity[i][4].extend(sims[28])
-        specificity[i][5].extend(sims[29])
-        specificity[i][6].extend(sims[30])
-        error[i][0].append(sims[31])
-        error[i][1].append(sims[32])
-        error[i][2].append(sims[33])
-        error[i][3].append(sims[34])
-        error[i][4].append(sims[35])
-        error[i][5].append(sims[36])
-        error[i][6].append(sims[37])
+        selective_coverage.append(sims[3])
+        selective_coverage2.append(sims[4])
+        naive_coverage.append(sims[5])
+        ds_coverage.append(sims[6])
+        ds_coverage2.append(sims[7])
+        single_selective_coverage.append(sims[8])
+        single_selective_coverage2.append(sims[9])
 
-    selective_lengths = [length[i][0] for i in range(length_path)]
-    selective_lengths2 = [length[i][1] for i in range(length_path)]
-    naive_lengths = [length[i][2] for i in range(length_path)]
-    ds_lengths = [length[i][3] for i in range(length_path)]
-    ds_lengths2 = [length[i][4] for i in range(length_path)]
-    single_selective_lengths = [length[i][5] for i in range(length_path)]
-    single_selective_lengths2 = [length[i][6] for i in range(length_path)]
+        selective_lengths.append(sims[10])
+        selective_lengths2.append(sims[11])
+        naive_lengths.append(sims[12])
+        ds_lengths.append(sims[13])
+        ds_lengths2.append(sims[14])
+        single_selective_lengths.append(sims[15])
+        single_selective_lengths2.append(sims[16])
 
-    selective_coverage = [coverage[i][0] for i in range(length_path)]
-    selective_coverage2 = [coverage[i][1] for i in range(length_path)]
-    naive_coverage = [coverage[i][2] for i in range(length_path)]
-    ds_coverage = [coverage[i][3] for i in range(length_path)]
-    ds_coverage2 = [coverage[i][4] for i in range(length_path)]
-    single_selective_coverage = [coverage[i][5] for i in range(length_path)]
-    single_selective_coverage2 = [coverage[i][6] for i in range(length_path)]
+        selective_sensitivity.append(sims[17])
+        selective_sensitivity2.append(sims[18])
+        naive_sensitivity.append(sims[19])
+        ds_sensitivity.append(sims[20])
+        ds_sensitivity2.append(sims[21])
+        single_task_sensitivity.append(sims[22])
+        single_task_sensitivity2.append(sims[23])
 
-    selective_sensitivity = [sensitivity[i][0] for i in range(length_path)]
-    selective_sensitivity2 = [sensitivity[i][1] for i in range(length_path)]
-    naive_sensitivity = [sensitivity[i][2] for i in range(length_path)]
-    ds_sensitivity = [sensitivity[i][3] for i in range(length_path)]
-    ds_sensitivity2 = [sensitivity[i][4] for i in range(length_path)]
-    single_task_sensitivity = [sensitivity[i][5] for i in range(length_path)]
-    single_task_sensitivity2 = [sensitivity[i][6] for i in range(length_path)]
+        selective_specificity.append(sims[24])
+        selective_specificity2.append(sims[25])
+        naive_specificity.append(sims[26])
+        ds_specificity.append(sims[27])
+        ds_specificity2.append(sims[28])
+        single_task_specificity.append(sims[29])
+        single_task_specificity2.append(sims[30])
 
-    selective_specificity = [specificity[i][0] for i in range(length_path)]
-    selective_specificity2 = [specificity[i][1] for i in range(length_path)]
-    naive_specificity = [specificity[i][2] for i in range(length_path)]
-    ds_specificity = [specificity[i][3] for i in range(length_path)]
-    ds_specificity2 = [specificity[i][4] for i in range(length_path)]
-    single_task_specificity = [specificity[i][5] for i in range(length_path)]
-    single_task_specificity2 = [specificity[i][6] for i in range(length_path)]
-
-    selective_error = [error[i][0] for i in range(length_path)]
-    selective_error2 = [error[i][1] for i in range(length_path)]
-    naive_error = [error[i][2] for i in range(length_path)]
-    ds_error = [error[i][3] for i in range(length_path)]
-    ds_error2 = [error[i][4] for i in range(length_path)]
-    single_selective_error = [error[i][5] for i in range(length_path)]
-    single_selective_error2 = [error[i][6] for i in range(length_path)]
+        selective_error.append(sims[31])
+        selective_error2.append(sims[32])
+        naive_error.append(sims[33])
+        ds_error.append(sims[34])
+        ds_error2.append(sims[35])
+        single_selective_error.append(sims[36])
+        single_selective_error2.append(sims[37])
 
     idx_min_random_multitask = np.argmin(selective_error)
     idx_min_random_multitask2 = np.argmin(selective_error2)
@@ -258,8 +253,6 @@ plt.legend()
 plt.tight_layout()
 plt.ylabel('Coverage per Simulation',fontsize=12)
 
-
-
 plt.sca(ax2)
 first = plt.boxplot([length_by_ts[j][0] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
 second = plt.boxplot([length_by_ts[j][1] for j in range(len(task_sparsity_list))], positions=np.array(range(length)) * 3 +.3, sym='', widths=0.3)
@@ -317,7 +310,7 @@ ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 ax1.legend(loc='lower left', bbox_to_anchor=(0.6, -0.45),fontsize=14,ncol=3)
-plt.savefig('cov_len_by_ts_mixed_2_5_n200_400.png', bbox_inches='tight')
+plt.savefig('vary_task_sparsity_p250.png', bbox_inches='tight')
 
 
 #fig = plt.figure(figsize=(25, 10))
