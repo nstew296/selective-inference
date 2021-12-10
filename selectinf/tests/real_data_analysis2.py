@@ -415,6 +415,8 @@ print("general pred r, data split 50/50",pred_r_general)
 
 common = {i:np.intersect1d(all_variables_rand1[i],all_variables_ds50[i]) for i in range(ntask)}
 print("common",common)
+common_significant = {i:np.intersect1d(significant_variables_rand1[i],significant_variables_ds50[i]) for i in range(ntask)}
+print("common significant",common_significant)
 common_lengths = []
 for i in range(ntask):
     for predictor in common[i]:
@@ -432,8 +434,8 @@ print(final_err_rand07, "Average testing error per task, rand scale 0.7")
 print(pred_r_rand07, "Predictive r, rand scale 0.7")
 print(np.mean(selective07_intervals),"Mean interval length, rand scale 0.7")
 print(np.std(selective07_intervals), "Sd interval length, rand scale 0.7")
-print(np.sum([len(all_variables_rand07[i]) for i in range(len(all_variables_rand1))]),"Sum of selected across tasks")
-print(np.sum([len(significant_variables_rand07[i]) for i in range(len(significant_variables_rand1))]),"Sum of "
+print(np.sum([len(all_variables_rand07[i]) for i in range(len(all_variables_rand07))]),"Sum of selected across tasks")
+print(np.sum([len(significant_variables_rand07[i]) for i in range(len(significant_variables_rand07))]),"Sum of "
                                                                                                          "significant across tasks")
 match_length_indx = {}
 start = 0
@@ -469,10 +471,10 @@ sample_sizes = predictors_train.shape[0]
 samples = np.arange(np.int(sample_sizes))
 selection = np.random.choice(samples, size=np.int(0.67 * sample_sizes), replace=False)
 inference = np.setdiff1d(samples, selection)
-response_selection = {j: responses_train[j][selection] for j in range(ntask)}
-predictor_vars_selection = predictors_train[selection,:]
-response_inference = {j: responses_train[j][inference] for j in range(ntask)}
-predictor_vars_inference = predictors_train[inference,:]
+responses_selection = {j: responses_train[j][selection] for j in range(ntask)}
+predictors_selection = predictors_train[selection,:]
+responses_inference = {j: responses_train[j][inference] for j in range(ntask)}
+predictors_inference = predictors_train[inference,:]
 
 final_estimates_ds67, final_intervals_ds67, ds67_intervals, all_variables_ds67, significant_variables_ds67, final_err_ds67, pred_r_ds67, coefs_var_ds67 = \
     ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
@@ -517,6 +519,8 @@ for i in range(ntask):
 
 common = {i:np.intersect1d(all_variables_rand07[i],all_variables_ds67[i]) for i in range(ntask)}
 print("common",common)
+common_significant = {i:np.intersect1d(significant_variables_rand07[i],significant_variables_ds67[i]) for i in range(ntask)}
+print("common significant",common_significant)
 common_lengths_67 = []
 for i in range(ntask):
     for predictor in common[i]:
