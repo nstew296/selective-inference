@@ -8,12 +8,12 @@ from selectinf.randomized.tests.test_multitask_lasso_2 import test_coverage
 
 k=5
 p=100
-global_sparsity = 0.95
-#task_sparsity = 0.4
+#global_sparsity = 0.95
+task_sparsity = 0.4
 
 length_path = 15
 lambdamin = 0
-lambdamax = 4.0
+lambdamax = 4.5
 #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
 #feature_weight_list = np.exp(weights)
 feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
@@ -22,8 +22,8 @@ print(feature_weight_list)
 df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
-sparsity_list = [0.0,0.2,0.4,0.6]
-#sparsity_list = [0.85,0.90,0.95,0.99]
+#sparsity_list = [0.0,0.2,0.4,0.6]
+sparsity_list = [0.85,0.90,0.95,0.99]
 n_list = [100,100,100,100]
 ##n_list = [5,5,5,20,20]
 coverage_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(sparsity_list))}
@@ -32,8 +32,8 @@ f1_by_ts = {j: [[], [], [], [], [], []] for j in range(len(sparsity_list))}
 
 
 for j in range(len(sparsity_list)):
-    positive = (1.-global_sparsity)*(1.-sparsity_list[j])*k*p
-    #positive = (1.-task_sparsity)*(1.-sparsity_list[j])*k*p
+    #positive = (1.-global_sparsity)*(1.-sparsity_list[j])*k*p
+    positive = (1.-task_sparsity)*(1.-sparsity_list[j])*k*p
     negative = k*p - positive
 
     selective_lengths = []
@@ -301,8 +301,8 @@ fig.suptitle("Regression Dimension p=100",fontsize=14)
 
 def common_format(ax):
     ax.grid(True, which='both',color='#f0f0f0')
-    ax.set_xlabel('Task Sparsity', fontsize=12)
-    #ax.set_xlabel('Global Sparsity', fontsize=12)
+    #ax.set_xlabel('Task Sparsity', fontsize=12)
+    ax.set_xlabel('Global Sparsity', fontsize=12)
     return ax
 
 common_format(ax1)
@@ -314,7 +314,7 @@ ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 ax1.legend(loc='lower left', bbox_to_anchor=(0.6, -0.45),fontsize=14,ncol=3)
-plt.savefig('vary_task_sparsity_p100.png', bbox_inches='tight')
+plt.savefig('vary_global_sparsity_p100.png', bbox_inches='tight')
 
 
 #fig = plt.figure(figsize=(25, 10))
