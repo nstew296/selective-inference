@@ -78,7 +78,7 @@ for j in range(len(sparsity_list)):
 
     for i in range(len(feature_weight_list)):
         print((i,j),"(i,j)")
-        sims = test_coverage(feature_weight_list[i],[2.5,5.0],gs=sparsity_list[j],nsim=n_list[j])
+        sims = test_coverage(feature_weight_list[i],[2.5,5.0],sparsity_list[j],nsim=n_list[j])
         selective_coverage.append(sims[3])
         selective_coverage2.append(sims[4])
         naive_coverage.append(sims[5])
