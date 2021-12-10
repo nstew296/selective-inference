@@ -4,7 +4,7 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 #import seaborn as sns
-from selectinf.randomized.tests.test_multitask_lasso_2 import test_coverage
+from selectinf.randomized.tests.test_multitask_lasso import test_coverage
 
 k=5
 p=250
