@@ -7,13 +7,13 @@ import pandas as pd
 from selectinf.randomized.tests.test_multitask_lasso_2 import test_coverage
 
 k=5
-p=100
+p=250
 #global_sparsity = 0.95
 task_sparsity = 0.4
 
 length_path = 15
 lambdamin = 0
-lambdamax = 4.5
+lambdamax = 5.5
 #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
 #feature_weight_list = np.exp(weights)
 feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
@@ -296,7 +296,7 @@ plt.ylabel('f1 per Simulation',fontsize=12)
 ax1.set_title("Coverage", y = 1.01)
 ax2.set_title("Length", y = 1.01)
 ax3.set_title("Accuracy", y = 1.01)
-fig.suptitle("Regression Dimension p=100",fontsize=14)
+fig.suptitle("Regression Dimension p=250",fontsize=14)
 
 
 def common_format(ax):
@@ -314,7 +314,7 @@ ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 ax1.legend(loc='lower left', bbox_to_anchor=(0.6, -0.45),fontsize=14,ncol=3)
-plt.savefig('vary_global_sparsity_p100.png', bbox_inches='tight')
+plt.savefig('vary_global_sparsity_p250.png', bbox_inches='tight')
 
 
 #fig = plt.figure(figsize=(25, 10))
