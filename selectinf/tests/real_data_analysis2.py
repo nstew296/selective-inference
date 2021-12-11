@@ -535,7 +535,6 @@ def set_box_color(bp, color, linestyle):
 
 fig = plt.figure(figsize=(17, 14))
 ax1 = fig.add_subplot(111)
-
 plt.sca(ax1)
 first = plt.boxplot([common_lengths_67], positions=np.asarray([1]), sym='', widths=0.3)
 second = plt.boxplot([common_lengths], positions=np.asarray([1.6]), sym='', widths=0.3)
@@ -565,9 +564,8 @@ plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 plt.savefig('real_data_lengths2.png', bbox_inches='tight')
 
 
-fig = plt.figure(figsize=(17, 14))
-ax1 = fig.add_subplot(111)
-
+fig = plt.figure(figsize=(20, 10))
+ax1 = fig.add_subplot(121)
 plt.sca(ax1)
 first = plt.boxplot([selective07_intervals], positions=np.asarray([1]), sym='', widths=0.3)
 second = plt.boxplot([selective1_intervals], positions=np.asarray([1.8]), sym='', widths=0.3)
@@ -586,26 +584,14 @@ plt.plot([], c='#31a354', label='Data Splitting 50/50', linestyle='--', linewidt
 plt.legend()
 plt.ylabel('Interval Length', fontsize=20)
 plt.yticks(fontsize=18)
-
 ax1.set_title("Distribution of Interval Lengths", y=1.01 ,fontsize=24)
 ax1.legend(loc='lower left', bbox_to_anchor=(0.319, -0.225), fontsize=20)
 ax1.set_xticklabels([])
 ax1.set_xticks([])
-
-def common_format(ax):
-    ax.grid(True, which='both', color='#f0f0f0')
-    ax.set_xlabel('Method', fontsize=20)
-    return ax
-
 common_format(ax1)
-plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-plt.savefig('real_data_lengths.png', bbox_inches='tight')
 
-
-
-fig = plt.figure(figsize=(17, 14))
-ax1 = fig.add_subplot(111)
-plt.sca(ax1)
+ax2 = fig.add_subplot(122)
+plt.sca(ax2)
 first = plt.boxplot([coefs_var_rand07], positions=np.asarray([1]), sym='', widths=0.3)
 second = plt.boxplot([coefs_var_rand1], positions=np.asarray([1.8]), sym='', widths=0.3)
 fourth = plt.boxplot([coefs_var_ds67], positions=np.asarray([1.3]), sym='', widths=0.3)
@@ -616,24 +602,13 @@ set_box_color(fourth, '#238443', 'solid')
 set_box_color(fifth, '#31a354', '--')
 plt.xlim(0.7, 2.4)
 plt.tight_layout()
-plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso 0.7', linewidth=2.5)
-plt.plot([], c='#238443', label='Data Splitting 67/33', linewidth=2.5)
-plt.plot([], c='#6baed6', label='Randomized Multi-Task Lasso 1.0', linestyle='--', linewidth=2.5)
-plt.plot([], c='#31a354', label='Data Splitting 50/50', linestyle='--', linewidth=2.5)
-plt.legend()
 plt.ylabel('Coefficient of Variation', fontsize=20)
 plt.yticks(fontsize=18)
 
-ax1.set_title("Coefficient of Variation for Estimated Model Parameters", y=1.01 ,fontsize=24)
-ax1.legend(loc='lower left', bbox_to_anchor=(0.319, -0.225), fontsize=20)
-ax1.set_xticklabels([])
-ax1.set_xticks([])
-
-def common_format(ax):
-    ax.grid(True, which='both', color='#f0f0f0')
-    ax.set_xlabel('Method', fontsize=20)
-    return ax
-
-common_format(ax1)
+ax2.set_title("Coefficient of Variation for Estimated Model Parameters", y=1.01 ,fontsize=20)
+ax2.set_xticklabels([])
+ax2.set_xticks([])
+common_format(ax2)
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-plt.savefig('real_data_cv.png', bbox_inches='tight')
+ax1.legend(loc='lower left', bbox_to_anchor=(0.319, -0.225), fontsize=20)
+plt.savefig('real_data_lengths_cv.png', bbox_inches='tight')

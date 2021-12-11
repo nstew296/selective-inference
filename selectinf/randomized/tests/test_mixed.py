@@ -1045,7 +1045,7 @@ def main():
     length_path = 10
 
     lambdamin = 0.5
-    lambdamax = 4.0
+    lambdamax = 3.0
     #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
     #feature_weight_list = np.exp(weights)
     feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
@@ -1261,14 +1261,6 @@ def main():
     set_box_color(seventh, '#feb24c', '--')
     plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list])
     plt.xlim(-1, (length - 1) * 3 + 3)
-    plt.plot([], c='#D7191C', label='Naive', linewidth=2.5)
-    plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso 0.7', linewidth=2.5)
-    plt.plot([], c='#6baed6', label='Randomized Multi-Task Lasso 1.0', linestyle='--', linewidth=2.5)
-    plt.plot([], c='#238443', label='Data Splitting 67/33', linewidth=2.5)
-    plt.plot([], c='#31a354', label='Data Splitting 50/50', linestyle='--', linewidth=2.5)
-    plt.plot([], c='#fd8d3c', label='K Randomized Lassos 0.7', linewidth=2.5)
-    plt.plot([], c='#feb24c', label='K Randomized Lassos 1.0', linestyle='--', linewidth=2.5)
-    plt.legend()
     plt.tight_layout()
     plt.ylabel('Interval Length', fontsize=12)
 
@@ -1287,6 +1279,14 @@ def main():
     set_box_color(seventh, '#feb24c', '--')
     plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list])
     plt.xlim(-1, (length - 1) * 3 + 3)
+    plt.plot([], c='#D7191C', label='Naive', linewidth=2.5)
+    plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso 0.7', linewidth=2.5)
+    plt.plot([], c='#6baed6', label='Randomized Multi-Task Lasso 1.0', linestyle='--', linewidth=2.5)
+    plt.plot([], c='#238443', label='Data Splitting 67/33', linewidth=2.5)
+    plt.plot([], c='#31a354', label='Data Splitting 50/50', linestyle='--', linewidth=2.5)
+    plt.plot([], c='#fd8d3c', label='K Randomized Lassos 0.7', linewidth=2.5)
+    plt.plot([], c='#feb24c', label='K Randomized Lassos 1.0', linestyle='--', linewidth=2.5)
+    plt.legend()
     plt.tight_layout()
     plt.ylabel('F1 Score', fontsize=12)
 
@@ -1294,7 +1294,7 @@ def main():
     ax2.set_title("Length", y=1.01)
     ax3.set_title("Accuracy", y=1.01)
 
-    ax2.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.6), fontsize=14)
+    ax3.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.6), fontsize=14)
 
     def common_format(ax):
         ax.grid(True, which='both', color='#f0f0f0')
@@ -1307,7 +1307,7 @@ def main():
 
     ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
-    plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+    plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=0.6)
     plt.savefig('cov_len_f1_by_lambda.png', bbox_inches='tight')
 
 
