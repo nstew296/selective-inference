@@ -1051,73 +1051,160 @@ def main():
     feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
     print(feature_weight_list)
 
-    coverage = {i: [[], [], [], [], [], [], []] for i in range(length_path)}
-    length = {i: [[], [], [], [], [], [], []] for i in range(length_path)}
-    sensitivity = {i: [[], [], [], [], [], [], []] for i in range(length_path)}
-    specificity = {i: [[], [], [], [], [], [], []] for i in range(length_path)}
-    error = {i: [[], [], [], [], [], [], []] for i in range(length_path)}
+    selective_lengths = []
+    selective_lengths2 = []
+    naive_lengths = []
+    ds_lengths = []
+    ds_lengths2 = []
+    single_selective_lengths = []
+    single_selective_lengths2 = []
+
+    selective_coverage = []
+    selective_coverage2 = []
+    naive_coverage = []
+    ds_coverage = []
+    ds_coverage2 = []
+    single_selective_coverage = []
+    single_selective_coverage2 = []
+
+    selective_sensitivity = []
+    selective_sensitivity2 = []
+    naive_sensitivity = []
+    ds_sensitivity = []
+    ds_sensitivity2 = []
+    single_task_sensitivity = []
+    single_task_sensitivity2 = []
+
+    selective_specificity = []
+    selective_specificity2 = []
+    naive_specificity = []
+    ds_specificity = []
+    ds_specificity2 = []
+    single_task_specificity = []
+    single_task_specificity2 = []
+
+    selective_error = []
+    selective_error2 = []
+    naive_error = []
+    ds_error = []
+    ds_error2 = []
+    single_selective_error = []
+    single_selective_error2 = []
 
     for i in range(len(feature_weight_list)):
         sims = test_coverage(feature_weight_list[i], [2.0, 5.0], nsim=100)
-        coverage[i][0].extend(sims[3])
-        coverage[i][1].extend(sims[4])
-        coverage[i][2].extend(sims[5])
-        coverage[i][3].extend(sims[6])
-        coverage[i][4].extend(sims[7])
-        coverage[i][5].extend(sims[8])
-        coverage[i][6].extend(sims[9])
-        length[i][0].extend(sims[10])
-        length[i][1].extend(sims[11])
-        length[i][2].extend(sims[12])
-        length[i][3].extend(sims[13])
-        length[i][4].extend(sims[14])
-        length[i][5].extend(sims[15])
-        length[i][6].extend(sims[16])
-        sensitivity[i][0].extend(sims[17])
-        sensitivity[i][1].extend(sims[18])
-        sensitivity[i][2].extend(sims[19])
-        sensitivity[i][3].extend(sims[20])
-        sensitivity[i][4].extend(sims[21])
-        sensitivity[i][5].extend(sims[22])
-        sensitivity[i][6].extend(sims[23])
-        specificity[i][0].extend(sims[24])
-        specificity[i][1].extend(sims[25])
-        specificity[i][2].extend(sims[26])
-        specificity[i][3].extend(sims[27])
-        specificity[i][4].extend(sims[28])
-        specificity[i][5].extend(sims[29])
-        specificity[i][6].extend(sims[30])
-        error[i][0].append(sims[31])
-        error[i][1].append(sims[32])
-        error[i][2].append(sims[33])
-        error[i][3].append(sims[34])
-        error[i][4].append(sims[35])
-        error[i][5].append(sims[36])
-        error[i][6].append(sims[37])
+        selective_coverage.append(sims[3])
+        selective_coverage2.append(sims[4])
+        naive_coverage.append(sims[5])
+        ds_coverage.append(sims[6])
+        ds_coverage2.append(sims[7])
+        single_selective_coverage.append(sims[8])
+        single_selective_coverage2.append(sims[9])
 
-    selective_lengths = [length[i][0] for i in range(length_path)]
-    selective_lengths2 = [length[i][1] for i in range(length_path)]
-    naive_lengths = [length[i][2] for i in range(length_path)]
-    ds_lengths = [length[i][3] for i in range(length_path)]
-    ds_lengths2 = [length[i][4] for i in range(length_path)]
-    single_selective_lengths = [length[i][5] for i in range(length_path)]
-    single_selective_lengths2 = [length[i][6] for i in range(length_path)]
+        selective_lengths.append(sims[10])
+        selective_lengths2.append(sims[11])
+        naive_lengths.append(sims[12])
+        ds_lengths.append(sims[13])
+        ds_lengths2.append(sims[14])
+        single_selective_lengths.append(sims[15])
+        single_selective_lengths2.append(sims[16])
 
-    selective_coverage = [coverage[i][0] for i in range(length_path)]
-    selective_coverage2 = [coverage[i][1] for i in range(length_path)]
-    naive_coverage = [coverage[i][2] for i in range(length_path)]
-    ds_coverage = [coverage[i][3] for i in range(length_path)]
-    ds_coverage2 = [coverage[i][4] for i in range(length_path)]
-    single_selective_coverage = [coverage[i][5] for i in range(length_path)]
-    single_selective_coverage2 = [coverage[i][6] for i in range(length_path)]
+        selective_sensitivity.append(sims[17])
+        selective_sensitivity2.append(sims[18])
+        naive_sensitivity.append(sims[19])
+        ds_sensitivity.append(sims[20])
+        ds_sensitivity2.append(sims[21])
+        single_task_sensitivity.append(sims[22])
+        single_task_sensitivity2.append(sims[23])
 
-    selective_error = [error[i][0] for i in range(length_path)]
-    selective_error2 = [error[i][1] for i in range(length_path)]
-    naive_error = [error[i][2] for i in range(length_path)]
-    ds_error = [error[i][3] for i in range(length_path)]
-    ds_error2 = [error[i][4] for i in range(length_path)]
-    single_selective_error = [error[i][5] for i in range(length_path)]
-    single_selective_error2 = [error[i][6] for i in range(length_path)]
+        selective_specificity.append(sims[24])
+        selective_specificity2.append(sims[25])
+        naive_specificity.append(sims[26])
+        ds_specificity.append(sims[27])
+        ds_specificity2.append(sims[28])
+        single_task_specificity.append(sims[29])
+        single_task_specificity2.append(sims[30])
+
+        selective_error.append(sims[31])
+        selective_error2.append(sims[32])
+        naive_error.append(sims[33])
+        ds_error.append(sims[34])
+        ds_error2.append(sims[35])
+        single_selective_error.append(sims[36])
+        single_selective_error2.append(sims[37])
+
+    selective_f1 = []
+    selective2_f1 = []
+    ds_f1 = []
+    ds2_f1 = []
+    single_selective_f1 = []
+    single_selective2_f1 = []
+    positive = (1. - 0.4) * (1. - 0.95) * 5 * 100
+    negative = 5 * 100 - positive
+    for i in range(length_path):
+        selective_tp_fp_mat = np.asarray(
+            [np.asarray([1.0 - np.asarray(selective_specificity)[i, :][n] for n in range(100)]), np.asarray(selective_sensitivity)[i, :]]).T
+
+
+        selective_f1.append(np.asarray([2.0 * selective_tp_fp_mat[n, 1] * positive / (2.0 * selective_tp_fp_mat[n, 1] * positive +
+                                                           selective_tp_fp_mat[n, 0] * negative + (1.0 -
+                                                           selective_tp_fp_mat[n, 1]) * positive) for n in range(100)]))
+
+        selective2_tp_fp_mat = np.asarray(
+            [np.asarray([1.0 - np.asarray(selective_specificity2)[i, :][n] for n in range(100)]),
+             np.asarray(selective_sensitivity2)[i, :]]).T
+
+        selective2_f1.append(
+            np.asarray([2.0 * selective2_tp_fp_mat[n, 1] * positive / (2.0 * selective2_tp_fp_mat[n, 1] * positive +
+                                                                      selective2_tp_fp_mat[n, 0] * negative + (1.0 -
+                                                                                                              selective2_tp_fp_mat[
+                                                                                                                  n, 1]) * positive)
+                        for n in range(100)]))
+
+        ds_tp_fp_mat = np.asarray(
+            [np.asarray([1.0 - np.asarray(ds_specificity)[i, :][n] for n in range(100)]),
+             np.asarray(ds_sensitivity)[i, :]]).T
+
+        ds_f1.append(
+            np.asarray([2.0 * ds_tp_fp_mat[n, 1] * positive / (2.0 * ds_tp_fp_mat[n, 1] * positive +
+                                                                      ds_tp_fp_mat[n, 0] * negative + (1.0 -
+                                                                                                              ds_tp_fp_mat[
+                                                                                                                  n, 1]) * positive)
+                        for n in range(100)]))
+
+        ds2_tp_fp_mat = np.asarray(
+            [np.asarray([1.0 - np.asarray(ds_specificity2)[i, :][n] for n in range(100)]),
+             np.asarray(ds_sensitivity2)[i, :]]).T
+
+        ds2_f1.append(
+            np.asarray([2.0 * ds2_tp_fp_mat[n, 1] * positive / (2.0 * ds2_tp_fp_mat[n, 1] * positive +
+                                                               ds2_tp_fp_mat[n, 0] * negative + (1.0 -
+                                                                                                ds2_tp_fp_mat[
+                                                                                                    n, 1]) * positive)
+                        for n in range(100)]))
+
+        single_selective_tp_fp_mat = np.asarray(
+            [np.asarray([1.0 - np.asarray(single_task_specificity)[i, :][n] for n in range(100)]),
+             np.asarray(single_task_sensitivity)[i, :]]).T
+
+        single_selective_f1.append(
+            np.asarray([2.0 * single_selective_tp_fp_mat[n, 1] * positive / (2.0 * single_selective_tp_fp_mat[n, 1] * positive +
+                                                               single_selective_tp_fp_mat[n, 0] * negative + (1.0 -
+                                                                                                single_selective_tp_fp_mat[
+                                                                                                    n, 1]) * positive)
+                        for n in range(100)]))
+
+        single_selective2_tp_fp_mat = np.asarray(
+            [np.asarray([1.0 - np.asarray(single_task_specificity2)[i, :][n] for n in range(100)]),
+             np.asarray(single_task_sensitivity2)[i, :]]).T
+
+        single_selective2_f1.append(
+            np.asarray([2.0 * single_selective2_tp_fp_mat[n, 1] * positive / (
+                        2.0 * single_selective2_tp_fp_mat[n, 1] * positive +
+                        single_selective2_tp_fp_mat[n, 0] * negative + (1.0 -
+                                                                       single_selective2_tp_fp_mat[
+                                                                           n, 1]) * positive)
+                        for n in range(100)]))
 
     def set_box_color(bp, color, linestyle):
         plt.setp(bp['boxes'], color=color, linestyle=linestyle)
@@ -1127,30 +1214,31 @@ def main():
 
     length = len(feature_weight_list)
 
-    fig = plt.figure(figsize=(17, 14))
-    ax1 = fig.add_subplot(211)
-    ax2 = fig.add_subplot(212)
+    fig = plt.figure(figsize=(17, 21))
+    ax1 = fig.add_subplot(311)
+    ax2 = fig.add_subplot(312)
+    ax3 = fig.add_subplot(313)
 
     plt.sca(ax1)
-    first = plt.boxplot(selective_coverage,positions=np.array(xrange(length)) * 3, sym='', widths=0.3)
-    second = plt.boxplot(selective_coverage2,positions=np.array(xrange(length)) * 3 + .3, sym='', widths=0.3)
-    third = plt.boxplot(naive_coverage, positions=np.array(xrange(length)) * 3 + .6, sym='', widths=0.3)
-    fourth = plt.boxplot(ds_coverage, positions=np.array(xrange(length)) * 3 + .9, sym='', widths=0.3)
-    fifth = plt.boxplot(ds_coverage2, positions=np.array(xrange(length)) * 3 + 1.2, sym='', widths=0.3)
-    sixth = plt.boxplot(single_selective_coverage, positions=np.array(xrange(length)) * 3 + 1.5, sym='', widths=0.3)
-    seventh = plt.boxplot(single_selective_coverage2, positions=np.array(xrange(length)) * 3 + 1.8, sym='', widths=0.3)
-    set_box_color(first, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
-    set_box_color(second, '#6baed6', '--')
-    set_box_color(third, '#D7191C', 'solid')
+    first = plt.boxplot(naive_coverage, positions=np.array(range(length)) * 3, sym='', widths=0.3)
+    second = plt.boxplot(selective_coverage,positions=np.array(range(length)) * 3 + 0.3, sym='', widths=0.3)
+    third = plt.boxplot(selective_coverage2,positions=np.array(range(length)) * 3 + .6, sym='', widths=0.3)
+    fourth = plt.boxplot(ds_coverage, positions=np.array(range(length)) * 3 + .9, sym='', widths=0.3)
+    fifth = plt.boxplot(ds_coverage2, positions=np.array(range(length)) * 3 + 1.2, sym='', widths=0.3)
+    sixth = plt.boxplot(single_selective_coverage, positions=np.array(range(length)) * 3 + 1.5, sym='', widths=0.3)
+    seventh = plt.boxplot(single_selective_coverage2, positions=np.array(range(length)) * 3 + 1.8, sym='', widths=0.3)
+    set_box_color(first, '#D7191C', 'solid')
+    set_box_color(second, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
+    set_box_color(third, '#6baed6', '--')
     set_box_color(fourth, '#238443', 'solid')
     set_box_color(fifth, '#31a354', '--')
     set_box_color(sixth, '#fd8d3c', 'solid')
     set_box_color(seventh, '#feb24c', '--')
-    plt.xticks(xrange(1, (length) * 3 + 1, 3), [round(num, 1) for num in feature_weight_list])
+    plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list])
     plt.xlim(-1, (length - 1) * 3 + 3)
-    plt.plot(np.argmin(selective_error) * 3, 1.01, 'ro', c='#2b8cbe')
-    plt.plot(np.argmin(selective_error2) * 3 + .3, 1.01, 'ro', c='#6baed6')
-    plt.plot(np.argmin(naive_error) * 3 + .6, 1.01, 'ro', c='#D7191C')
+    plt.plot(np.argmin(selective_error) * 3 +.3, 1.01, 'ro', c='#2b8cbe')
+    plt.plot(np.argmin(selective_error2) * 3 + .6, 1.01, 'ro', c='#6baed6')
+    plt.plot(np.argmin(naive_error) * 3, 1.01, 'ro', c='#D7191C')
     plt.plot(np.argmin(ds_error) * 3 + .9, 1.01, 'ro', c='#238443')
     plt.plot(np.argmin(ds_error2) * 3 + 1.2, 1.01, 'ro', c='#31a354')
     plt.plot(np.argmin(single_selective_error) * 3 + 1.5, 1.01, 'ro', c='#fd8d3c')
@@ -1159,46 +1247,52 @@ def main():
     plt.ylabel('Mean Coverage per Simulation', fontsize=12)
 
     plt.sca(ax2)
-    first = plt.boxplot(selective_lengths,positions=np.array(xrange(length)) * 3, sym='', widths=0.3)
-    second = plt.boxplot(selective_lengths2,positions=np.array(xrange(length)) * 3 + .3, sym='', widths=0.3)
-    third = plt.boxplot(naive_lengths,positions=np.array(xrange(length)) * 3 + .6, sym='', widths=0.3)
-    fourth = plt.boxplot(ds_lengths, positions=np.array(xrange(length)) * 3 + .9, sym='', widths=0.3)
-    fifth = plt.boxplot(ds_lengths2,positions=np.array(xrange(length)) * 3 + 1.2, sym='', widths=0.3)
-    sixth = plt.boxplot(single_selective_lengths,positions=np.array(xrange(length)) * 3 + 1.5, sym='', widths=0.3)
-    seventh = plt.boxplot(single_selective_lengths2, positions=np.array(xrange(length)) * 3 + 1.8, sym='', widths=0.3)
-    set_box_color(first, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
-    set_box_color(second, '#6baed6', '--')
-    set_box_color(third, '#D7191C', 'solid')
+    second = plt.boxplot(selective_lengths, positions=np.array(range(length)) * 3, sym='', widths=0.3)
+    third = plt.boxplot(selective_lengths2, positions=np.array(range(length)) * 3 + .3, sym='', widths=0.3)
+    fourth = plt.boxplot(ds_lengths, positions=np.array(range(length)) * 3 + .6, sym='', widths=0.3)
+    fifth = plt.boxplot(ds_lengths2, positions=np.array(range(length)) * 3 + .9, sym='', widths=0.3)
+    sixth = plt.boxplot(single_selective_lengths, positions=np.array(range(length)) * 3 + 1.2, sym='', widths=0.3)
+    seventh = plt.boxplot(single_selective_lengths2, positions=np.array(range(length)) * 3 + 1.5, sym='', widths=0.3)
+    set_box_color(second, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
+    set_box_color(third, '#6baed6', '--')
     set_box_color(fourth, '#238443', 'solid')
     set_box_color(fifth, '#31a354', '--')
     set_box_color(sixth, '#fd8d3c', 'solid')
     set_box_color(seventh, '#feb24c', '--')
-    plt.xticks(xrange(1, (length) * 3 + 1, 3), [round(num, 1) for num in feature_weight_list])
+    plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list])
     plt.xlim(-1, (length - 1) * 3 + 3)
-    max_length = np.max(np.concatenate(
-        (np.concatenate(selective_lengths), np.concatenate(selective_lengths2), np.concatenate(naive_lengths),
-         np.concatenate(ds_lengths), np.concatenate(ds_lengths2), np.concatenate(single_selective_lengths),
-         np.concatenate(single_selective_lengths2))))
-    plt.plot(np.argmin(selective_error) * 3, max_length, 'ro', c='#2b8cbe')
-    plt.plot(np.argmin(selective_error2) * 3 + .3, max_length, 'ro', c='#6baed6')
-    plt.plot(np.argmin(naive_error) * 3 + .6, max_length, 'ro', c='#D7191C')
-    plt.plot(np.argmin(ds_error) * 3 + .9, max_length, 'ro', c='#238443')
-    plt.plot(np.argmin(ds_error2) * 3 + 1.2, max_length, 'ro', c='#31a354')
-    plt.plot(np.argmin(single_selective_error) * 3 + 1.5, max_length, 'ro', c='#fd8d3c')
-    plt.plot(np.argmin(single_selective_error2) * 3 + 1.8, max_length, 'ro', c='#feb24c')
-    plt.tight_layout()
-    plt.plot([], c='#D7191C', label='Multi-Task Lasso', linewidth=2.5)
-    plt.plot([], c='#fd8d3c', label='K Randomized Lassos 0.7', linewidth=2.5)
-    plt.plot([], c='#feb24c', label='K Randomized Lassos 1.0', linestyle='--', linewidth=2.5)
-    plt.plot([], c='#238443', label='Data Splitting 67/33', linewidth=2.5)
-    plt.plot([], c='#31a354', label='Data Splitting 50/50', linestyle='--', linewidth=2.5)
+    plt.plot([], c='#D7191C', label='Naive', linewidth=2.5)
     plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso 0.7', linewidth=2.5)
     plt.plot([], c='#6baed6', label='Randomized Multi-Task Lasso 1.0', linestyle='--', linewidth=2.5)
+    plt.plot([], c='#238443', label='Data Splitting 67/33', linewidth=2.5)
+    plt.plot([], c='#31a354', label='Data Splitting 50/50', linestyle='--', linewidth=2.5)
+    plt.plot([], c='#fd8d3c', label='K Randomized Lassos 0.7', linewidth=2.5)
+    plt.plot([], c='#feb24c', label='K Randomized Lassos 1.0', linestyle='--', linewidth=2.5)
     plt.legend()
+    plt.tight_layout()
     plt.ylabel('Interval Length', fontsize=12)
+
+    plt.sca(ax3)
+    second = plt.boxplot(selective_f1, positions=np.array(range(length)) * 3 , sym='', widths=0.3)
+    third = plt.boxplot(selective2_f1, positions=np.array(range(length)) * 3 + .3, sym='', widths=0.3)
+    fourth = plt.boxplot(ds_f1, positions=np.array(range(length)) * 3 + .6, sym='', widths=0.3)
+    fifth = plt.boxplot(ds2_f1, positions=np.array(range(length)) * 3 + .9, sym='', widths=0.3)
+    sixth = plt.boxplot(single_selective_f1, positions=np.array(range(length)) * 3 + 1.2, sym='', widths=0.3)
+    seventh = plt.boxplot(single_selective2_f1, positions=np.array(range(length)) * 3 + 1.5, sym='', widths=0.3)
+    set_box_color(second, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
+    set_box_color(third, '#6baed6', '--')
+    set_box_color(fourth, '#238443', 'solid')
+    set_box_color(fifth, '#31a354', '--')
+    set_box_color(sixth, '#fd8d3c', 'solid')
+    set_box_color(seventh, '#feb24c', '--')
+    plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list])
+    plt.xlim(-1, (length - 1) * 3 + 3)
+    plt.tight_layout()
+    plt.ylabel('F1 Score', fontsize=12)
 
     ax1.set_title("Coverage", y=1.01)
     ax2.set_title("Length", y=1.01)
+    ax3.set_title("Accuracy", y=1.01)
 
     ax2.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.6), fontsize=14)
 
@@ -1209,11 +1303,12 @@ def main():
 
     common_format(ax1)
     common_format(ax2)
+    common_format(ax3)
 
     ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
     plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-    plt.savefig('cov_len_by_lambda.png', bbox_inches='tight')
+    plt.savefig('cov_len_f1_by_lambda.png', bbox_inches='tight')
 
 
 if __name__ == "__main__":
