@@ -314,9 +314,9 @@ class multi_task_lasso():
                                                   self.offset_con,
                                                   step=1.,
                                                   nstep=10000,
-                                                  min_its=500,
-                                                  tol=1.e-5)
-        #its 1000, tol e-12
+                                                  min_its=1000,
+                                                  tol=1.e-12)
+        #its 500, tol e-5
 
         final_estimator = cov_target.dot(_prec).dot(observed_target) \
                           + cov_target.dot(target_lin.T.dot(prec_opt.dot(cond_mean - soln))) + C
@@ -393,7 +393,7 @@ class multi_task_lasso():
 
         return initial_solns, initial_subgrads
 
-    def _solve_multitask_problem(self, perturbations=None, num_iter=1000, atol=1.e-2):
+    def _solve_multitask_problem(self, perturbations=None, num_iter=1000, atol=1.e-5):
 
         if perturbations is not None:
             self._initial_omega = perturbations
