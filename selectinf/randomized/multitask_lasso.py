@@ -314,8 +314,9 @@ class multi_task_lasso():
                                                   self.offset_con,
                                                   step=1.,
                                                   nstep=10000,
-                                                  min_its=5000,
-                                                  tol=1.e-12)
+                                                  min_its=500,
+                                                  tol=1.e-5)
+        #its 1000, tol e-12
 
         final_estimator = cov_target.dot(_prec).dot(observed_target) \
                           + cov_target.dot(target_lin.T.dot(prec_opt.dot(cond_mean - soln))) + C
@@ -374,6 +375,7 @@ class multi_task_lasso():
     def _solve_randomized_problem(self,
                                   penalty,
                                   solve_args={'tol': 1.e-12, 'min_its': 50}):
+        #toll e-12
 
         quad_list = [rr.identity_quadratic(self.ridge_terms[i],
                                            0,
