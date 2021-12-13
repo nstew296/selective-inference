@@ -11,7 +11,7 @@ p=100
 #global_sparsity = 0.95
 task_sparsity = 0.4
 
-length_path = 5
+length_path = 15
 lambdamin = 0
 lambdamax = 4.0
 #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
@@ -24,7 +24,7 @@ df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 #sparsity_list = [0.0,0.2,0.4,0.6]
 sparsity_list = [0.80,0.85,0.9,0.95]
-n_list = [2,2,2,2]
+n_list = [100,100,100,100]
 ##n_list = [5,5,5,20,20]
 coverage_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(sparsity_list))}
 length_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(sparsity_list))}
