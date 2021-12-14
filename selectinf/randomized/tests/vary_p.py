@@ -12,7 +12,7 @@ task_sparsity = 0.4
 
 length_path = 5
 lambdamin = 1.0
-lambdamax = 4.5
+lambdamax = 5.0
 #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
 #feature_weight_list = np.exp(weights)
 feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
@@ -216,10 +216,10 @@ for j in range(len(p_list)):
 
 length = len(p_list)
 def set_box_color(bp, color,linestyle):
-    plt.setp(bp['boxes'], color=color,linestyle=linestyle)
-    plt.setp(bp['whiskers'], color=color,linestyle=linestyle)
-    plt.setp(bp['caps'], color=color)
-    plt.setp(bp['medians'], color=color)
+    plt.setp(bp['boxes'], color=color,linestyle=linestyle,linewidth=2)
+    plt.setp(bp['whiskers'], color=color,linestyle=linestyle,linewidth=2)
+    plt.setp(bp['caps'], color=color,linewidth=2)
+    plt.setp(bp['medians'], color=color,linewidth=2)
 
 fig = plt.figure(figsize=(17,5))
 ax1 = fig.add_subplot(131)
@@ -238,7 +238,7 @@ set_box_color(fourth, '#238443','solid')
 set_box_color(fifth, '#31a354','--')
 set_box_color(sixth, '#fd8d3c','solid')
 set_box_color(seventh,'#feb24c','--')
-plt.xticks(range(1, (length) * 3 + 1, 3), p_list)
+plt.xticks(range(1, (length) * 3 + 1, 3), p_list,fontsize=14)
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.plot([], c='#2b8cbe', label='MTL-SI (0.7)',linewidth=2.5)
 plt.plot([], c='#6baed6', label='MTL-SI (1.0)',linestyle='--',linewidth=2.5)
@@ -248,7 +248,7 @@ plt.plot([], c='#fd8d3c', label='Disjoint-SI (0.7)',linewidth=2.5)
 plt.plot([], c='#feb24c', label='Disjoint-SI (1.0)',linestyle='--',linewidth=2.5)
 plt.legend()
 plt.tight_layout()
-plt.ylabel('Coverage per Simulation',fontsize=12)
+plt.ylabel('Coverage per Simulation',fontsize=18)
 
 plt.sca(ax2)
 first = plt.boxplot([length_by_p[j][0] for j in range(len(p_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
@@ -263,10 +263,10 @@ set_box_color(fourth, '#238443','solid')
 set_box_color(fifth, '#31a354','--')
 set_box_color(sixth, '#fd8d3c','solid')
 set_box_color(seventh,'#feb24c','--')
-plt.xticks(range(1, (length) * 3 + 1, 3), p_list)
+plt.xticks(range(1, (length) * 3 + 1, 3), p_list,fontsize=14)
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.tight_layout()
-plt.ylabel('Interval Length',fontsize=12)
+plt.ylabel('Interval Length',fontsize=18)
 
 plt.sca(ax3)
 first = plt.boxplot([f1_by_p[j][0] for j in range(len(p_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
@@ -281,21 +281,20 @@ set_box_color(fourth, '#238443','solid')
 set_box_color(fifth, '#31a354','--')
 set_box_color(sixth, '#fd8d3c','solid')
 set_box_color(seventh,'#feb24c','--')
-plt.xticks(range(1, (length) * 3 + 1, 3), p_list)
+plt.xticks(range(1, (length) * 3 + 1, 3), p_list,fontsize=14)
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.tight_layout()
-plt.ylabel('f1 per Simulation',fontsize=12)
+plt.ylabel('f1 per Simulation',fontsize=18)
 
 
-ax1.set_title("Coverage", y = 1.01)
-ax2.set_title("Length", y = 1.01)
-ax3.set_title("Accuracy", y = 1.01)
-fig.suptitle("Global Sparsity 95%, Task Sparsity 40%",fontsize=14)
+ax1.set_title("Coverage", y = 1.01,fontsize=20)
+ax2.set_title("Length", y = 1.01,fontsize=20)
+ax3.set_title("Accuracy", y = 1.01,fontsize=20)
 
 
 def common_format(ax):
     ax.grid(True, which='both',color='#f0f0f0')
-    ax.set_xlabel('p', fontsize=12)
+    ax.set_xlabel('p', fontsize=18)
     return ax
 
 common_format(ax1)
@@ -306,7 +305,7 @@ common_format(ax3)
 ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-ax1.legend(loc='lower left', bbox_to_anchor=(0.6, -0.45),fontsize=14,ncol=3)
+ax1.legend(loc='lower left', bbox_to_anchor=(0.6, -0.45),fontsize=18,ncol=3)
 plt.savefig('vary_p.png', bbox_inches='tight')
 
 
