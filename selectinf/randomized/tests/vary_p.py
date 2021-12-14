@@ -249,6 +249,7 @@ plt.plot([], c='#feb24c', label='Disjoint-SI (1.0)',linestyle='--',linewidth=2.5
 plt.legend()
 plt.tight_layout()
 plt.ylabel('Coverage per Simulation',fontsize=18)
+plt.yticks(fontsize=14)
 
 plt.sca(ax2)
 first = plt.boxplot([length_by_p[j][0] for j in range(len(p_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
@@ -267,6 +268,7 @@ plt.xticks(range(1, (length) * 3 + 1, 3), p_list,fontsize=14)
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.tight_layout()
 plt.ylabel('Interval Length',fontsize=18)
+plt.yticks(fontsize=14)
 
 plt.sca(ax3)
 first = plt.boxplot([f1_by_p[j][0] for j in range(len(p_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
@@ -285,7 +287,7 @@ plt.xticks(range(1, (length) * 3 + 1, 3), p_list,fontsize=14)
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.tight_layout()
 plt.ylabel('f1 per Simulation',fontsize=18)
-
+plt.yticks(fontsize=14)
 
 ax1.set_title("Coverage", y = 1.01,fontsize=20)
 ax2.set_title("Length", y = 1.01,fontsize=20)
