@@ -1207,10 +1207,10 @@ def main():
                         for n in range(nsim)]))
 
     def set_box_color(bp, color, linestyle):
-        plt.setp(bp['boxes'], color=color, linestyle=linestyle)
-        plt.setp(bp['whiskers'], color=color, linestyle=linestyle)
-        plt.setp(bp['caps'], color=color)
-        plt.setp(bp['medians'], color=color)
+        plt.setp(bp['boxes'], color=color, linestyle=linestyle,linewidth=2)
+        plt.setp(bp['whiskers'], color=color, linestyle=linestyle,linewidth=2)
+        plt.setp(bp['caps'], color=color,linewidth=2)
+        plt.setp(bp['medians'], color=color,linewidth=2)
 
     length = len(feature_weight_list)
 
@@ -1234,7 +1234,7 @@ def main():
     set_box_color(fifth, '#31a354', '--')
     set_box_color(sixth, '#fd8d3c', 'solid')
     set_box_color(seventh, '#feb24c', '--')
-    plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list])
+    plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list],fontsize=14)
     plt.xlim(-1, (length - 1) * 3 + 3)
     plt.plot(np.argmin(selective_error) * 3 +.3, 1.01, 'ro', c='#2b8cbe')
     plt.plot(np.argmin(selective_error2) * 3 + .6, 1.01, 'ro', c='#6baed6')
@@ -1244,7 +1244,8 @@ def main():
     plt.plot(np.argmin(single_selective_error) * 3 + 1.5, 1.01, 'ro', c='#fd8d3c')
     plt.plot(np.argmin(single_selective_error2) * 3 + 1.8, 1.01, 'ro', c='#feb24c')
     plt.tight_layout()
-    plt.ylabel('Mean Coverage per Simulation', fontsize=12)
+    plt.ylabel('Mean Coverage per Simulation', fontsize=16)
+    plt.yticks(fontsize=14)
 
     plt.sca(ax2)
     second = plt.boxplot(selective_lengths, positions=np.array(range(length)) * 3, sym='', widths=0.3)
@@ -1259,10 +1260,11 @@ def main():
     set_box_color(fifth, '#31a354', '--')
     set_box_color(sixth, '#fd8d3c', 'solid')
     set_box_color(seventh, '#feb24c', '--')
-    plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list])
+    plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list],fontsize=14)
     plt.xlim(-1, (length - 1) * 3 + 3)
     plt.tight_layout()
-    plt.ylabel('Interval Length', fontsize=12)
+    plt.ylabel('Interval Length', fontsize=16)
+    plt.yticks(fontsize=14)
 
     plt.sca(ax3)
     second = plt.boxplot(selective_f1, positions=np.array(range(length)) * 3 , sym='', widths=0.3)
@@ -1277,7 +1279,7 @@ def main():
     set_box_color(fifth, '#31a354', '--')
     set_box_color(sixth, '#fd8d3c', 'solid')
     set_box_color(seventh, '#feb24c', '--')
-    plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list])
+    plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list],fontsize=14)
     plt.xlim(-1, (length - 1) * 3 + 3)
     plt.plot([], c='#D7191C', label='Naive', linewidth=2.5)
     plt.plot([], c='#2b8cbe', label='MTL (0.7) + SI', linewidth=2.5)
@@ -1288,17 +1290,18 @@ def main():
     plt.plot([], c='#feb24c', label='LASSO (1.0) + SI', linestyle='--', linewidth=2.5)
     plt.legend()
     plt.tight_layout()
-    plt.ylabel('F1 Score', fontsize=12)
+    plt.ylabel('F1 Score', fontsize=16)
+    plt.yticks(fontsize=14)
 
-    ax1.set_title("Coverage", y=1.01)
-    ax2.set_title("Length", y=1.01)
-    ax3.set_title("Accuracy", y=1.01)
+    ax1.set_title("Coverage", y=1.01,fontsize=20)
+    ax2.set_title("Length", y=1.01,fontsize=20)
+    ax3.set_title("Accuracy", y=1.01,fontsize=20)
 
-    ax3.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.6), fontsize=14)
+    ax3.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.6), fontsize=16)
 
     def common_format(ax):
         ax.grid(True, which='both', color='#f0f0f0')
-        ax.set_xlabel('Lambda Value', fontsize=12)
+        ax.set_xlabel('Lambda Value', fontsize=16)
         return ax
 
     common_format(ax1)

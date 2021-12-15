@@ -358,6 +358,8 @@ selectinf/randomized/tests/test_strong.py
 selectinf/randomized/tests/test_topK.py
 selectinf/randomized/tests/test_weak.py
 selectinf/randomized/tests/testv2.py
+selectinf/randomized/tests/vary_global_and_task_sparsity.py
+selectinf/randomized/tests/vary_p.py
 selectinf/randomized/tests/vary_task_sparsity.py
 selectinf/randomized/tests/sandbox/test_Mest.py
 selectinf/randomized/tests/sandbox/test_convenience.py
