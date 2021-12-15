@@ -62,13 +62,13 @@ for j in range(len(p_list)):
     idx_min_k_random_lasso = np.argmin(single_selective_error)
     idx_min_k_random_lasso2 = np.argmin(single_selective_error2)
 
-    feature_weight_list = [feature_weight_list[idx_min_random_multitask],feature_weight_list[idx_min_random_multitask2],
+    feature_weight_list2 = [feature_weight_list[idx_min_random_multitask],feature_weight_list[idx_min_random_multitask2],
                            feature_weight_list[idx_min_naive_multitask], feature_weight_list[idx_min_data_splitting],
                            feature_weight_list[idx_min_data_splitting2],feature_weight_list[idx_min_k_random_lasso],
                            feature_weight_list[idx_min_k_random_lasso2]]
 
 
-    sims = test_coverage(feature_weight_list,[2.5,5.0],p_list[j],task_sparsity,global_sparsity,nsim=n_list[j])
+    sims = test_coverage(feature_weight_list2,[2.5,5.0],p_list[j],task_sparsity,global_sparsity,nsim=n_list[j])
     selective_coverage = sims[3]
     selective_coverage2 = sims[4]
     naive_coverage = sims[5]
