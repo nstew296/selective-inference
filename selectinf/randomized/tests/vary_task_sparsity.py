@@ -71,7 +71,7 @@ for j in range(len(sparsity_list)):
                            feature_weight_list[idx_min_data_splitting2], feature_weight_list[idx_min_k_random_lasso],
                            feature_weight_list[idx_min_k_random_lasso2]]
 
-    sims = test_coverage(feature_weight_list2, [2.5, 5.0], p, sparsity_list[j], global_sparsity, nsim=n_list[j])
+    sims = test_coverage(feature_weight_list2, [2.5, 5.0], p, task_sparsity, sparsity_list[j], nsim=n_list[j])
     selective_coverage = sims[3]
     selective_coverage2 = sims[4]
     naive_coverage = sims[5]
