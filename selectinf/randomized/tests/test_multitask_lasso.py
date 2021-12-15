@@ -763,6 +763,8 @@ def test_coverage(weight,signal,p,ts,gs,nsim=100):
         response_vars_test = {j: response_vars[j][test] for j in range(ntask)}
         predictor_vars_test = {j: predictor_vars[j][test] for j in range(ntask)}
 
+        print(weight,"weight")
+
 
         coverage, length, pivot, sns, spc, err = test_multitask_lasso_hetero(predictor_vars_train,
                                                                          response_vars_train,
@@ -772,7 +774,7 @@ def test_coverage(weight,signal,p,ts,gs,nsim=100):
                                                                          gaussian_noise,
                                                                          sigma,
                                                                          link="identity",
-                                                                         weight=weight,
+                                                                         weight=weight[0],
 
                                                                          randomizer_scale= 0.7)
 
@@ -792,7 +794,7 @@ def test_coverage(weight,signal,p,ts,gs,nsim=100):
                                                                              gaussian_noise,
                                                                              sigma,
                                                                              link="identity",
-                                                                             weight=weight,
+                                                                             weight=weight[1],
                                                                              randomizer_scale=1.0)
 
         if coverage2 != []:
@@ -810,7 +812,7 @@ def test_coverage(weight,signal,p,ts,gs,nsim=100):
                                                                              response_vars_test,
                                                                              beta,
                                                                              sigma,
-                                                                             weight,
+                                                                             weight[2],
                                                                              link="identity")
 
         if coverage_naive != []:
@@ -828,7 +830,7 @@ def test_coverage(weight,signal,p,ts,gs,nsim=100):
                                                                              response_vars_test,
                                                                              beta,
                                                                              sigma,
-                                                                             weight,
+                                                                             weight[3],
                                                                              split = 0.67,
                                                                              link="identity")
 
@@ -847,7 +849,7 @@ def test_coverage(weight,signal,p,ts,gs,nsim=100):
                                                                             response_vars_test,
                                                                             beta,
                                                                             sigma,
-                                                                            weight,
+                                                                            weight[4],
                                                                             split=0.5,
                                                                             link="identity")
 
@@ -865,7 +867,7 @@ def test_coverage(weight,signal,p,ts,gs,nsim=100):
                                       response_vars_test,
                                       beta,
                                       sigma,
-                                      weight,
+                                      weight[5],
                                       randomizer_scale = 0.7,
                                       link="identity")
 
@@ -884,7 +886,7 @@ def test_coverage(weight,signal,p,ts,gs,nsim=100):
             response_vars_test,
             beta,
             sigma,
-            weight,
+            weight[6],
             randomizer_scale=1.0,
             link="identity")
 

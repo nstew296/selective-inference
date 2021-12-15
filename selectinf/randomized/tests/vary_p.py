@@ -21,8 +21,8 @@ print(feature_weight_list)
 df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
-p_list = [100,250,500,1000]
-n_list = [10,10,10,10]
+p_list = [100,200,300,400]
+n_list = [1,1,1,1]
 ##n_list = [5,5,5,20,20]
 coverage_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 length_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
@@ -32,38 +32,6 @@ f1_by_p = {j: [[], [], [], [], [], []] for j in range(len(p_list))}
 for j in range(len(p_list)):
     positive = (1.-global_sparsity)*(1.-task_sparsity)*k*p_list[j]
     negative = k*p_list[j] - positive
-
-    selective_lengths = []
-    selective_lengths2 = []
-    naive_lengths = []
-    ds_lengths = []
-    ds_lengths2 = []
-    single_selective_lengths = []
-    single_selective_lengths2 = []
-
-    selective_coverage = []
-    selective_coverage2 = []
-    naive_coverage = []
-    ds_coverage = []
-    ds_coverage2 = []
-    single_selective_coverage = []
-    single_selective_coverage2 = []
-
-    selective_sensitivity = []
-    selective_sensitivity2 = []
-    naive_sensitivity = []
-    ds_sensitivity = []
-    ds_sensitivity2 = []
-    single_task_sensitivity = []
-    single_task_sensitivity2 = []
-
-    selective_specificity = []
-    selective_specificity2 = []
-    naive_specificity = []
-    ds_specificity = []
-    ds_specificity2 = []
-    single_task_specificity = []
-    single_task_specificity2 = []
 
     selective_error = []
     selective_error2 = []
@@ -75,39 +43,9 @@ for j in range(len(p_list)):
 
     for i in range(len(feature_weight_list)):
         print((i,j),"(i,j)")
-        sims = test_coverage(feature_weight_list[i],[2.5,5.0],p_list[j],task_sparsity,global_sparsity,nsim=n_list[j])
-        selective_coverage.append(sims[3])
-        selective_coverage2.append(sims[4])
-        naive_coverage.append(sims[5])
-        ds_coverage.append(sims[6])
-        ds_coverage2.append(sims[7])
-        single_selective_coverage.append(sims[8])
-        single_selective_coverage2.append(sims[9])
-
-        selective_lengths.append(sims[10])
-        selective_lengths2.append(sims[11])
-        naive_lengths.append(sims[12])
-        ds_lengths.append(sims[13])
-        ds_lengths2.append(sims[14])
-        single_selective_lengths.append(sims[15])
-        single_selective_lengths2.append(sims[16])
-
-        selective_sensitivity.append(sims[17])
-        selective_sensitivity2.append(sims[18])
-        naive_sensitivity.append(sims[19])
-        ds_sensitivity.append(sims[20])
-        ds_sensitivity2.append(sims[21])
-        single_task_sensitivity.append(sims[22])
-        single_task_sensitivity2.append(sims[23])
-
-        selective_specificity.append(sims[24])
-        selective_specificity2.append(sims[25])
-        naive_specificity.append(sims[26])
-        ds_specificity.append(sims[27])
-        ds_specificity2.append(sims[28])
-        single_task_specificity.append(sims[29])
-        single_task_specificity2.append(sims[30])
-
+        weight = [feature_weight_list[i]]*7
+        print(weight)
+        sims = test_coverage(weight,[2.5,5.0],p_list[j],task_sparsity,global_sparsity,nsim=1)
         selective_error.append(sims[31])
         selective_error2.append(sims[32])
         naive_error.append(sims[33])
@@ -124,9 +62,48 @@ for j in range(len(p_list)):
     idx_min_k_random_lasso = np.argmin(single_selective_error)
     idx_min_k_random_lasso2 = np.argmin(single_selective_error2)
 
+    feature_weight_list = [feature_weight_list[idx_min_random_multitask],feature_weight_list[idx_min_random_multitask2],
+                           feature_weight_list[idx_min_naive_multitask], feature_weight_list[idx_min_data_splitting],
+                           feature_weight_list[idx_min_data_splitting2],feature_weight_list[idx_min_k_random_lasso],
+                           feature_weight_list[idx_min_k_random_lasso2]]
+
+
+    sims = test_coverage(feature_weight_list,[2.5,5.0],p_list[j],task_sparsity,global_sparsity,nsim=n_list[j])
+    selective_coverage = sims[3]
+    selective_coverage2 = sims[4]
+    naive_coverage = sims[5]
+    ds_coverage = sims[6]
+    ds_coverage2 = sims[7]
+    single_selective_coverage = sims[8]
+    single_selective_coverage2 = sims[9]
+
+    selective_lengths = sims[10]
+    selective_lengths2 = sims[11]
+    naive_lengths = sims[12]
+    ds_lengths = sims[13]
+    ds_lengths2 = sims[14]
+    single_selective_lengths = sims[15]
+    single_selective_lengths2 = sims[16]
+
+    selective_sensitivity = sims[17]
+    selective_sensitivity2 = sims[18]
+    naive_sensitivity = sims[19]
+    ds_sensitivity = sims[20]
+    ds_sensitivity2 = sims[21]
+    single_task_sensitivity = sims[22]
+    single_task_sensitivity2 = sims[23]
+
+    selective_specificity = sims[24]
+    selective_specificity2 = sims[25]
+    naive_specificity = sims[26]
+    ds_specificity = sims[27]
+    ds_specificity2 = sims[28]
+    single_task_specificity = sims[29]
+    single_task_specificity2 = sims[30]
+
+
     selective_tp_fp_mat = np.asarray(
-        [np.asarray([1.0 - np.asarray(selective_specificity)[idx_min_random_multitask, :][n]
-                     for n in range(n_list[j])]), np.asarray(selective_sensitivity)[idx_min_random_multitask, :]]).T
+        [np.asarray([1.0 - np.asarray(selective_specificity)[n] for n in range(n_list[j])]), np.asarray(selective_sensitivity)]).T
     selective_f1 = np.asarray(
         [2.0 * selective_tp_fp_mat[n, 1] * positive / (2.0 * selective_tp_fp_mat[n, 1] * positive +
                                                        selective_tp_fp_mat[n, 0] * negative + (1.0 -
@@ -135,8 +112,7 @@ for j in range(len(p_list)):
     f1_by_p[j][0] = selective_f1
 
     selective2_tp_fp_mat = np.asarray(
-        [np.asarray([1.0 - np.asarray(selective_specificity2)[idx_min_random_multitask2, :][n]
-                     for n in range(n_list[j])]), np.asarray(selective_sensitivity2)[idx_min_random_multitask, :]]).T
+        [np.asarray([1.0 - np.asarray(selective_specificity2)[n] for n in range(n_list[j])]), np.asarray(selective_sensitivity2)]).T
     selective2_f1 = np.asarray(
         [2.0 * selective2_tp_fp_mat[n, 1] * positive / (2.0 * selective2_tp_fp_mat[n, 1] * positive +
                                                        selective2_tp_fp_mat[n, 0] * negative + (1.0 -
@@ -145,8 +121,8 @@ for j in range(len(p_list)):
     f1_by_p[j][1] = selective2_f1
 
     ds_tp_fp_mat = np.asarray(
-        [np.asarray([1.0 - np.asarray(ds_specificity)[idx_min_data_splitting, :][n]
-                     for n in range(n_list[j])]), np.asarray(ds_sensitivity)[idx_min_data_splitting, :]]).T
+        [np.asarray([1.0 - np.asarray(ds_specificity)[n]
+                     for n in range(n_list[j])]), np.asarray(ds_sensitivity)]).T
     ds_f1 = np.asarray(
         [2.0 * ds_tp_fp_mat[n, 1] * positive / (2.0 * ds_tp_fp_mat[n, 1] * positive +
                                                        ds_tp_fp_mat[n, 0] * negative + (1.0 -
@@ -155,8 +131,8 @@ for j in range(len(p_list)):
     f1_by_p[j][2] = ds_f1
 
     ds2_tp_fp_mat = np.asarray(
-        [np.asarray([1.0 - np.asarray(ds_specificity2)[idx_min_data_splitting2, :][n]
-                     for n in range(n_list[j])]), np.asarray(ds_sensitivity2)[idx_min_data_splitting2, :]]).T
+        [np.asarray([1.0 - np.asarray(ds_specificity2)[n]
+                     for n in range(n_list[j])]), np.asarray(ds_sensitivity2)]).T
     ds2_f1 = np.asarray(
         [2.0 * ds2_tp_fp_mat[n, 1] * positive / (2.0 * ds2_tp_fp_mat[n, 1] * positive +
                                                 ds2_tp_fp_mat[n, 0] * negative + (1.0 -
@@ -166,8 +142,8 @@ for j in range(len(p_list)):
     f1_by_p[j][3] = ds2_f1
 
     single_task_tp_fp_mat = np.asarray(
-        [np.asarray([1.0 - np.asarray(single_task_specificity)[idx_min_k_random_lasso, :][n]
-                     for n in range(n_list[j])]), np.asarray(single_task_sensitivity)[idx_min_k_random_lasso, :]]).T
+        [np.asarray([1.0 - np.asarray(single_task_specificity)[n]
+                     for n in range(n_list[j])]), np.asarray(single_task_sensitivity)]).T
     single_task_f1 = np.asarray(
         [2.0 * single_task_tp_fp_mat[n, 1] * positive / (2.0 * single_task_tp_fp_mat[n, 1] * positive +
                                                 single_task_tp_fp_mat[n, 0] * negative + (1.0 -
@@ -177,8 +153,8 @@ for j in range(len(p_list)):
     f1_by_p[j][4] = single_task_f1
 
     single_task2_tp_fp_mat = np.asarray(
-        [np.asarray([1.0 - np.asarray(single_task_specificity2)[idx_min_k_random_lasso2, :][n]
-                     for n in range(n_list[j])]), np.asarray(single_task_sensitivity2)[idx_min_k_random_lasso2, :]]).T
+        [np.asarray([1.0 - np.asarray(single_task_specificity2)[n]
+                     for n in range(n_list[j])]), np.asarray(single_task_sensitivity2)]).T
 
     single_task2_f1 = np.asarray(
         [2.0 * single_task2_tp_fp_mat[n, 1] * positive / (2.0 * single_task2_tp_fp_mat[n, 1] * positive +
@@ -193,26 +169,26 @@ for j in range(len(p_list)):
     print(np.mean(selective_f1),np.mean(selective2_f1),np.mean(ds_f1),np.mean(ds2_f1),np.mean(single_task_f1),np.mean(single_task2_f1),"F1 score means")
 
 
-    coverage_by_p[j][0] = selective_coverage[idx_min_random_multitask]
-    length_by_p[j][0] = selective_lengths[idx_min_random_multitask]
+    coverage_by_p[j][0] = selective_coverage
+    length_by_p[j][0] = selective_lengths
 
-    coverage_by_p[j][1] = selective_coverage2[idx_min_random_multitask2]
-    length_by_p[j][1] = selective_lengths2[idx_min_random_multitask2]
+    coverage_by_p[j][1] = selective_coverage2
+    length_by_p[j][1] = selective_lengths2
 
-    coverage_by_p[j][2] = naive_coverage[idx_min_naive_multitask]
-    length_by_p[j][2] = naive_lengths[idx_min_naive_multitask]
+    coverage_by_p[j][2] = naive_coverage
+    length_by_p[j][2] = naive_lengths
 
-    coverage_by_p[j][3] = ds_coverage[idx_min_data_splitting]
-    length_by_p[j][3] = ds_lengths[idx_min_data_splitting]
+    coverage_by_p[j][3] = ds_coverage
+    length_by_p[j][3] = ds_lengths
 
-    coverage_by_p[j][4] = ds_coverage2[idx_min_data_splitting2]
-    length_by_p[j][4] = ds_lengths2[idx_min_data_splitting2]
+    coverage_by_p[j][4] = ds_coverage2
+    length_by_p[j][4] = ds_lengths2
 
-    coverage_by_p[j][5] = single_selective_coverage[idx_min_k_random_lasso]
-    length_by_p[j][5] = single_selective_lengths[idx_min_k_random_lasso]
+    coverage_by_p[j][5] = single_selective_coverage
+    length_by_p[j][5] = single_selective_lengths
 
-    coverage_by_p[j][6] = single_selective_coverage2[idx_min_k_random_lasso2]
-    length_by_p[j][6] = single_selective_lengths2[idx_min_k_random_lasso2]
+    coverage_by_p[j][6] = single_selective_coverage2
+    length_by_p[j][6] = single_selective_lengths2
 
 length = len(p_list)
 def set_box_color(bp, color,linestyle):

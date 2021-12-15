@@ -1042,10 +1042,10 @@ def main():
     # plt.title('SNR 3.0-5.0')
     # plt.savefig("boxplot25.png")
 
-    length_path = 10
-
-    lambdamin = 0.5
-    lambdamax = 3.0
+    length_path = 8
+    nsim = 100
+    lambdamin = 0
+    lambdamax = 3.5
     #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
     #feature_weight_list = np.exp(weights)
     feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
@@ -1092,7 +1092,7 @@ def main():
     single_selective_error2 = []
 
     for i in range(len(feature_weight_list)):
-        sims = test_coverage(feature_weight_list[i], [2.0, 5.0], nsim=100)
+        sims = test_coverage(feature_weight_list[i], [2.0, 5.0], nsim=nsim)
         selective_coverage.append(sims[3])
         selective_coverage2.append(sims[4])
         naive_coverage.append(sims[5])
@@ -1143,15 +1143,15 @@ def main():
     negative = 5 * 100 - positive
     for i in range(length_path):
         selective_tp_fp_mat = np.asarray(
-            [np.asarray([1.0 - np.asarray(selective_specificity)[i, :][n] for n in range(100)]), np.asarray(selective_sensitivity)[i, :]]).T
+            [np.asarray([1.0 - np.asarray(selective_specificity)[i, :][n] for n in range(nsim)]), np.asarray(selective_sensitivity)[i, :]]).T
 
 
         selective_f1.append(np.asarray([2.0 * selective_tp_fp_mat[n, 1] * positive / (2.0 * selective_tp_fp_mat[n, 1] * positive +
                                                            selective_tp_fp_mat[n, 0] * negative + (1.0 -
-                                                           selective_tp_fp_mat[n, 1]) * positive) for n in range(100)]))
+                                                           selective_tp_fp_mat[n, 1]) * positive) for n in range(nsim)]))
 
         selective2_tp_fp_mat = np.asarray(
-            [np.asarray([1.0 - np.asarray(selective_specificity2)[i, :][n] for n in range(100)]),
+            [np.asarray([1.0 - np.asarray(selective_specificity2)[i, :][n] for n in range(nsim)]),
              np.asarray(selective_sensitivity2)[i, :]]).T
 
         selective2_f1.append(
@@ -1159,10 +1159,10 @@ def main():
                                                                       selective2_tp_fp_mat[n, 0] * negative + (1.0 -
                                                                                                               selective2_tp_fp_mat[
                                                                                                                   n, 1]) * positive)
-                        for n in range(100)]))
+                        for n in range(nsim)]))
 
         ds_tp_fp_mat = np.asarray(
-            [np.asarray([1.0 - np.asarray(ds_specificity)[i, :][n] for n in range(100)]),
+            [np.asarray([1.0 - np.asarray(ds_specificity)[i, :][n] for n in range(nsim)]),
              np.asarray(ds_sensitivity)[i, :]]).T
 
         ds_f1.append(
@@ -1170,10 +1170,10 @@ def main():
                                                                       ds_tp_fp_mat[n, 0] * negative + (1.0 -
                                                                                                               ds_tp_fp_mat[
                                                                                                                   n, 1]) * positive)
-                        for n in range(100)]))
+                        for n in range(nsim)]))
 
         ds2_tp_fp_mat = np.asarray(
-            [np.asarray([1.0 - np.asarray(ds_specificity2)[i, :][n] for n in range(100)]),
+            [np.asarray([1.0 - np.asarray(ds_specificity2)[i, :][n] for n in range(nsim)]),
              np.asarray(ds_sensitivity2)[i, :]]).T
 
         ds2_f1.append(
@@ -1181,10 +1181,10 @@ def main():
                                                                ds2_tp_fp_mat[n, 0] * negative + (1.0 -
                                                                                                 ds2_tp_fp_mat[
                                                                                                     n, 1]) * positive)
-                        for n in range(100)]))
+                        for n in range(nsim)]))
 
         single_selective_tp_fp_mat = np.asarray(
-            [np.asarray([1.0 - np.asarray(single_task_specificity)[i, :][n] for n in range(100)]),
+            [np.asarray([1.0 - np.asarray(single_task_specificity)[i, :][n] for n in range(nsim)]),
              np.asarray(single_task_sensitivity)[i, :]]).T
 
         single_selective_f1.append(
@@ -1192,10 +1192,10 @@ def main():
                                                                single_selective_tp_fp_mat[n, 0] * negative + (1.0 -
                                                                                                 single_selective_tp_fp_mat[
                                                                                                     n, 1]) * positive)
-                        for n in range(100)]))
+                        for n in range(nsim)]))
 
         single_selective2_tp_fp_mat = np.asarray(
-            [np.asarray([1.0 - np.asarray(single_task_specificity2)[i, :][n] for n in range(100)]),
+            [np.asarray([1.0 - np.asarray(single_task_specificity2)[i, :][n] for n in range(nsim)]),
              np.asarray(single_task_sensitivity2)[i, :]]).T
 
         single_selective2_f1.append(
@@ -1204,7 +1204,7 @@ def main():
                         single_selective2_tp_fp_mat[n, 0] * negative + (1.0 -
                                                                        single_selective2_tp_fp_mat[
                                                                            n, 1]) * positive)
-                        for n in range(100)]))
+                        for n in range(nsim)]))
 
     def set_box_color(bp, color, linestyle):
         plt.setp(bp['boxes'], color=color, linestyle=linestyle)
@@ -1238,7 +1238,7 @@ def main():
     plt.xlim(-1, (length - 1) * 3 + 3)
     plt.plot(np.argmin(selective_error) * 3 +.3, 1.01, 'ro', c='#2b8cbe')
     plt.plot(np.argmin(selective_error2) * 3 + .6, 1.01, 'ro', c='#6baed6')
-    plt.plot(np.argmin(naive_error) * 3, 1.01, 'ro', c='#D7191C')
+    #plt.plot(np.argmin(naive_error) * 3, 1.01, 'ro', c='#D7191C')
     plt.plot(np.argmin(ds_error) * 3 + .9, 1.01, 'ro', c='#238443')
     plt.plot(np.argmin(ds_error2) * 3 + 1.2, 1.01, 'ro', c='#31a354')
     plt.plot(np.argmin(single_selective_error) * 3 + 1.5, 1.01, 'ro', c='#fd8d3c')
@@ -1280,12 +1280,12 @@ def main():
     plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list])
     plt.xlim(-1, (length - 1) * 3 + 3)
     plt.plot([], c='#D7191C', label='Naive', linewidth=2.5)
-    plt.plot([], c='#2b8cbe', label='Randomized Multi-Task Lasso 0.7', linewidth=2.5)
-    plt.plot([], c='#6baed6', label='Randomized Multi-Task Lasso 1.0', linestyle='--', linewidth=2.5)
-    plt.plot([], c='#238443', label='Data Splitting 67/33', linewidth=2.5)
-    plt.plot([], c='#31a354', label='Data Splitting 50/50', linestyle='--', linewidth=2.5)
-    plt.plot([], c='#fd8d3c', label='K Randomized Lassos 0.7', linewidth=2.5)
-    plt.plot([], c='#feb24c', label='K Randomized Lassos 1.0', linestyle='--', linewidth=2.5)
+    plt.plot([], c='#2b8cbe', label='MTL (0.7) + SI', linewidth=2.5)
+    plt.plot([], c='#6baed6', label='MTL (1.0) + SI', linestyle='--', linewidth=2.5)
+    plt.plot([], c='#238443', label='DS (0.67)', linewidth=2.5)
+    plt.plot([], c='#31a354', label='DS (0.5)', linestyle='--', linewidth=2.5)
+    plt.plot([], c='#fd8d3c', label='LASSO (0.7) + SI', linewidth=2.5)
+    plt.plot([], c='#feb24c', label='LASSO (1.0) + SI', linestyle='--', linewidth=2.5)
     plt.legend()
     plt.tight_layout()
     plt.ylabel('F1 Score', fontsize=12)
@@ -1308,7 +1308,7 @@ def main():
     ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
     plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=0.6)
-    plt.savefig('cov_len_f1_by_lambda.png', bbox_inches='tight')
+    plt.savefig('cov_len_f1_by_lambda2.png', bbox_inches='tight')
 
 
 if __name__ == "__main__":
