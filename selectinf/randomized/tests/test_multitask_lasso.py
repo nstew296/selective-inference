@@ -388,7 +388,9 @@ def test_multitask_lasso_data_splitting(predictor_vars_train,
 
     # Compute snesitivity and specificity after inference
     true_active = np.transpose(np.nonzero(np.transpose(beta)))
+    print(true_active,"true active")
     num_positive = np.shape(true_active)[0]
+    print(num_positive,"num_positive")
     if (active_signs != 0).sum() > 0:
         selected_active = np.transpose(np.nonzero(np.transpose(active_signs)))
         true_positive_selected = [x in true_active.tolist() for x in selected_active.tolist()]

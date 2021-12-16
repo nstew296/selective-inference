@@ -534,7 +534,7 @@ def set_box_color(bp, color, linestyle):
     plt.setp(bp['medians'], color=color, linewidth=2.5)
 
 fig = plt.figure(figsize=(8.5, 14))
-ax1 = fig.add_subplot(111)
+ax1 = fig.add_subplot(131)
 plt.sca(ax1)
 first = plt.boxplot([common_lengths_67], positions=np.asarray([1]), sym='', widths=0.3)
 second = plt.boxplot([common_lengths], positions=np.asarray([1.6]), sym='', widths=0.3)
