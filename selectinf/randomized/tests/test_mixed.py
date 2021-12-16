@@ -1044,7 +1044,7 @@ def main():
 
     length_path = 8
     nsim = 100
-    lambdamin = 0
+    lambdamin = 0.25
     lambdamax = 3.5
     #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
     #feature_weight_list = np.exp(weights)
