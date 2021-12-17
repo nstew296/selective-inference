@@ -11,7 +11,7 @@ global_sparsity = 0.9
 task_sparsity = 0.4
 
 length_path = 5
-lambdamin = 0.5
+lambdamin = 0.8
 lambdamax = 5.0
 #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
 #feature_weight_list = np.exp(weights)
@@ -21,7 +21,7 @@ print(feature_weight_list)
 df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
-p_list = [100,250,500,1000]
+p_list = [100,250,500,750]
 n_list = [50,50,50,50]
 ##n_list = [5,5,5,20,20]
 coverage_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
@@ -68,7 +68,7 @@ for j in range(len(p_list)):
                            feature_weight_list[idx_min_k_random_lasso2]]
 
 
-    sims = test_coverage(feature_weight_list2,[2.5,5.0],p_list[j],task_sparsity,global_sparsity,nsim=n_list[j])
+    sims = test_coverage(feature_weight_list2,[1.0,3.0],p_list[j],task_sparsity,global_sparsity,nsim=n_list[j])
     selective_coverage = sims[3]
     selective_coverage2 = sims[4]
     naive_coverage = sims[5]
