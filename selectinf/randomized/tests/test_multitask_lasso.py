@@ -446,6 +446,7 @@ def test_single_task_lasso_posi_hetero(predictor_vars_train,
                      response_vars_train[i],
                      W,
                      sigma=sigma[i],
+                     ridge_term=0.,
                      randomizer_scale=randomizer_scale)
 
         signs = single_task_lasso.fit()

@@ -22,7 +22,7 @@ df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
 p_list = [100,250,500,750]
-n_list = [50,50,50,50]
+n_list = [5,5,5,5]
 ##n_list = [5,5,5,20,20]
 coverage_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 length_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
@@ -216,12 +216,12 @@ set_box_color(sixth, '#fd8d3c','solid')
 set_box_color(seventh,'#feb24c','--')
 plt.xticks(range(1, (length) * 3 + 1, 3), p_list,fontsize=14)
 plt.xlim(-1, (length - 1) * 3 + 3)
-plt.plot([], c='#2b8cbe', label='MTL-SI (0.7)',linewidth=2.5)
-plt.plot([], c='#6baed6', label='MTL-SI (1.0)',linestyle='--',linewidth=2.5)
-plt.plot([], c='#238443', label='DS (67/33)',linewidth=2.5)
-plt.plot([], c='#31a354', label='DS (50/50)',linestyle='--',linewidth=2.5)
-plt.plot([], c='#fd8d3c', label='Disjoint-SI (0.7)',linewidth=2.5)
-plt.plot([], c='#feb24c', label='Disjoint-SI (1.0)',linestyle='--',linewidth=2.5)
+plt.plot([], c='#2b8cbe', label='MTL (0.7) + SI',linewidth=2.5)
+plt.plot([], c='#6baed6', label='MTL (1.0) + SI',linestyle='--',linewidth=2.5)
+plt.plot([], c='#238443', label='DS (0.67)',linewidth=2.5)
+plt.plot([], c='#31a354', label='DS (0.5)',linestyle='--',linewidth=2.5)
+plt.plot([], c='#fd8d3c', label='LASSO (0.7) + SI',linewidth=2.5)
+plt.plot([], c='#feb24c', label='LASSO (1.0) + SI',linestyle='--',linewidth=2.5)
 plt.legend()
 plt.tight_layout()
 plt.ylabel('Coverage per Simulation',fontsize=18)

@@ -665,7 +665,7 @@ def test_coverage(weight,signal,nsim=100):
     ntask = 5
     nsamples= 1000 * np.ones(ntask)
     p=100
-    global_sparsity=0.95
+    global_sparsity=0.9
     task_sparsity= 0.40
     sigma=1. * np.ones(ntask)
     signal_fac=np.array(signal)
@@ -724,9 +724,9 @@ def test_coverage(weight,signal,nsim=100):
                 return tdist.rvs(df, size=n) / sd_t
 
             if link == "identity":
-                noise = _noise(nsamples.sum(), np.inf)
+                noise = _noise(nsamples.sum() * 2, np.inf)
                 response_vars = {}
-                nsamples_cumsum = np.cumsum(nsamples)
+                nsamples_cumsum = np.cumsum([nsamples[i] * 2 for i in range(ntask)])
                 for i in range(ntask):
                     if i == 0:
                         response_vars[i] = (predictor_vars[i].dot(beta[:, i]) + noise[:nsamples_cumsum[i]]) * \
@@ -753,8 +753,8 @@ def test_coverage(weight,signal,nsim=100):
 
         print(n,"n sim")
 
-        samples = np.arange(np.int(nsamples[0]))
-        train = np.random.choice(samples, size=np.int(0.5*nsamples[0]), replace=False)
+        samples = np.arange(np.int(nsamples[0]*2))
+        train = np.random.choice(samples, size=np.int(nsamples[0]), replace=False)
         test = np.setdiff1d(samples, train)
 
         response_vars_train = {j: response_vars[j][train] for j in range(ntask)}
@@ -1043,7 +1043,7 @@ def main():
     # plt.savefig("boxplot25.png")
 
     length_path = 8
-    nsim = 100
+    nsim = 50
     lambdamin = 0.25
     lambdamax = 3.5
     #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
@@ -1092,7 +1092,7 @@ def main():
     single_selective_error2 = []
 
     for i in range(len(feature_weight_list)):
-        sims = test_coverage(feature_weight_list[i], [2.0, 5.0], nsim=nsim)
+        sims = test_coverage(feature_weight_list[i], [1.0, 3.0], nsim=nsim)
         selective_coverage.append(sims[3])
         selective_coverage2.append(sims[4])
         naive_coverage.append(sims[5])
