@@ -8,12 +8,12 @@ from selectinf.randomized.tests.test_multitask_lasso import test_coverage
 
 k=5
 p=100
-global_sparsity = 0.95
+global_sparsity = 0.90
 #task_sparsity = 0.4
 
 length_path = 15
-lambdamin = 0
-lambdamax = 4.0
+lambdamin = 0.5
+lambdamax = 5.0
 #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
 #feature_weight_list = np.exp(weights)
 feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
@@ -24,7 +24,7 @@ df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 sparsity_list = [0.0,0.2,0.4,0.6]
 #sparsity_list = [0.80,0.85,0.9,0.95]
-n_list = [100,100,100,100]
+n_list = [5,5,5,5]
 ##n_list = [5,5,5,20,20]
 coverage_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(sparsity_list))}
 length_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(sparsity_list))}
@@ -79,7 +79,7 @@ for j in range(len(sparsity_list)):
     for i in range(len(feature_weight_list)):
         print((i,j),"(i,j)")
         weight = [feature_weight_list[i]]*7
-        sims = test_coverage(weight,[2.5,5.0],p,sparsity_list[j],global_sparsity,nsim=n_list[j])
+        sims = test_coverage(weight,[1.0,3.0],p,sparsity_list[j],global_sparsity,nsim=n_list[j])
         selective_coverage.append(sims[3])
         selective_coverage2.append(sims[4])
         naive_coverage.append(sims[5])

@@ -391,7 +391,7 @@ def gaussian_multitask_instance(ntask,
                                 equicorrelated=False):
 
     np.random.seed(5)
-    predictor_vars= {i: _design(nsamples[i], p, rhos[i], equicorrelated)[0] for i in range(ntask)}
+    predictor_vars= {i: _design(nsamples[i]*2, p, rhos[i], equicorrelated)[0] for i in range(ntask)}
 
     if center:
         predictor_vars = {i: predictor_vars[i]-predictor_vars[i].mean(0)[None, :] for i in range(ntask)}
@@ -439,9 +439,9 @@ def gaussian_multitask_instance(ntask,
             sd_t = np.std(tdist.rvs(df, size=50000))
         return tdist.rvs(df, size=n) / sd_t
 
-    gaussian_noise = _noise(nsamples.sum() + p*ntask, df)
+    gaussian_noise = _noise(nsamples.sum()*2 + p*ntask, df)
     response_vars = {}
-    nsamples_cumsum = np.cumsum(nsamples)
+    nsamples_cumsum = np.cumsum([nsamples[i]*2 for i in range(ntask)])
     for i in range(ntask):
         if i == 0:
             response_vars[i] = (predictor_vars[i].dot(beta[:, i]) + gaussian_noise[:nsamples_cumsum[i]]) * sigma[i]

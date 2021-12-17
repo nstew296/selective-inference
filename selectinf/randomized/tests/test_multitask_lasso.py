@@ -388,9 +388,7 @@ def test_multitask_lasso_data_splitting(predictor_vars_train,
 
     # Compute snesitivity and specificity after inference
     true_active = np.transpose(np.nonzero(np.transpose(beta)))
-    print(true_active,"true active")
     num_positive = np.shape(true_active)[0]
-    print(num_positive,"num_positive")
     if (active_signs != 0).sum() > 0:
         selected_active = np.transpose(np.nonzero(np.transpose(active_signs)))
         true_positive_selected = [x in true_active.tolist() for x in selected_active.tolist()]
@@ -665,7 +663,7 @@ def test_coverage(weight,signal,p,ts,gs,nsim=100):
     single_task_selective_test_error_list2 = []
 
     ntask = 5
-    nsamples= 2000 * np.ones(ntask)
+    nsamples= 1000 * np.ones(ntask)
     p=p
     global_sparsity= gs
     task_sparsity= ts
@@ -688,6 +686,12 @@ def test_coverage(weight,signal,p,ts,gs,nsim=100):
                                                                                            rhos,
                                                                                            random_signs=True,
                                                                                            equicorrelated=True)[:4]
+        SIG = np.full((p,p),0.3)
+        np.fill_diagonal(SIG,1.0)
+        SNR = beta.T.dot(SIG.dot(beta))/1000
+        SNR = np.diag(SNR)
+        print(SNR,"SNR")
+        print(SNR/(1+SNR), "PVE")
 
     if link == "logit":
         response_vars, predictor_vars, beta, gaussian_noise = logistic_multitask_instance(ntask,
@@ -726,9 +730,9 @@ def test_coverage(weight,signal,p,ts,gs,nsim=100):
                 return tdist.rvs(df, size=n) / sd_t
 
             if link == "identity":
-                noise = _noise(nsamples.sum(), np.inf)
+                noise = _noise(nsamples.sum()*2, np.inf)
                 response_vars = {}
-                nsamples_cumsum = np.cumsum(nsamples)
+                nsamples_cumsum = np.cumsum([nsamples[i]*2 for i in range(ntask)])
                 for i in range(ntask):
                     if i == 0:
                         response_vars[i] = (predictor_vars[i].dot(beta[:, i]) + noise[:nsamples_cumsum[i]]) * \
@@ -755,8 +759,8 @@ def test_coverage(weight,signal,p,ts,gs,nsim=100):
 
         print(n,"n sim")
 
-        samples = np.arange(np.int(nsamples[0]))
-        train = np.random.choice(samples, size=np.int(0.5*nsamples[0]), replace=False)
+        samples = np.arange(np.int(nsamples[0]*2))
+        train = np.random.choice(samples, size=np.int(nsamples[0]), replace=False)
         test = np.setdiff1d(samples, train)
 
         response_vars_train = {j: response_vars[j][train] for j in range(ntask)}

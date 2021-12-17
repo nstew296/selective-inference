@@ -7,7 +7,7 @@ import pandas as pd
 from selectinf.randomized.tests.test_multitask_lasso import test_coverage
 
 k=5
-global_sparsity = 0.95
+global_sparsity = 0.9
 task_sparsity = 0.4
 
 length_path = 5
@@ -22,7 +22,7 @@ df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
 p_list = [100,250,500,1000]
-n_list = [100,100,100,100]
+n_list = [50,50,50,50]
 ##n_list = [5,5,5,20,20]
 coverage_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 length_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
@@ -45,7 +45,7 @@ for j in range(len(p_list)):
         print((i,j),"(i,j)")
         weight = [feature_weight_list[i]]*7
         print(weight)
-        sims = test_coverage(weight,[2.5,5.0],p_list[j],task_sparsity,global_sparsity,nsim=1)
+        sims = test_coverage(weight,[1.0,3.0],p_list[j],task_sparsity,global_sparsity,nsim=1)
         selective_error.append(sims[31])
         selective_error2.append(sims[32])
         naive_error.append(sims[33])
