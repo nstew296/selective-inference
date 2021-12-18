@@ -21,8 +21,8 @@ print(feature_weight_list)
 df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
-p_list = [250,500,750]
-n_list = [5,5,5,5]
+p_list = [100,250,500,750]
+n_list = [50,50,50,50]
 ##n_list = [5,5,5,20,20]
 coverage_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 length_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
