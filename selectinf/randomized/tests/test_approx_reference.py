@@ -61,58 +61,65 @@ def test_approx_pivot(n=500,
                       s=5,
                       sigma=2.,
                       rho=0.4,
-                      randomizer_scale=1.):
+                      randomizer_scale=1.,
+                      equicorrelated=False,
+                      useIP=False):
 
     inst, const = gaussian_instance, lasso.gaussian
     signal = np.sqrt(signal_fac * 2 * np.log(p))
 
-    X, Y, beta = inst(n=n,
-                      p=p,
-                      signal=signal,
-                      s=s,
-                      equicorrelated=False,
-                      rho=rho,
-                      sigma=sigma,
-                      random_signs=True)[:3]
+    while True:
 
-    n, p = X.shape
+        X, Y, beta = inst(n=n,
+                          p=p,
+                          signal=signal,
+                          s=s,
+                          equicorrelated=equicorrelated,
+                          rho=rho,
+                          sigma=sigma,
+                          random_signs=False)[:3]
 
-    sigma_ = np.std(Y)
-    dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
+        n, p = X.shape
 
-    W = 1 * np.ones(X.shape[1]) * np.sqrt(2 * np.log(p)) * sigma_
+        sigma_ = np.std(Y)
+        if n > (2 * p):
+            dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
+        else:
+            dispersion = sigma_ ** 2
 
-    conv = const(X,
-                 Y,
-                 W,
-                 randomizer_scale=randomizer_scale * dispersion)
+        eps = np.random.standard_normal((n, 2000)) * Y.std()
+        W = 0.7 * np.median(np.abs(X.T.dot(eps)).max(1))
 
-    signs = conv.fit()
-    nonzero = signs != 0
+        conv = const(X,
+                     Y,
+                     W,
+                     ridge_term=0.)
+                     #randomizer_scale=randomizer_scale * sigma_)
 
-    if nonzero.sum()>0:
-        beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
+        signs = conv.fit()
+        nonzero = signs != 0
+        print("no of variables selected ", nonzero.sum())
 
-        (observed_target,
-         cov_target,
-         cov_target_score,
-         alternatives) = selected_targets(conv.loglike,
-                                          conv._W,
-                                          nonzero,
-                                          dispersion=dispersion)
+        if nonzero.sum() > 0:
+            beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
 
-        inverse_info = conv.selective_MLE(observed_target,
-                                          cov_target,
-                                          cov_target_score)[1]
+            (observed_target,
+             cov_target,
+             cov_target_score,
+             alternatives) = selected_targets(conv.loglike,
+                                              conv._W,
+                                              nonzero,
+                                              dispersion=dispersion)
 
-        approximate_grid_inf = approximate_grid_inference(conv,
-                                                          observed_target,
-                                                          cov_target,
-                                                          cov_target_score)
+            approximate_grid_inf = approximate_grid_inference(conv,
+                                                              observed_target,
+                                                              cov_target,
+                                                              cov_target_score,
+                                                              useIP=useIP)
 
-        pivot = approximate_grid_inf._approx_pivots(beta_target)
+            pivot = approximate_grid_inf._approx_pivots(beta_target)
 
-        return pivot
+            return pivot
 
 
 def test_approx_ci(n=500,
@@ -146,7 +153,7 @@ def test_approx_ci(n=500,
     conv = const(X,
                  Y,
                  W,
-                 randomizer_scale=randomizer_scale * dispersion)
+                 randomizer_scale=randomizer_scale * sigma_)
 
     signs = conv.fit()
     nonzero = signs != 0
@@ -161,7 +168,6 @@ def test_approx_ci(n=500,
                                           nonzero,
                                           dispersion=dispersion)
 
-        ntarget = observed_target.shape[0]
         result, inverse_info = conv.selective_MLE(observed_target,
                                                   cov_target,
                                                   cov_target_score)[:2]
@@ -191,18 +197,23 @@ def test_approx_ci(n=500,
 
 def main(nsim=300, CI = False):
 
+    import matplotlib as mpl
+    mpl.use('tkagg')
     import matplotlib.pyplot as plt
     from statsmodels.distributions.empirical_distribution import ECDF
+
     if CI is False:
         _pivot = []
         for i in range(nsim):
-            _pivot.extend(test_approx_pivot(n=200,
-                                            p=100,
-                                            signal_fac=1.,
-                                            s=5,
-                                            sigma=3.,
-                                            rho=0.20,
-                                            randomizer_scale=1.))
+            _pivot.extend(test_approx_pivot(n=100,
+                                            p=400,
+                                            signal_fac=0.5,
+                                            s=0,
+                                            sigma=2.,
+                                            rho=0.30,
+                                            randomizer_scale=1.,
+                                            equicorrelated=True,
+                                            useIP=True))
 
             print("iteration completed ", i)
 
@@ -232,4 +243,4 @@ def main(nsim=300, CI = False):
             print("iteration completed ", n + 1)
 
 if __name__ == "__main__":
-    main(nsim=40, CI = False)
+    main(nsim=20, CI = False)
