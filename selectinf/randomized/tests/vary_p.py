@@ -10,9 +10,9 @@ k=5
 global_sparsity = 0.9
 task_sparsity = 0.4
 
-length_path = 5
-lambdamin = 0.8
-lambdamax = 5.0
+length_path = 8
+lambdamin = 0.6
+lambdamax = 4.0
 #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
 #feature_weight_list = np.exp(weights)
 feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
@@ -22,7 +22,7 @@ df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
 p_list = [100,250,500,750]
-n_list = [50,50,50,50]
+n_list = [20,20,20,20]
 ##n_list = [5,5,5,20,20]
 coverage_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 length_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}

@@ -110,9 +110,9 @@ def test_multitask_lasso_hetero(predictor_vars_train,
         for j in range(ntask):
             idx_new = np.sum(active_signs[:, j] != 0)
             if idx_new == 0:
-                error += (0.5 * np.sum(np.square(response_vars_test[j])))/nsamples_test[j]
+                error += (np.sum(np.square(response_vars_test[j])))/nsamples_test[j]
                 continue
-            error += 0.5 * (np.sum(
+            error += (np.sum(
                 np.square((response_vars_test[j] - (predictor_vars_test[j])[:, (active_signs[:, j] != 0)].dot(
                     estimate[idx:idx + idx_new])))))/nsamples_test[j]
             idx = idx + idx_new
@@ -120,7 +120,7 @@ def test_multitask_lasso_hetero(predictor_vars_train,
     else:
         error=0
         for j in range(ntask):
-            error += (0.5 * np.linalg.norm(response_vars_test[j], 2) ** 2)/nsamples_test[j]
+            error += (np.linalg.norm(response_vars_test[j], 2) ** 2)/nsamples_test[j]
         intervals = np.asarray([[np.nan, np.nan]])
 
 
@@ -237,17 +237,17 @@ def test_multitask_lasso_naive_hetero(predictor_vars_train,
 
             idx_new = np.sum(active_signs[:, i] != 0)
             if idx_new == 0:
-                error += (0.5 * np.sum(np.square(response_vars_test[i])))/nsamples_test[i]
+                error += (np.sum(np.square(response_vars_test[i])))/nsamples_test[i]
                 continue
             observed_target = np.linalg.pinv(X[:, (active_signs[:, i] != 0)]).dot(y)
-            error += (0.5 * np.sum(np.square(
+            error += (np.sum(np.square(
                 response_vars_test[i] - (predictor_vars_test[i])[:, (active_signs[:, i] != 0)].dot(
                     observed_target))))/nsamples_test[i]
 
     else:
         error=0
         for j in range(ntask):
-            error += (0.5 * np.linalg.norm(response_vars_test[j], 2) ** 2)/nsamples_test[j]
+            error += (np.linalg.norm(response_vars_test[j], 2) ** 2)/nsamples_test[j]
         CIs = np.asarray([[0, 0],[np.nan,np.nan]])
 
 
@@ -373,16 +373,16 @@ def test_multitask_lasso_data_splitting(predictor_vars_train,
 
             idx_new = np.sum(active_signs[:, i] != 0)
             if idx_new == 0:
-                error += (0.5 * np.sum(np.square(response_vars_test[i])))/nsamples_test[i]
+                error += (np.sum(np.square(response_vars_test[i])))/nsamples_test[i]
                 continue
-            error += (0.5 * np.sum(np.square(
+            error += (np.sum(np.square(
                 response_vars_test[i] - (predictor_vars_test[i])[:, (active_signs[:, i] != 0)].dot(
                     observed_target))))/nsamples_test[i]
 
     else:
         error=0
         for j in range(ntask):
-            error += (0.5 * np.linalg.norm(response_vars_test[j], 2) ** 2)/nsamples_test[j]
+            error += (np.linalg.norm(response_vars_test[j], 2) ** 2)/nsamples_test[j]
         CIs = np.asarray([[0, 0],[np.nan,np.nan]])
 
 
@@ -423,6 +423,7 @@ def test_single_task_lasso_posi_hetero(predictor_vars_train,
                                       predictor_vars_test,
                                       response_vars_test,
                                       beta,
+                                      gaussian_noise,
                                       sigma,
                                       weight,
                                       randomizer_scale = 1.0,
@@ -441,7 +442,6 @@ def test_single_task_lasso_posi_hetero(predictor_vars_train,
     for i in range(ntask):
 
         W = np.ones(p) * weight
-        #W[0] = 0
         single_task_lasso = lasso.gaussian(predictor_vars_train[i],
                      response_vars_train[i],
                      W,
@@ -449,26 +449,25 @@ def test_single_task_lasso_posi_hetero(predictor_vars_train,
                      ridge_term=0.,
                      randomizer_scale=randomizer_scale)
 
-        signs = single_task_lasso.fit()
+        _initial_omega = np.array(
+            [randomizer_scale * sigma[i] * gaussian_noise[(i * p):((i + 1) * p)][j] for j in range(p)]).T
+        signs = single_task_lasso.fit(perturb=_initial_omega)
         nonzero = signs != 0
 
         (observed_target, cov_target, cov_target_score, alternatives) = \
-            selected_targets(single_task_lasso.loglike, single_task_lasso._W, nonzero)
+            selected_targets(single_task_lasso.loglike, single_task_lasso._W, nonzero,  dispersion=sigma[i]**2)
 
 
         try:
-            MLE_result, observed_info_mean, _ = single_task_lasso.selective_MLE(
+            MLE_result, observed_info_mean = single_task_lasso.selective_MLE(
                 observed_target,
                 cov_target,
-                cov_target_score)
+                cov_target_score)[0:2]
 
-            final_estimator = np.asarray(MLE_result['MLE'])
+            final_estimator = MLE_result['MLE']
 
-            alpha = 1. - 0.90
-            quantile = ndist.ppf(1 - alpha / 2.)
+            intervals = np.asarray(MLE_result[['lower_confidence', 'upper_confidence']])
 
-            intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
-                               final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
 
             beta_target = np.linalg.pinv(predictor_vars_train[i][:, nonzero]).dot(predictor_vars_train[i].dot(beta[:, i]))
 
@@ -481,13 +480,14 @@ def test_single_task_lasso_posi_hetero(predictor_vars_train,
             selected_active.extend([[i, j] for j in np.nonzero(signs)[0]])
 
         except:
+            print("OOPS")
             pass
 
         idx_new = np.sum(signs != 0)
         if idx_new == 0:
-            error += (0.5 * np.sum(np.square(response_vars_test[i]))) / nsamples_test[i]
+            error += (np.sum(np.square(response_vars_test[i]))) / nsamples_test[i]
             continue
-        error += (0.5 * np.sum(np.square(
+        error += (np.sum(np.square(
             response_vars_test[i] - (predictor_vars_test[i])[:, nonzero].dot(
                 final_estimator)))) / nsamples_test[i]
 
@@ -873,6 +873,7 @@ def test_coverage(weight,signal,p,ts,gs,nsim=100):
                                       predictor_vars_test,
                                       response_vars_test,
                                       beta,
+                                      gaussian_noise,
                                       sigma,
                                       weight[5],
                                       randomizer_scale = 0.7,
@@ -892,6 +893,7 @@ def test_coverage(weight,signal,p,ts,gs,nsim=100):
             predictor_vars_test,
             response_vars_test,
             beta,
+            gaussian_noise,
             sigma,
             weight[6],
             randomizer_scale=1.0,
