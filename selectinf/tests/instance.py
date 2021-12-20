@@ -377,7 +377,8 @@ def HIV_NRTI(drug='3TC',
 
 
 def gaussian_multitask_instance(ntask,
-                                nsamples,
+                                nsamples_train,
+                                nsamples_test,
                                 p,
                                 global_sparsity,
                                 task_sparsity,
@@ -391,10 +392,13 @@ def gaussian_multitask_instance(ntask,
                                 equicorrelated=False):
 
     np.random.seed(5)
-    predictor_vars= {i: _design(nsamples[i]*2, p, rhos[i], equicorrelated)[0] for i in range(ntask)}
+    predictor_vars_train = {i: _design(nsamples_train[i], p, rhos[i], equicorrelated)[0] for i in range(ntask)}
+    predictor_vars_test = {i: _design(nsamples_test[i], p, rhos[i], equicorrelated)[0] for i in range(ntask)}
 
     if center:
-        predictor_vars = {i: predictor_vars[i]-predictor_vars[i].mean(0)[None, :] for i in range(ntask)}
+        predictor_vars_train = {i: predictor_vars_train[i]-predictor_vars_train[i].mean(0)[None, :] for i in range(ntask)}
+        predictor_vars_test = {i: predictor_vars_test[i] - predictor_vars_test[i].mean(0)[None, :] for i in
+                                range(ntask)}
 
     signal = np.atleast_1d(signal)
 
@@ -421,12 +425,14 @@ def gaussian_multitask_instance(ntask,
     if random_signs:
         beta *= (2 * np.random.binomial(1, 0.5, size=(p,ntask)) - 1.)
 
-    beta /= np.sqrt(nsamples)
+    beta /= np.sqrt(nsamples_train)
 
     if scale:
-        scalings = {i: predictor_vars[i].std(0) * np.sqrt(nsamples[i]) for i in range(ntask)}
-        predictor_vars = {i: predictor_vars[i]/(scalings[i][None, :]) for i in range(ntask)}
-        beta *= np.sqrt(nsamples)
+        scalings_train = {i: predictor_vars_train[i].std(0) * np.sqrt(nsamples_train[i]) for i in range(ntask)}
+        predictor_vars_train = {i: predictor_vars_train[i]/(scalings_train[i][None, :]) for i in range(ntask)}
+        scalings_test = {i: predictor_vars_test[i].std(0) * np.sqrt(nsamples_train[i]) for i in range(ntask)}
+        predictor_vars_test = {i: predictor_vars_test[i] / (scalings_test[i][None, :]) for i in range(ntask)}
+        beta *= np.sqrt(nsamples_train)
 
     active = np.zeros((p, ntask), np.bool)
     active[beta != 0] = True
@@ -439,16 +445,23 @@ def gaussian_multitask_instance(ntask,
             sd_t = np.std(tdist.rvs(df, size=50000))
         return tdist.rvs(df, size=n) / sd_t
 
-    gaussian_noise = _noise(nsamples.sum()*2 + p*ntask, df)
-    response_vars = {}
-    nsamples_cumsum = np.cumsum([nsamples[i]*2 for i in range(ntask)])
+    gaussian_noise = _noise(nsamples_train.sum() + nsamples_test.sum() + p*ntask, df)
+    response_vars_train = {}
+    response_vars_test = {}
+    nsamples_train_cumsum = np.cumsum([nsamples_train[i] for i in range(ntask)])
+    nsamples_test_cumsum = np.cumsum([nsamples_test[i] for i in range(ntask)])
     for i in range(ntask):
         if i == 0:
-            response_vars[i] = (predictor_vars[i].dot(beta[:, i]) + gaussian_noise[:nsamples_cumsum[i]]) * sigma[i]
+            response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]) + gaussian_noise[:nsamples_train_cumsum[i]]) * sigma[i]
+            response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i]) + gaussian_noise[nsamples_train.sum()
+                                                                                :nsamples_train.sum() + nsamples_test_cumsum[i]]) * sigma[i]
         else:
-            response_vars[i] = (predictor_vars[i].dot(beta[:, i]) + gaussian_noise[nsamples_cumsum[i-1]:nsamples_cumsum[i]]) * sigma[i]
+            response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]) + gaussian_noise[nsamples_train_cumsum[i-1]:nsamples_train_cumsum[i]]) * sigma[i]
+            response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i]) + gaussian_noise[nsamples_train.sum()+
+                                                                                nsamples_test_cumsum[i - 1]: nsamples_train.sum() +
+                                                                                nsamples_test_cumsum[i]]) * sigma[i]
 
-    return response_vars, predictor_vars, beta * sigma, gaussian_noise[nsamples_cumsum[-1]:], np.nonzero(active), sigma
+    return response_vars_train, predictor_vars_train, response_vars_test, predictor_vars_test, beta * sigma, gaussian_noise[nsamples_train.sum()+nsamples_test.sum():], np.nonzero(active), sigma
 
 
 def logistic_multitask_instance(ntask,
