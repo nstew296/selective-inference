@@ -18,13 +18,14 @@ p_list = [100,250,500,750]
 rho = 0.3
 sigma=1.0
 signal_fac = np.array([1.0,3.0])
-weight = 2.25
+#weight = 2.25
 randomizer_scale = 0.7
 covlist = {j: [] for j in range(len(p_list))}
 
 for j in range(len(p_list)):
     p = p_list[j]
     signal = np.sqrt(signal_fac * 2 * np.log(p))
+    weight = np.sqrt(2 * np.log(p))
     s = int(p*0.1*0.6)
     for i in range(500):
         X, Y, beta = gaussian_instance(n=n,
