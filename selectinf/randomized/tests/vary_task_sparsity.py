@@ -7,8 +7,8 @@ from selectinf.randomized.tests.test_multitask_lasso import test_coverage
 
 k=5
 p=100
-#global_sparsity = 0.90
-task_sparsity = 0.4
+global_sparsity = 0.90
+#task_sparsity = 0.4
 
 length_path = 15
 lambdamin = 0.8
@@ -21,8 +21,8 @@ print(feature_weight_list)
 df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
-#sparsity_list = [0.0,0.2,0.4,0.6]
-sparsity_list = [0.80,0.85,0.9,0.95]
+sparsity_list = [0.0,0.2,0.4,0.6]
+#sparsity_list = [0.80,0.85,0.9,0.95]
 n_list = [100,100,100,100]
 ##n_list = [5,5,5,20,20]
 coverage_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(sparsity_list))}
@@ -31,8 +31,8 @@ f1_by_ts = {j: [[], [], [], [], [], []] for j in range(len(sparsity_list))}
 
 
 for j in range(len(sparsity_list)):
-    #positive = (1.-global_sparsity)*(1.-sparsity_list[j])*k*p
-    positive = (1.-task_sparsity)*(1.-sparsity_list[j])*k*p
+    positive = (1.-global_sparsity)*(1.-sparsity_list[j])*k*p
+    #positive = (1.-task_sparsity)*(1.-sparsity_list[j])*k*p
     negative = k*p - positive
 
     selective_lengths = []
@@ -78,7 +78,7 @@ for j in range(len(sparsity_list)):
     for i in range(len(feature_weight_list)):
         print((i,j),"(i,j)")
         weight = [feature_weight_list[i]]*7
-        sims = test_coverage(weight,[1.0,3.0],p,task_sparsity,sparsity_list[j],nsim=n_list[j])
+        sims = test_coverage(weight,[1.0,3.0],p,sparsity_list[j],global_sparsity,nsim=n_list[j])
         selective_coverage.append(sims[3])
         selective_coverage2.append(sims[4])
         naive_coverage.append(sims[5])
@@ -300,8 +300,8 @@ ax3.set_title("Accuracy", y = 1.01,fontsize=20)
 
 def common_format(ax):
     ax.grid(True, which='both',color='#f0f0f0')
-    #ax.set_xlabel('Task Sparsity', fontsize=18)
-    ax.set_xlabel('Global Sparsity', fontsize=18)
+    ax.set_xlabel('Task Sparsity', fontsize=18)
+    #ax.set_xlabel('Global Sparsity', fontsize=18)
     return ax
 
 common_format(ax1)
@@ -312,7 +312,7 @@ common_format(ax3)
 ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.2)
 ax1.legend(loc='lower left', bbox_to_anchor=(0.6, -0.45),fontsize=20,ncol=3)
-plt.savefig('vary_global_sparsity_p100.png', bbox_inches='tight')
+plt.savefig('vary_task_sparsity_p100.png', bbox_inches='tight')
 
 
 #fig = plt.figure(figsize=(25, 10))
