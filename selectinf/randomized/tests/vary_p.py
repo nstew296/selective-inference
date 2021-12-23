@@ -6,7 +6,7 @@ import pandas as pd
 from selectinf.randomized.tests.test_multitask_lasso import test_coverage
 
 k=5
-global_sparsity = 0.9
+global_sparsity = [0.9167,0.9667,0.9833,0.9888]
 task_sparsity = 0.4
 
 length_path = 8
@@ -19,14 +19,14 @@ df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
 p_list = [100,250,500,750]
-n_list = [20,20,20,20]
+n_list = [50,50,50,50]
 coverage_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 length_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 f1_by_p = {j: [[], [], [], [], [], []] for j in range(len(p_list))}
 
 
 for j in range(len(p_list)):
-    positive = (1.-global_sparsity)*(1.-task_sparsity)*k*p_list[j]
+    positive = (1.-global_sparsity[j])*(1.-task_sparsity)*k*p_list[j]
     negative = k*p_list[j] - positive
 
     selective_error = []
@@ -41,7 +41,7 @@ for j in range(len(p_list)):
         print((i,j),"(i,j)")
         weight = [feature_weight_list[i]]*7
         print(weight)
-        sims = test_coverage(weight,[1.0,3.0],p_list[j],task_sparsity,global_sparsity,nsim=1)
+        sims = test_coverage(weight,[1.0,3.0],p_list[j],task_sparsity,global_sparsity[j],nsim=1)
         selective_error.append(sims[31])
         selective_error2.append(sims[32])
         naive_error.append(sims[33])
@@ -64,7 +64,7 @@ for j in range(len(p_list)):
                            feature_weight_list[idx_min_k_random_lasso2]]
 
 
-    sims = test_coverage(feature_weight_list2,[1.0,3.0],p_list[j],task_sparsity,global_sparsity,nsim=n_list[j])
+    sims = test_coverage(feature_weight_list2,[1.0,3.0],p_list[j],task_sparsity,global_sparsity[j],nsim=n_list[j])
     selective_coverage = sims[3]
     selective_coverage2 = sims[4]
     naive_coverage = sims[5]
