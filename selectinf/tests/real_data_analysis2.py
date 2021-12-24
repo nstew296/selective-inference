@@ -598,7 +598,7 @@ set_box_color(fourth, '#238443', 'solid')
 set_box_color(fifth, '#31a354', '--')
 plt.xlim(0.7, 2.4)
 plt.tight_layout()
-plt.ylabel('Coefficient of Variation for Estimated Effects', fontsize=18)
+plt.ylabel('Coefficient of Variation for Estimated Effects', fontsize=17)
 plt.yticks(fontsize=18)
 
 ax3.set_title("Distribution of Coefficient of Variation", y=1.01 ,fontsize=24)
