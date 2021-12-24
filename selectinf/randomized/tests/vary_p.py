@@ -6,8 +6,10 @@ import pandas as pd
 from selectinf.randomized.tests.test_multitask_lasso import test_coverage
 
 k=5
-global_sparsity = [0.9167,0.9667,0.9833,0.9888]
-task_sparsity = 0.4
+#global_sparsity = [0.9167,0.9667,0.9833,0.9888]
+global_sparsity = [0.9375,0.975,0.9875,0.99167]
+task_sparsity = 0.2
+#task_sparsity = 0.4
 
 length_path = 8
 lambdamin = 0.5
