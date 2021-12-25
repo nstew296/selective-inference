@@ -21,7 +21,7 @@ df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
 p_list = [100,250,500,750]
-n_list = [100,100,100,100]
+n_list = [10,10,10,10]
 coverage_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 length_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 f1_by_p = {j: [[], [], [], [], [], []] for j in range(len(p_list))}
@@ -282,7 +282,7 @@ ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 ax1.legend(loc='lower left', bbox_to_anchor=(0.6, -0.45),fontsize=18,ncol=3)
-plt.savefig('vary_p2.png', bbox_inches='tight')
+plt.savefig('vary_p_ts2.png', bbox_inches='tight')
 
 
 #fig = plt.figure(figsize=(25, 10))
