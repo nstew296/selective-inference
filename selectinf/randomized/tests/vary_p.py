@@ -12,7 +12,7 @@ task_sparsity = 0.2
 #task_sparsity = 0.4
 
 length_path = 8
-lambdamin = 0.75
+lambdamin = 1.25
 lambdamax = 4.5
 feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
 print(feature_weight_list)
@@ -21,10 +21,11 @@ df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
 p_list = [100,250,500,750]
-n_list = [10,10,10,10]
+n_list = [100,100,100,100]
 coverage_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 length_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 f1_by_p = {j: [[], [], [], [], [], []] for j in range(len(p_list))}
+pivots_by_p = {j: [[], []] for j in range(len(p_list))}
 
 
 for j in range(len(p_list)):
@@ -67,21 +68,25 @@ for j in range(len(p_list)):
 
 
     sims = test_coverage(feature_weight_list2,[1.0,3.0],p_list[j],task_sparsity,global_sparsity[j],nsim=n_list[j])
-    selective_coverage = sims[3]
-    selective_coverage2 = sims[4]
-    naive_coverage = sims[5]
-    ds_coverage = sims[6]
-    ds_coverage2 = sims[7]
-    single_selective_coverage = sims[8]
-    single_selective_coverage2 = sims[9]
 
-    selective_lengths = sims[10]
-    selective_lengths2 = sims[11]
-    naive_lengths = sims[12]
-    ds_lengths = sims[13]
-    ds_lengths2 = sims[14]
-    single_selective_lengths = sims[15]
-    single_selective_lengths2 = sims[16]
+    pivots_by_p[j][0] = sims[0]
+    pivots_by_p[j][1] = sims[1]
+
+    selective_coverage = coverage_by_p[j][0] = sims[3]
+    selective_coverage2 = coverage_by_p[j][1] = sims[4]
+    naive_coverage = coverage_by_p[j][2] = sims[5]
+    ds_coverage = coverage_by_p[j][3] = sims[6]
+    ds_coverage2 = coverage_by_p[j][4] = sims[7]
+    single_selective_coverage = coverage_by_p[j][5] = sims[8]
+    single_selective_coverage2 = coverage_by_p[j][6] = sims[9]
+
+    selective_lengths = length_by_p[j][0] = sims[10]
+    selective_lengths2 = length_by_p[j][1] = sims[11]
+    naive_lengths = length_by_p[j][2] = sims[12]
+    ds_lengths = length_by_p[j][3] = sims[13]
+    ds_lengths2 = length_by_p[j][4] = sims[14]
+    single_selective_lengths = length_by_p[j][5] = sims[15]
+    single_selective_lengths2 = length_by_p[j][6] = sims[16]
 
     selective_sensitivity = sims[17]
     selective_sensitivity2 = sims[18]
@@ -166,28 +171,6 @@ for j in range(len(p_list)):
 
     print(np.mean(selective_f1),np.mean(selective2_f1),np.mean(ds_f1),np.mean(ds2_f1),np.mean(single_task_f1),np.mean(single_task2_f1),"F1 score means")
 
-
-    coverage_by_p[j][0] = selective_coverage
-    length_by_p[j][0] = selective_lengths
-
-    coverage_by_p[j][1] = selective_coverage2
-    length_by_p[j][1] = selective_lengths2
-
-    coverage_by_p[j][2] = naive_coverage
-    length_by_p[j][2] = naive_lengths
-
-    coverage_by_p[j][3] = ds_coverage
-    length_by_p[j][3] = ds_lengths
-
-    coverage_by_p[j][4] = ds_coverage2
-    length_by_p[j][4] = ds_lengths2
-
-    coverage_by_p[j][5] = single_selective_coverage
-    length_by_p[j][5] = single_selective_lengths
-
-    coverage_by_p[j][6] = single_selective_coverage2
-    length_by_p[j][6] = single_selective_lengths2
-
 length = len(p_list)
 def set_box_color(bp, color,linestyle):
     plt.setp(bp['boxes'], color=color,linestyle=linestyle,linewidth=2)
@@ -260,7 +243,7 @@ set_box_color(sixth,'#feb24c','--')
 plt.xticks(range(1, (length) * 3 + 1, 3), p_list,fontsize=14)
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.tight_layout()
-plt.ylabel('f1 per Simulation',fontsize=18)
+plt.ylabel('F1 per Simulation',fontsize=18)
 plt.yticks(fontsize=14)
 
 ax1.set_title("Coverage", y = 1.01,fontsize=20)
@@ -281,40 +264,66 @@ common_format(ax3)
 ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-ax1.legend(loc='lower left', bbox_to_anchor=(0.6, -0.45),fontsize=18,ncol=3)
+ax1.legend(loc='lower left', bbox_to_anchor=(0.625, -0.45),fontsize=18,ncol=3)
 plt.savefig('vary_p_ts2.png', bbox_inches='tight')
 
+#Plot distribution of pivots
+pivots = pivots_by_p[0][0]
+pivots_naive = pivots_by_p[0][1]
+plt.clf()
+grid = np.linspace(0, 1, 101)
+points = [np.max(np.searchsorted(np.sort(np.asarray(pivots)), i, side='right')) / np.float(np.shape(pivots)[0]) for
+              i in np.linspace(0, 1, 101)]
+points_naive = [np.max(np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right')) / np.float(
+        np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
+fig = plt.figure(figsize=(32, 8))
+fig.tight_layout()
+fig.add_subplot(1, 4, 1)
+plt.plot(grid, points, c='blue', marker='^')
+plt.plot(grid, points_naive, c='red', marker='^')
+plt.plot(grid, grid, 'k--')
+plt.title('ECDF of Pivots, p=100')
 
-#fig = plt.figure(figsize=(25, 10))
-#fig.tight_layout()
-#fig.add_subplot(1, 2, 1)
-#plt.plot(task_sparsity_list, random_multitask_sensitivity, c='#D7191C')
-#plt.plot(task_sparsity_list, naive_multitask_sensitivity, c='#2b8cbe')
-#plt.plot(task_sparsity_list, data_splitting_sensitivity, c='#31a354')
-#plt.plot(task_sparsity_list, k_random_lasso_sensitivity, c='#c51b8a')
-#plt.plot([], c='#D7191C', label='Randomized Multi-Task Lasso')
-#plt.plot([], c='#2b8cbe', label='Multi-Task Lasso')
-#plt.plot([], c='#31a354', label='Data Splitting')
-#plt.plot([], c='#c51b8a', label='K Randomized Lassos')
-#plt.plot([], c='#feb24c', label='One Randomized Lasso')
-#plt.legend()
-#plt.tight_layout()
-#plt.ylabel('Average Sensitivity')
-#plt.xlabel('Task Sparsity')
-#plt.title('Sensitivity by Task Sparsity')
-#fig.add_subplot(1, 2, 2)
-#plt.plot(task_sparsity_list, random_multitask_specificity, c='#D7191C')
-#plt.plot(task_sparsity_list, naive_multitask_specificity, c='#2b8cbe')
-#plt.plot(task_sparsity_list, data_splitting_specificity, c='#31a354')
-#plt.plot(task_sparsity_list, k_random_lasso_specificity, c='#c51b8a')
-#plt.plot([], c='#D7191C', label='Randomized Multi-Task Lasso')
-#plt.plot([], c='#2b8cbe', label='Multi-Task Lasso')
-#plt.plot([], c='#31a354', label='Data Splitting')
-#plt.plot([], c='#c51b8a', label='K Randomized Lassos')
-#plt.plot([], c='#feb24c', label='One Randomized Lasso')
-#plt.legend()
-#plt.tight_layout()
-#plt.ylabel('Average Specificity')
-#plt.xlabel('Task Sparsity')
-#plt.title('Specificity by Task Sparsity')
-#plt.savefig('model_selection_compare_weak.png')
+pivots = pivots_by_p[1][0]
+pivots_naive = pivots_by_p[1][1]
+grid = np.linspace(0, 1, 101)
+points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in
+              np.linspace(0, 1, 101)]
+points_naive = [
+        np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i
+        in np.linspace(0, 1, 101)]
+fig.add_subplot(1, 4, 2)
+plt.plot(grid, points, c='blue', marker='^')
+plt.plot(grid, points_naive, c='red', marker='^')
+plt.plot(grid, grid, 'k--')
+plt.title('ECDF of Pivots, p=250')
+
+pivots = pivots_by_p[2][0]
+pivots_naive = pivots_by_p[2][1]
+grid = np.linspace(0, 1, 101)
+points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in
+              np.linspace(0, 1, 101)]
+points_naive = [
+        np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i
+        in np.linspace(0, 1, 101)]
+fig.add_subplot(1, 4, 3)
+plt.plot(grid, points, c='blue', marker='^')
+plt.plot(grid, points_naive, c='red', marker='^')
+plt.plot(grid, grid, 'k--')
+plt.title('ECDF of Pivots, p=500')
+
+pivots = pivots_by_p[3][0]
+pivots_naive = pivots_by_p[3][1]
+grid = np.linspace(0, 1, 101)
+points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in
+              np.linspace(0, 1, 101)]
+points_naive = [
+       np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i
+        in np.linspace(0, 1, 101)]
+fig.add_subplot(1, 4, 4)
+plt.plot(grid, points, c='blue', marker='^')
+plt.plot(grid, points_naive, c='red', marker='^')
+plt.plot(grid, grid, 'k--')
+plt.title('ECDF of Pivots, p=750')
+
+plt.savefig("pivots_by_p.png")
