@@ -264,7 +264,7 @@ common_format(ax3)
 ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-ax1.legend(loc='lower left', bbox_to_anchor=(0.625, -0.45),fontsize=18,ncol=3)
+ax1.legend(loc='lower left', bbox_to_anchor=(0.7, -0.45),fontsize=18,ncol=3)
 plt.savefig('vary_p_ts2.png', bbox_inches='tight')
 
 #Plot distribution of pivots
