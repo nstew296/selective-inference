@@ -663,58 +663,41 @@ def test_coverage(weight,signal,nsim=100):
     single_task_selective_test_error_list2 = []
 
     ntask = 5
-    nsamples= 1000 * np.ones(ntask)
-    p=100
-    global_sparsity=0.9
-    task_sparsity= 0.40
-    sigma=1. * np.ones(ntask)
-    signal_fac=np.array(signal)
-    rhos=0.3 * np.ones(ntask)
-    link="identity"
-
+    nsamples = 1000 * np.ones(ntask)
+    nsamples_test = 1000 * np.ones(ntask)
+    p = 100
+    global_sparsity = 0.9
+    task_sparsity = 0.2
+    sigma = 1. * np.ones(ntask)
+    signal_fac = np.array(signal)
+    rhos = 0.3 * np.ones(ntask)
     nsamples = nsamples.astype(int)
+    nsamples_test = nsamples_test.astype(int)
     signal = np.sqrt(signal_fac * 2 * np.log(p))
 
-    if link == "identity":
-        response_vars, predictor_vars, beta, gaussian_noise = gaussian_multitask_instance(ntask,
-                                                                                           nsamples,
-                                                                                           p,
-                                                                                           global_sparsity,
-                                                                                           task_sparsity,
-                                                                                           sigma,
-                                                                                           signal,
-                                                                                           rhos,
-                                                                                           random_signs=True,
-                                                                                           equicorrelated=True)[:4]
+    response_vars_train, predictor_vars_train, response_vars_test, predictor_vars_test, beta, gaussian_noise = gaussian_multitask_instance(
+        ntask,
+        nsamples,
+        nsamples_test,
+        p,
+        global_sparsity,
+        task_sparsity,
+        sigma,
+        signal,
+        rhos,
+        random_signs=True,
+        equicorrelated=True)[:6]
 
-    if link == "logit":
-        response_vars, predictor_vars, beta, gaussian_noise = logistic_multitask_instance(ntask,
-                                                                                           nsamples,
-                                                                                           p,
-                                                                                           global_sparsity,
-                                                                                           task_sparsity,
-                                                                                           sigma,
-                                                                                           signal,
-                                                                                           rhos,
-                                                                                           random_signs=True,
-                                                                                           equicorrelated=True)[:4]
-
-    if link == "log":
-        response_vars, predictor_vars, beta, gaussian_noise = poisson_multitask_instance(ntask,
-                                                                                          nsamples,
-                                                                                          p,
-                                                                                          global_sparsity,
-                                                                                          task_sparsity,
-                                                                                          sigma,
-                                                                                          signal,
-                                                                                          rhos,
-                                                                                          random_signs=True,
-                                                                                          equicorrelated=True)[:4]
-
+    SIG = np.full((p, p), 0.3)
+    np.fill_diagonal(SIG, 1.0)
+    SNR = beta.T.dot(SIG.dot(beta)) / 1000
+    SNR = np.diag(SNR)
+    print(SNR, "SNR")
+    print(SNR / (1 + SNR), "PVE")
 
     for n in range(nsim):
 
-        if n>=1:
+        if n >= 1:
 
             def _noise(n, df=np.inf):
                 if df == np.inf:
@@ -723,46 +706,37 @@ def test_coverage(weight,signal,nsim=100):
                     sd_t = np.std(tdist.rvs(df, size=50000))
                 return tdist.rvs(df, size=n) / sd_t
 
-            if link == "identity":
-                noise = _noise(nsamples.sum() * 2, np.inf)
-                response_vars = {}
-                nsamples_cumsum = np.cumsum([nsamples[i] * 2 for i in range(ntask)])
-                for i in range(ntask):
-                    if i == 0:
-                        response_vars[i] = (predictor_vars[i].dot(beta[:, i]) + noise[:nsamples_cumsum[i]]) * \
-                                           sigma[i]
-                    else:
-                        response_vars[i] = (predictor_vars[i].dot(beta[:, i]) + noise[
-                                                                                nsamples_cumsum[i - 1]:nsamples_cumsum[
-                                                                                    i]]) * sigma[i]
+            gaussian_noise = _noise(nsamples.sum() + nsamples_test.sum() + p * ntask)
+            response_vars_train = {}
+            response_vars_test = {}
+            nsamples_train_cumsum = np.cumsum([nsamples[i] for i in range(ntask)])
+            nsamples_test_cumsum = np.cumsum([nsamples_test[i] for i in range(ntask)])
 
-            if link == "logit":
-                response_vars = {}
-                pis = {}
-                for i in range(ntask):
-                    pis[i] = predictor_vars[i].dot(beta[:, i]) * sigma[i]
-                    response_vars[i] = np.random.binomial(1, np.exp(pis[i]) / (1.0 + np.exp(pis[i])))
-
-            if link == "log":
-                response_vars = {}
-                pis = {}
-                for i in range(ntask):
-                    pis[i] = predictor_vars[i].dot(beta[:, i]) * sigma[i]
-                    response_vars[i] = np.random.poisson(np.exp(pis[i]))
-
-
-        print(n,"n sim")
-
-        samples = np.arange(np.int(nsamples[0]*2))
-        train = np.random.choice(samples, size=np.int(nsamples[0]), replace=False)
-        test = np.setdiff1d(samples, train)
-
-        response_vars_train = {j: response_vars[j][train] for j in range(ntask)}
-        predictor_vars_train = {j: predictor_vars[j][train] for j in range(ntask)}
-
-        response_vars_test = {j: response_vars[j][test] for j in range(ntask)}
-        predictor_vars_test = {j: predictor_vars[j][test] for j in range(ntask)}
-
+            for i in range(ntask):
+                if i == 0:
+                    response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i] / sigma[i]) + gaussian_noise[
+                                                                                                   :
+                                                                                                   nsamples_train_cumsum[
+                                                                                                       i]]) * sigma[i]
+                    response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i] / sigma[i]) + gaussian_noise[
+                                                                                                 nsamples.sum()
+                                                                                                 :nsamples.sum() +
+                                                                                                  nsamples_test_cumsum[
+                                                                                                      i]]) * \
+                                            sigma[i]
+                else:
+                    response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]) + gaussian_noise[
+                                                                                        nsamples_train_cumsum[
+                                                                                            i - 1]:
+                                                                                        nsamples_train_cumsum[i]]) * \
+                                             sigma[i]
+                    response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i]) + gaussian_noise[
+                                                                                      nsamples.sum() +
+                                                                                      nsamples_test_cumsum[
+                                                                                          i - 1]: nsamples.sum() +
+                                                                                                  nsamples_test_cumsum[
+                                                                                                      i]]) * sigma[
+                                                i]
 
         coverage, length, pivot, sns, spc, err = test_multitask_lasso_hetero(predictor_vars_train,
                                                                          response_vars_train,
@@ -1043,7 +1017,7 @@ def main():
     # plt.savefig("boxplot25.png")
 
     length_path = 8
-    nsim = 50
+    nsim = 100
     lambdamin = 0.25
     lambdamax = 3.5
     #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))

@@ -7,9 +7,14 @@ from selectinf.randomized.tests.test_multitask_lasso import test_coverage
 
 k=5
 #global_sparsity = [0.9167,0.9667,0.9833,0.9888]
-global_sparsity = [0.9375,0.975,0.9875,0.99167]
-task_sparsity = 0.2
+#global_sparsity = [0.9375,0.975,0.9875,0.99167]
+#global_sparsity = [0.875,0.9375,0.9875]
+global_sparsity = [0.83333,0.9167,0.9833]
 #task_sparsity = 0.4
+#task_sparsity = 0.2
+#task_sparsity = 0.2
+task_sparsity = 0.4
+
 
 length_path = 8
 lambdamin = 0.75
@@ -20,8 +25,10 @@ print(feature_weight_list)
 df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
-p_list = [100,250,500,750]
-n_list = [100,100,100,100]
+p_list = [50,100,500]
+#n_list = [100,100,100]
+#p_list = [100,250,500,750]
+n_list = [100,100,100]
 coverage_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 length_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 f1_by_p = {j: [[], [], [], [], [], []] for j in range(len(p_list))}
@@ -278,11 +285,14 @@ points_naive = [np.max(np.searchsorted(np.sort(np.asarray(pivots_naive)), i, sid
         np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
 fig = plt.figure(figsize=(32, 8))
 fig.tight_layout()
-fig.add_subplot(1, 4, 1)
+fig.add_subplot(1, 3, 1)
 plt.plot(grid, points, c='blue', marker='^')
 plt.plot(grid, points_naive, c='red', marker='^')
 plt.plot(grid, grid, 'k--')
-plt.title('ECDF of Pivots, p=100')
+plt.title('ECDF of Pivots, p=50',fontsize=24)
+plt.xticks(fontsize=16)
+plt.yticks(fontsize=16)
+plt.legend(['MTL (0.7) + SI','Naive'],fontsize=24,loc='lower right')
 
 pivots = pivots_by_p[1][0]
 pivots_naive = pivots_by_p[1][1]
@@ -292,11 +302,13 @@ points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.flo
 points_naive = [
         np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i
         in np.linspace(0, 1, 101)]
-fig.add_subplot(1, 4, 2)
+fig.add_subplot(1, 3, 2)
 plt.plot(grid, points, c='blue', marker='^')
 plt.plot(grid, points_naive, c='red', marker='^')
 plt.plot(grid, grid, 'k--')
-plt.title('ECDF of Pivots, p=250')
+plt.title('ECDF of Pivots, p=100',fontsize=24)
+plt.xticks(fontsize=16)
+plt.yticks(fontsize=16)
 
 pivots = pivots_by_p[2][0]
 pivots_naive = pivots_by_p[2][1]
@@ -306,24 +318,13 @@ points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.flo
 points_naive = [
         np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i
         in np.linspace(0, 1, 101)]
-fig.add_subplot(1, 4, 3)
+fig.add_subplot(1, 3, 3)
 plt.plot(grid, points, c='blue', marker='^')
 plt.plot(grid, points_naive, c='red', marker='^')
 plt.plot(grid, grid, 'k--')
-plt.title('ECDF of Pivots, p=500')
+plt.title('ECDF of Pivots, p=500',fontsize=24)
+plt.xticks(fontsize=16)
+plt.yticks(fontsize=16)
 
-pivots = pivots_by_p[3][0]
-pivots_naive = pivots_by_p[3][1]
-grid = np.linspace(0, 1, 101)
-points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / np.float(np.shape(pivots)[0]) for i in
-              np.linspace(0, 1, 101)]
-points_naive = [
-       np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / np.float(np.shape(pivots_naive)[0]) for i
-        in np.linspace(0, 1, 101)]
-fig.add_subplot(1, 4, 4)
-plt.plot(grid, points, c='blue', marker='^')
-plt.plot(grid, points_naive, c='red', marker='^')
-plt.plot(grid, grid, 'k--')
-plt.title('ECDF of Pivots, p=750')
 
-plt.savefig("pivots_by_p.png")
+plt.savefig("pivots_by_p_ts4.png")
