@@ -306,7 +306,7 @@ fig.add_subplot(1, 3, 2)
 plt.plot(grid, points, c='blue', marker='^')
 plt.plot(grid, points_naive, c='red', marker='^')
 plt.plot(grid, grid, 'k--')
-plt.title('ECDF of Pivots, p=100',fontsize=24)
+plt.title('ECDF of Pivots, p=250',fontsize=24)
 plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)
 
