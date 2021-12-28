@@ -83,6 +83,8 @@ responses_test[10] = Y11[test]
 
 glavaan = np.genfromtxt('general_g.csv', delimiter=',')[1:]
 
+print("HI")
+
 ntask = 11
 
 def _noise(n, df=np.inf):
@@ -321,7 +323,7 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
 
 final_estimates_rand1, final_intervals_rand1, selective1_intervals, all_variables_rand1, significant_variables_rand1, final_err_rand1, pred_r_rand1, coefs_var_rand1 = \
     rand_multi_task_selection_inference(predictors_train,predictors_validate,predictors_test, responses_train,
-                                        responses_validate, responses_test,weight_list = np.arange(35,54,0.3),rand_scale=1.0)
+                                        responses_validate, responses_test,weight_list = np.arange(100,3000,100),rand_scale=1.0)
 
 print(final_err_rand1, "Average testing error per task, rand scale 1.0")
 print(pred_r_rand1, "Predictive r, rand scale 1.0")
@@ -375,7 +377,7 @@ predictors_inference = predictors_train[inference,:]
 
 final_estimates_ds50, final_intervals_ds50, ds50_intervals, all_variables_ds50, significant_variables_ds50, final_err_ds50, pred_r_ds50, coefs_var_ds50 = \
     ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
-                                        responses_validate, responses_test, weight_list = np.arange(12,37,0.3),split=0.5)
+                                        responses_validate, responses_test, weight_list = np.arange(50,2000,100),split=0.5)
 
 print(final_err_ds50, "Average testing error per task, data split 50/50")
 print(pred_r_ds50, "Predictive r, data split 50/50")
@@ -429,7 +431,7 @@ print(common_lengths)
 
 final_estimates_rand07, final_intervals_rand07, selective07_intervals, all_variables_rand07, significant_variables_rand07, final_err_rand07, pred_r_rand07, coefs_var_rand07 = \
     rand_multi_task_selection_inference(predictors_train,predictors_validate,predictors_test, responses_train,
-                                        responses_validate, responses_test,weight_list = np.arange(30,52,0.3),rand_scale=0.7)
+                                        responses_validate, responses_test,weight_list = np.arange(150,2000,50),rand_scale=0.7)
 
 print(final_err_rand07, "Average testing error per task, rand scale 0.7")
 print(pred_r_rand07, "Predictive r, rand scale 0.7")
@@ -479,7 +481,7 @@ predictors_inference = predictors_train[inference,:]
 
 final_estimates_ds67, final_intervals_ds67, ds67_intervals, all_variables_ds67, significant_variables_ds67, final_err_ds67, pred_r_ds67, coefs_var_ds67 = \
     ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
-                                        responses_validate, responses_test,weight_list = np.arange(18,40,0.3),split=0.67)
+                                        responses_validate, responses_test,weight_list = np.arange(50,2000,100),split=0.67)
 
 print(final_err_ds67, "Average testing error per task, data split 67/33")
 print(pred_r_ds67, "Predictive r, data split 67/33")
