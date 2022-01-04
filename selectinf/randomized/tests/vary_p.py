@@ -8,12 +8,12 @@ from selectinf.randomized.tests.test_multitask_lasso import test_coverage
 k=5
 #global_sparsity = [0.9167,0.9667,0.9833,0.9888]
 #global_sparsity = [0.9375,0.975,0.9875,0.99167]
-#global_sparsity = [0.875,0.9375,0.9875]
-global_sparsity = [0.83333,0.9667,0.9833]
+global_sparsity = [0.875,0.975,0.9875]
+#global_sparsity = [0.83333,0.9667,0.9833]
 #task_sparsity = 0.4
 #task_sparsity = 0.2
-#task_sparsity = 0.2
-task_sparsity = 0.4
+task_sparsity = 0.2
+#task_sparsity = 0.4
 
 
 length_path = 8
@@ -272,7 +272,7 @@ ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 ax1.legend(loc='lower left', bbox_to_anchor=(0.7, -0.45),fontsize=18,ncol=3)
-plt.savefig('vary_p_ts2.png', bbox_inches='tight')
+plt.savefig('vary_p_n500_ts2.png', bbox_inches='tight')
 
 #Plot distribution of pivots
 pivots = pivots_by_p[0][0]
@@ -327,4 +327,4 @@ plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)
 
 
-plt.savefig("pivots_by_p_ts4.png")
+plt.savefig("pivots_by_p_n500_ts2.png")
