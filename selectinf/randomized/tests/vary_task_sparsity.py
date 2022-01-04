@@ -316,6 +316,7 @@ ax1.legend(loc='lower left', bbox_to_anchor=(0.6, -0.45),fontsize=20,ncol=3)
 plt.savefig('vary_global_sparsity_p100.png', bbox_inches='tight')
 
 
+
 #fig = plt.figure(figsize=(25, 10))
 #fig.tight_layout()
 #fig.add_subplot(1, 2, 1)
