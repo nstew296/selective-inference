@@ -663,8 +663,8 @@ def test_coverage(weight,signal,nsim=100):
     single_task_selective_test_error_list2 = []
 
     ntask = 5
-    nsamples = 1000 * np.ones(ntask)
-    nsamples_test = 1000 * np.ones(ntask)
+    nsamples = 500 * np.ones(ntask)
+    nsamples_test = 500 * np.ones(ntask)
     p = 100
     global_sparsity = 0.9
     task_sparsity = 0.2
@@ -690,7 +690,7 @@ def test_coverage(weight,signal,nsim=100):
 
     SIG = np.full((p, p), 0.3)
     np.fill_diagonal(SIG, 1.0)
-    SNR = beta.T.dot(SIG.dot(beta)) / 1000
+    SNR = beta.T.dot(SIG.dot(beta)) / 500
     SNR = np.diag(SNR)
     print(SNR, "SNR")
     print(SNR / (1 + SNR), "PVE")

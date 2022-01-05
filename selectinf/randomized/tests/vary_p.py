@@ -8,7 +8,7 @@ from selectinf.randomized.tests.test_multitask_lasso import test_coverage
 k=5
 #global_sparsity = [0.9167,0.9667,0.9833,0.9888]
 #global_sparsity = [0.9375,0.975,0.9875,0.99167]
-global_sparsity = [0.875,0.975,0.9875]
+global_sparsity = [0.975,0.9875,0.99167]
 #global_sparsity = [0.83333,0.9667,0.9833]
 #task_sparsity = 0.4
 #task_sparsity = 0.2
@@ -25,7 +25,7 @@ print(feature_weight_list)
 df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
-p_list = [50,250,500]
+p_list = [250,500,750]
 #n_list = [100,100,100]
 #p_list = [100,250,500,750]
 n_list = [100,100,100]
