@@ -51,7 +51,7 @@ for j in range(len(p_list)):
         print((i,j),"(i,j)")
         weight = [feature_weight_list[i]]*7
         print(weight)
-        sims = test_coverage(weight,[1.0,3.0],p_list[j],task_sparsity,global_sparsity[j],nsim=1)
+        sims = test_coverage(weight,[1.0,3.0],p_list[j],task_sparsity,global_sparsity[j],nsim=5)
         selective_error.append(sims[31])
         selective_error2.append(sims[32])
         naive_error.append(sims[33])
