@@ -42,6 +42,8 @@ class multi_task_lasso():
          self.initial_subgrads,
          penalty_weight) = self._solve_multitask_problem(perturbations=perturbations)
 
+        #print(self.initial_subgrads)
+
         ##setting up some initial objects to form our K.K.T map which loops over the K regression tasks
 
         active_signs = np.zeros((p, self.ntask))
@@ -420,6 +422,7 @@ class multi_task_lasso():
             solution_current = self._solve_randomized_problem(penalty=penalty_current)
 
             beta = solution_current[0].T
+
 
             if np.sum(np.fabs(beta_prev - beta)) < atol:
                 break

@@ -8,7 +8,7 @@ from selectinf.randomized.tests.test_multitask_lasso import test_coverage
 k=5
 #global_sparsity = [0.9167,0.9667,0.9833,0.9888]
 #global_sparsity = [0.9375,0.975,0.9875,0.99167]
-global_sparsity = [0.875,0.95833,0.975]
+global_sparsity = [0.875,0.95,0.975,0.9875]
 #global_sparsity = [0.83333,0.9667,0.9833]
 #task_sparsity = 0.4
 #task_sparsity = 0.2
@@ -25,7 +25,7 @@ print(feature_weight_list)
 df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
-p_list = [100,300,500]
+p_list = [100,250,500,1000]
 #n_list = [100,100,100]
 #p_list = [100,250,500,750]
 n_list = [100,100,100]
@@ -289,7 +289,7 @@ fig.add_subplot(1, 3, 1)
 plt.plot(grid, points, c='blue', marker='^')
 plt.plot(grid, points_naive, c='red', marker='^')
 plt.plot(grid, grid, 'k--')
-plt.title('ECDF of Pivots, p=50',fontsize=24)
+plt.title('ECDF of Pivots, p=100',fontsize=24)
 plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)
 plt.legend(['MTL (0.7) + SI','Naive'],fontsize=24,loc='lower right')
