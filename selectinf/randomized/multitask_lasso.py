@@ -343,7 +343,12 @@ class multi_task_lasso():
 
         observed_targets = []
         cov_targets = np.array([])
-        crosscov_target_scores = np.array([])
+        selected = np.array([])
+        full = np.array([])
+        cov = np.array([])
+
+        tasks = np.arange(self.ntask)
+        cum_sum_i = 0
 
         for i in range(self.ntask):
 
@@ -360,8 +365,6 @@ class multi_task_lasso():
             cov_target = np.linalg.inv(Qfeat)
             _score_linear = -Xfeat.T.dot(W[:, None] * X).T
 
-            crosscov_target_score = _score_linear.dot(cov_target)
-
             if dispersions is None:  # use Pearson's X^2
                 dispersion = ((y - self.loglikes[i].saturated_loss.mean_function(
                     Xfeat.dot(observed_target))) ** 2 / W).sum() / (n - Xfeat.shape[1])
@@ -369,10 +372,35 @@ class multi_task_lasso():
                 dispersion = dispersions[i]
 
             observed_targets.extend(observed_target)
-            crosscov_target_scores = block_diag(crosscov_target_scores, crosscov_target_score.T * dispersion)
             cov_targets = block_diag(cov_targets, cov_target * dispersion)
+            full = block_diag(full,X)
+            selected = block_diag(selected,Xfeat)
+            cov = block_diag(cov,dispersion*np.identity(len(y)))
 
-        return np.asarray(observed_targets), cov_targets[1:, :], crosscov_target_scores[1:, :]
+
+            cum_sum_j = 0
+            for j in tasks[tasks<i]:
+                X_j, y_j = self.loglikes[j].data
+                cov_ij = (1./(np.shape(X)[0]-np.shape(X)[1]))*np.inner(y-X.dot(np.linalg.pinv(X).dot(y)),y_j-X_j.dot(np.linalg.pinv(X_j).dot(y_j)))
+                print(cov_ij)
+                cov[1 + len(y)*i:1 + len(y)*(i+1):,len(y)*j:len(y)*(j+1)] = cov_ij * np.identity(len(y))
+
+                features_j = self._active[:, j]
+                num_active_j = np.sum(features_j)
+                X_j_feat = X_j[:, features_j]
+                cov_target_ij = cov_ij*np.linalg.pinv(Xfeat).dot(np.linalg.pinv(X_j_feat).T)
+                cov_targets[1+cum_sum_i:1+cum_sum_i+np.sum(features),cum_sum_j:cum_sum_j+num_active_j] = cov_target_ij
+                cum_sum_j += num_active_j
+
+            cum_sum_i += np.sum(features)
+
+        selected = selected[1:,:]
+        full = full[1:,:]
+        cov = cov[1:,:] + cov[1:,:].T - np.diag(cov[1:,:])
+        cov_targets = cov_targets[1:, :] + cov_targets[1:, :].T - np.diag(cov_targets[1:, :])
+        crosscov_target_scores = -np.linalg.pinv(selected).dot(cov).dot(full)
+
+        return np.asarray(observed_targets), cov_targets, crosscov_target_scores
 
     def _solve_randomized_problem(self,
                                   penalty,
