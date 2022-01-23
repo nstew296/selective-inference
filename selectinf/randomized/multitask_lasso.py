@@ -382,7 +382,6 @@ class multi_task_lasso():
             for j in tasks[tasks<i]:
                 X_j, y_j = self.loglikes[j].data
                 cov_ij = (1./(np.shape(X)[0]-np.shape(X)[1]))*np.inner(y-X.dot(np.linalg.pinv(X).dot(y)),y_j-X_j.dot(np.linalg.pinv(X_j).dot(y_j)))
-                print(cov_ij)
                 cov[1 + len(y)*i:1 + len(y)*(i+1):,len(y)*j:len(y)*(j+1)] = cov_ij * np.identity(len(y))
 
                 features_j = self._active[:, j]
