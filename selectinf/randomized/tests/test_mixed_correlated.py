@@ -4,11 +4,12 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from scipy.stats import norm as ndist
+from scipy.linalg import block_diag
 from scipy.stats import t as tdist
 import random
 
 from selectinf.randomized.multitask_lasso import multi_task_lasso
-from selectinf.tests.instance import gaussian_multitask_instance
+from selectinf.tests.instance import gaussian_multitask_instance_cor
 from selectinf.tests.instance import logistic_multitask_instance
 from selectinf.tests.instance import poisson_multitask_instance
 from selectinf.randomized.lasso import lasso, selected_targets
@@ -675,14 +676,24 @@ def test_coverage(weight,signal,nsim=10):
     nsamples_test = nsamples_test.astype(int)
     signal = np.sqrt(signal_fac * 2 * np.log(p))
 
-    response_vars_train, predictor_vars_train, response_vars_test, predictor_vars_test, beta, gaussian_noise = gaussian_multitask_instance(
+    Sigma = np.zeros((ntask * nsamples[0], ntask * nsamples[0])) + np.diag(np.ones(ntask*nsamples[0]))
+    tasks = np.arange(ntask)
+    for i in range(ntask):
+        for j in tasks[tasks < i]:
+            cov_ij = np.random.uniform(low=0.15, high=0.40, size=1)
+            Sigma[nsamples[0] * i: nsamples[0] * (i + 1):,
+            nsamples[0] * j:nsamples[0] * (j + 1)] = cov_ij * np.identity(nsamples[0])
+
+    Sigma = Sigma + Sigma.T - np.diag(np.diag(Sigma))
+
+    response_vars_train, predictor_vars_train, response_vars_test, predictor_vars_test, beta, gaussian_noise = gaussian_multitask_instance_cor(
         ntask,
         nsamples,
         nsamples_test,
         p,
         global_sparsity,
         task_sparsity,
-        sigma,
+        Sigma,
         signal,
         rhos,
         random_signs=True,
@@ -699,44 +710,29 @@ def test_coverage(weight,signal,nsim=10):
 
         if n >= 1:
 
-            def _noise(n, df=np.inf):
-                if df == np.inf:
-                    return np.random.standard_normal(n)
-                else:
-                    sd_t = np.std(tdist.rvs(df, size=50000))
-                return tdist.rvs(df, size=n) / sd_t
+            def _noise(n, cov):
+                sample = np.random.multivariate_normal(np.zeros(n),cov)
+                return sample
 
-            gaussian_noise = _noise(nsamples.sum() + nsamples_test.sum() + p * ntask)
+            gaussian_noise_train = _noise(nsamples.sum(), Sigma)
+            gaussian_noise_test = _noise(nsamples_test.sum(), Sigma)
             response_vars_train = {}
             response_vars_test = {}
             nsamples_train_cumsum = np.cumsum([nsamples[i] for i in range(ntask)])
             nsamples_test_cumsum = np.cumsum([nsamples_test[i] for i in range(ntask)])
-
             for i in range(ntask):
                 if i == 0:
-                    response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i] / sigma[i]) + gaussian_noise[
-                                                                                                   :
-                                                                                                   nsamples_train_cumsum[
-                                                                                                       i]]) * sigma[i]
-                    response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i] / sigma[i]) + gaussian_noise[
-                                                                                                 nsamples.sum()
-                                                                                                 :nsamples.sum() +
-                                                                                                  nsamples_test_cumsum[
-                                                                                                      i]]) * \
-                                            sigma[i]
+                    response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]) + gaussian_noise_train[
+                                                                                        :nsamples_train_cumsum[i]])
+                    response_vars_test[i] = (
+                                predictor_vars_test[i].dot(beta[:, i]) + gaussian_noise_test[:nsamples_test_cumsum[i]])
                 else:
-                    response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]) + gaussian_noise[
-                                                                                        nsamples_train_cumsum[
-                                                                                            i - 1]:
-                                                                                        nsamples_train_cumsum[i]]) * \
-                                             sigma[i]
-                    response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i]) + gaussian_noise[
-                                                                                      nsamples.sum() +
-                                                                                      nsamples_test_cumsum[
-                                                                                          i - 1]: nsamples.sum() +
-                                                                                                  nsamples_test_cumsum[
-                                                                                                      i]]) * sigma[
-                                                i]
+                    response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]) + gaussian_noise_train[
+                                                                                        nsamples_train_cumsum[i - 1]:
+                                                                                        nsamples_train_cumsum[i]])
+                    response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i]) + gaussian_noise_test[
+                                                                                      nsamples_test_cumsum[i - 1]:
+                                                                                      nsamples_test_cumsum[i]])
 
         coverage, length, pivot, sns, spc, err = test_multitask_lasso_hetero(predictor_vars_train,
                                                                          response_vars_train,
@@ -1017,8 +1013,8 @@ def main():
     # plt.savefig("boxplot25.png")
 
     length_path = 8
-    nsim = 20
-    lambdamin = 0.25
+    nsim = 50
+    lambdamin = 0.75
     lambdamax = 3.5
     #weights = np.arange(np.log(lambdamin), np.log(lambdamax), (np.log(lambdamax) - np.log(lambdamin)) / (length_path))
     #feature_weight_list = np.exp(weights)

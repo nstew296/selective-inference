@@ -77,6 +77,8 @@ responses_train[10] = Y11[train]
 responses_validate[10] = Y11[validate]
 responses_test[10] = Y11[test]
 
+V = np.genfromtxt('V.csv', delimiter=',')[1:,]
+
 glavaan = np.genfromtxt('general_g.csv', delimiter=',')[1:]
 
 print("HI")
@@ -122,7 +124,7 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
             for i in range(ntask)}
         multi_lasso = multi_task_lasso(loglikes, np.asarray(feature_weight), ridge_terms, randomizers, nfeatures, ntask, None)
         active_signs = multi_lasso.fit(perturbations=perturbations)
-        estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(dispersions=dispersions)
+        estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(V,dispersions=dispersions)
         estimates_dict[weight] = estimate
         coef_var_dict[weight] = np.sqrt(np.diag(observed_info_mean)) / np.abs(estimate)
         intervals_dict[weight] = intervals
@@ -203,13 +205,14 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
                                         response_validate,response_test,weight_list,split=0.5):
 
     sample_sizes = predictor_vars_selection.shape[0]
+    sample_sizes_inference = predictor_vars_inference.shape[0]
     sample_sizes_validate = predictor_vars_validate.shape[0]
     sample_sizes_test = predictor_vars_test.shape[0]
     ridge_terms = np.zeros(ntask)
     nfeatures = predictor_vars_selection.shape[1]
     noise_levels = []
     for i in range(ntask):
-       noise_levels.append(np.sqrt(np.sum(np.asarray(response_selection[i] - predictor_vars_selection.dot(np.linalg.pinv(predictor_vars_selection).dot(response_selection[i])))**2)/(np.int(sample_sizes)-nfeatures-1)))
+       noise_levels.append(np.sqrt(np.sum(np.asarray(response_inference[i] - predictor_vars_inference.dot(np.linalg.pinv(predictor_vars_inference).dot(response_inference[i])))**2)/(sample_sizes_inference-nfeatures-1)))
     dispersions = [noise_levels[i]**2 for i in range(len(noise_levels))]
     randomizers = None
     estimates_dict = {}
@@ -319,7 +322,7 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
 
 final_estimates_rand1, final_intervals_rand1, selective1_intervals, all_variables_rand1, significant_variables_rand1, final_err_rand1, pred_r_rand1, coefs_var_rand1 = \
     rand_multi_task_selection_inference(predictors_train,predictors_validate,predictors_test, responses_train,
-                                        responses_validate, responses_test,weight_list = np.arange(42,60,0.3),rand_scale=1.0)
+                                        responses_validate, responses_test,weight_list = np.arange(46,47,1.0),rand_scale=1.0)
 
 print(final_err_rand1, "Average testing error per task, rand scale 1.0")
 print(pred_r_rand1, "Predictive r, rand scale 1.0")
@@ -329,282 +332,3 @@ print(len(selective1_intervals),"Number selected")
 print(np.sum([len(significant_variables_rand1[i]) for i in range(len(significant_variables_rand1))]),"Sum of significant across tasks")
 
 
-match_length_indx = {}
-start = 0
-for i in range(ntask):
-    match_length_indx[i] = selective1_intervals[start:start+len(all_variables_rand1[i])]
-    start += len(all_variables_rand1[i])
-
-#Predict g
-#Task scores
-task_scores = []
-start = 0
-for i in range(ntask):
-    task_scores.append(predictors_train[:, all_variables_rand1[i]].dot(final_estimates_rand1[start:start + len(all_variables_rand1[i])]))
-    start += len(all_variables_rand1[i])
-
-#Estimate coefficients
-y = np.asarray(glavaan[train])
-observed_target = (np.linalg.pinv(task_scores).T).dot(y)
-#c
-
-#Predicted g
-test_task_scores = []
-start = 0
-for i in range(ntask):
-    test_task_scores.append(predictors_test[:, all_variables_rand1[i]].dot(final_estimates_rand1[start:start + len(all_variables_rand1[i])]))
-    start += len(all_variables_rand1[i])
-test_task_scores = np.asarray(test_task_scores)
-
-pred_g = (test_task_scores.T).dot(observed_target)
-pred_r_general = np.corrcoef(glavaan[test],pred_g)
-print("general pred r, rand scale 1.0",pred_r_general)
-
-#Data splitting
-sample_sizes = predictors_train.shape[0]
-samples = np.arange(np.int(sample_sizes))
-selection = np.random.choice(samples, size=np.int(0.5 * sample_sizes), replace=False)
-inference = np.setdiff1d(samples, selection)
-responses_selection = {j: responses_train[j][selection] for j in range(ntask)}
-predictors_selection = predictors_train[selection,:]
-responses_inference = {j: responses_train[j][inference] for j in range(ntask)}
-predictors_inference = predictors_train[inference,:]
-
-
-final_estimates_ds50, final_intervals_ds50, ds50_intervals, all_variables_ds50, significant_variables_ds50, final_err_ds50, pred_r_ds50, coefs_var_ds50 = \
-    ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
-                                        responses_validate, responses_test, weight_list = np.arange(20,40,0.3),split=0.5)
-
-print(final_err_ds50, "Average testing error per task, data split 50/50")
-print(pred_r_ds50, "Predictive r, data split 50/50")
-print(np.mean(ds50_intervals),"Mean interval length, data split 50/50")
-print(np.std(ds50_intervals), "Sd interval length, data split 50/50")
-print(len(ds50_intervals),"Number selected")
-print(np.sum([len(significant_variables_ds50[i]) for i in range(len(significant_variables_ds50))]),"Sum of significant across tasks")
-
-match_length_indx2 = {}
-start2 = 0
-for i in range(ntask):
-    match_length_indx2[i] = ds50_intervals[start2:start2+len(all_variables_ds50[i])]
-    start2 += len(all_variables_ds50[i])
-
-#Predict g
-#Task scores
-task_scores = []
-start = 0
-for i in range(ntask):
-    task_scores.append(predictors_train[:, all_variables_ds50[i]].dot(final_estimates_ds50[start:start + len(all_variables_ds50[i])]))
-    start += len(all_variables_ds50[i])
-
-#Estimate coefficients
-y = np.asarray(glavaan[train])
-observed_target = (np.linalg.pinv(task_scores).T).dot(y)
-
-#Predicted g
-test_task_scores = []
-start = 0
-for i in range(ntask):
-    test_task_scores.append(predictors_test[:, all_variables_ds50[i]].dot(final_estimates_ds50[start:start + len(all_variables_ds50[i])]))
-    start += len(all_variables_ds50[i])
-test_task_scores = np.asarray(test_task_scores)
-
-pred_g = (test_task_scores.T).dot(observed_target)
-pred_r_general = np.corrcoef(glavaan[test],pred_g)
-print("general pred r, data split 50/50",pred_r_general)
-
-common = {i:np.intersect1d(all_variables_rand1[i],all_variables_ds50[i]) for i in range(ntask)}
-print("common",common)
-common_significant = {i:np.intersect1d(significant_variables_rand1[i],significant_variables_ds50[i]) for i in range(ntask)}
-print("common significant",common_significant)
-common_lengths = []
-for i in range(ntask):
-    for predictor in common[i]:
-        ratio_length = match_length_indx2[i][np.argwhere(all_variables_ds50[i]==predictor)[0][0]]/match_length_indx[i][np.argwhere(all_variables_rand1[i]==predictor)[0][0]]
-        common_lengths.append(ratio_length)
-print(common_lengths)
-
-#-----------------------------------------------------------------
-
-final_estimates_rand07, final_intervals_rand07, selective07_intervals, all_variables_rand07, significant_variables_rand07, final_err_rand07, pred_r_rand07, coefs_var_rand07 = \
-    rand_multi_task_selection_inference(predictors_train,predictors_validate,predictors_test, responses_train,
-                                        responses_validate, responses_test,weight_list = np.arange(40,55,0.3),rand_scale=0.7)
-
-print(final_err_rand07, "Average testing error per task, rand scale 0.7")
-print(pred_r_rand07, "Predictive r, rand scale 0.7")
-print(np.mean(selective07_intervals),"Mean interval length, rand scale 0.7")
-print(np.std(selective07_intervals), "Sd interval length, rand scale 0.7")
-print(np.sum([len(all_variables_rand07[i]) for i in range(len(all_variables_rand07))]),"Sum of selected across tasks")
-print(np.sum([len(significant_variables_rand07[i]) for i in range(len(significant_variables_rand07))]),"Sum of "
-                                                                                                         "significant across tasks")
-match_length_indx = {}
-start = 0
-for i in range(ntask):
-    match_length_indx[i] = selective07_intervals[start:start+len(all_variables_rand07[i])]
-    start += len(all_variables_rand07[i])
-
-#Predict g
-#Task scores
-task_scores = []
-start = 0
-for i in range(ntask):
-    task_scores.append(predictors_train[:, all_variables_rand07[i]].dot(final_estimates_rand07[start:start + len(all_variables_rand07[i])]))
-    start += len(all_variables_rand07[i])
-
-#Estimate coefficients
-y = np.asarray(glavaan[train])
-observed_target = (np.linalg.pinv(task_scores).T).dot(y)
-
-#Predicted g
-test_task_scores = []
-start = 0
-for i in range(ntask):
-    test_task_scores.append(predictors_test[:, all_variables_rand07[i]].dot(final_estimates_rand07[start:start + len(all_variables_rand07[i])]))
-    start += len(all_variables_rand07[i])
-test_task_scores = np.asarray(test_task_scores)
-
-pred_g = (test_task_scores.T).dot(observed_target)
-pred_r_general = np.corrcoef(glavaan[test],pred_g)
-print("general pred r, rand scale 0.7",pred_r_general)
-
-sample_sizes = predictors_train.shape[0]
-samples = np.arange(np.int(sample_sizes))
-selection = np.random.choice(samples, size=np.int(0.67 * sample_sizes), replace=False)
-inference = np.setdiff1d(samples, selection)
-responses_selection = {j: responses_train[j][selection] for j in range(ntask)}
-predictors_selection = predictors_train[selection,:]
-responses_inference = {j: responses_train[j][inference] for j in range(ntask)}
-predictors_inference = predictors_train[inference,:]
-
-final_estimates_ds67, final_intervals_ds67, ds67_intervals, all_variables_ds67, significant_variables_ds67, final_err_ds67, pred_r_ds67, coefs_var_ds67 = \
-    ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
-                                        responses_validate, responses_test,weight_list = np.arange(25,40,0.3),split=0.67)
-
-print(final_err_ds67, "Average testing error per task, data split 67/33")
-print(pred_r_ds67, "Predictive r, data split 67/33")
-print(np.mean(ds67_intervals),"Mean interval length, data split 67/33")
-print(np.std(ds67_intervals), "Sd interval length, data split 67/33")
-print(np.sum([len(all_variables_ds67[i]) for i in range(len(all_variables_ds67))]),"Sum of selected across tasks")
-print(np.sum([len(significant_variables_ds67[i]) for i in range(len(significant_variables_ds67))]),"Sum of significant across tasks")
-
-#Predict g
-#Task scores
-task_scores = []
-start = 0
-for i in range(ntask):
-    task_scores.append(predictors_train[:, all_variables_ds67[i]].dot(final_estimates_ds67[start:start + len(all_variables_ds67[i])]))
-    start += len(all_variables_ds67[i])
-
-#Estimate coefficients
-y = np.asarray(glavaan[train])
-observed_target = (np.linalg.pinv(task_scores).T).dot(y)
-
-#Predicted g
-test_task_scores = []
-start = 0
-for i in range(ntask):
-    test_task_scores.append(predictors_test[:, all_variables_ds67[i]].dot(final_estimates_ds67[start:start + len(all_variables_ds67[i])]))
-    start += len(all_variables_ds67[i])
-test_task_scores = np.asarray(test_task_scores)
-
-pred_g = (test_task_scores.T).dot(observed_target)
-pred_r_general = np.corrcoef(glavaan[test],pred_g)
-print("general pred r, data split 67/33",pred_r_general)
-
-match_length_indx2 = {}
-start2 = 0
-for i in range(ntask):
-    match_length_indx2[i] = ds67_intervals[start2:start2+len(all_variables_ds67[i])]
-    start2 += len(all_variables_ds67[i])
-
-common = {i:np.intersect1d(all_variables_rand07[i],all_variables_ds67[i]) for i in range(ntask)}
-print("common",common)
-common_significant = {i:np.intersect1d(significant_variables_rand07[i],significant_variables_ds67[i]) for i in range(ntask)}
-print("common significant",common_significant)
-common_lengths_67 = []
-for i in range(ntask):
-    for predictor in common[i]:
-        ratio_length = match_length_indx2[i][np.argwhere(all_variables_ds67[i]==predictor)[0][0]]/match_length_indx[i][np.argwhere(all_variables_rand07[i]==predictor)[0][0]]
-        common_lengths_67.append(ratio_length)
-
-def set_box_color(bp, color, linestyle):
-    plt.setp(bp['boxes'], color=color, linestyle=linestyle, linewidth=3.5)
-    plt.setp(bp['whiskers'], color=color, linestyle=linestyle, linewidth=3.5)
-    plt.setp(bp['caps'], color=color, linewidth=2.5)
-    plt.setp(bp['medians'], color=color, linewidth=2.5)
-
-fig = plt.figure(figsize=(24 ,8))
-ax1 = fig.add_subplot(133)
-plt.sca(ax1)
-first = plt.boxplot([common_lengths_67], positions=np.asarray([1]), sym='', widths=0.3)
-second = plt.boxplot([common_lengths], positions=np.asarray([1.6]), sym='', widths=0.3)
-set_box_color(first, '#35978f', 'solid')  # colors are from http://colorbrewer2.org/
-set_box_color(second, '#35978f', '--')
-plt.xlim(0.7, 1.9)
-plt.tight_layout()
-plt.plot([], c='#35978f', label='DS (0.67): MTL (0.7) + SI', linewidth=2.5)
-plt.plot([], c='#35978f', label='DS (0.5): MTL (1.0) + SI', linestyle='--', linewidth=2.5)
-plt.legend()
-plt.ylabel('Ratio of Lengths for Common Parameters', fontsize=20)
-plt.yticks(fontsize=18)
-
-ax1.set_title("Ratio of Interval Lengths", y=1.01 ,fontsize=24)
-ax1.legend(loc='lower left', bbox_to_anchor=(0.08, -.3), fontsize=24)
-ax1.set_xticklabels([])
-ax1.set_xticks([])
-
-def common_format(ax):
-    ax.grid(True, which='both', color='#f0f0f0')
-    ax.set_xlabel('Method', fontsize=20)
-    return ax
-
-common_format(ax1)
-ax1.axhline(y=1.0, color='k', linestyle='--', linewidth=2.5)
-
-
-ax2 = fig.add_subplot(131)
-plt.sca(ax2)
-first = plt.boxplot([selective07_intervals], positions=np.asarray([1]), sym='', widths=0.3)
-second = plt.boxplot([selective1_intervals], positions=np.asarray([1.8]), sym='', widths=0.3)
-fourth = plt.boxplot([ds67_intervals], positions=np.asarray([1.3]), sym='', widths=0.3)
-fifth = plt.boxplot([ds50_intervals], positions=np.asarray([2.1]), sym='', widths=0.3)
-set_box_color(first, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
-set_box_color(second, '#6baed6', '--')
-set_box_color(fourth, '#238443', 'solid')
-set_box_color(fifth, '#31a354', '--')
-plt.xlim(0.7, 2.4)
-plt.tight_layout()
-plt.plot([], c='#2b8cbe', label='MTL (0.7) + SI', linewidth=2.5)
-plt.plot([], c='#238443', label='DS (0.67)', linewidth=2.5)
-plt.plot([], c='#6baed6', label='MTL (1.0) + SI', linestyle='--', linewidth=2.5)
-plt.plot([], c='#31a354', label='DS (0.5)', linestyle='--', linewidth=2.5)
-plt.legend()
-plt.ylabel('Interval Length', fontsize=20)
-plt.yticks(fontsize=18)
-ax2.set_title("Distribution of Interval Lengths", y=1.01 ,fontsize=24)
-ax2.set_xticklabels([])
-ax2.set_xticks([])
-common_format(ax2)
-
-ax3 = fig.add_subplot(132)
-plt.sca(ax3)
-first = plt.boxplot([coefs_var_rand07], positions=np.asarray([1]), sym='', widths=0.3)
-second = plt.boxplot([coefs_var_rand1], positions=np.asarray([1.8]), sym='', widths=0.3)
-fourth = plt.boxplot([coefs_var_ds67], positions=np.asarray([1.3]), sym='', widths=0.3)
-fifth = plt.boxplot([coefs_var_ds50], positions=np.asarray([2.1]), sym='', widths=0.3)
-set_box_color(first, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
-set_box_color(second, '#6baed6', '--')
-set_box_color(fourth, '#238443', 'solid')
-set_box_color(fifth, '#31a354', '--')
-plt.xlim(0.7, 2.4)
-plt.tight_layout()
-plt.ylabel('Coefficient of Variation for Estimated Effects', fontsize=18)
-plt.yticks(fontsize=18)
-
-ax3.set_title("Distribution of Coefficient of Variation", y=1.01 ,fontsize=24)
-ax3.set_xticklabels([])
-ax3.set_xticks([])
-common_format(ax3)
-plt.tight_layout(pad=0.4, w_pad=0.7, h_pad=1.0)
-plt.subplots_adjust(wspace=0.2)
-ax2.legend(loc='lower left', bbox_to_anchor=(0.515, -0.3), fontsize=24,ncol=2)
-plt.savefig('real_data_lengths_cv.png', bbox_inches='tight')

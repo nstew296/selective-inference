@@ -3,6 +3,7 @@ import pandas as pd
 import random
 
 from scipy.stats import t as tdist
+from scipy.linalg import block_diag
 
 _cov_cache = {}
 
@@ -463,6 +464,88 @@ def gaussian_multitask_instance(ntask,
 
     return response_vars_train, predictor_vars_train, response_vars_test, predictor_vars_test, beta * sigma, gaussian_noise[nsamples_train.sum()+nsamples_test.sum():], np.nonzero(active), sigma
 
+
+def gaussian_multitask_instance_cor(ntask,
+                                nsamples_train,
+                                nsamples_test,
+                                p,
+                                global_sparsity,
+                                task_sparsity,
+                                cov,
+                                signal,
+                                rhos, #list of correlation parameters
+                                random_signs=False,
+                                scale=True,
+                                center=True,
+                                equicorrelated=False):
+
+    np.random.seed(5)
+    predictor_vars_train = {i: _design(nsamples_train[i], p, rhos[i], equicorrelated)[0] for i in range(ntask)}
+    predictor_vars_test = {i: _design(nsamples_test[i], p, rhos[i], equicorrelated)[0] for i in range(ntask)}
+
+    if center:
+        predictor_vars_train = {i: predictor_vars_train[i]-predictor_vars_train[i].mean(0)[None, :] for i in range(ntask)}
+        predictor_vars_test = {i: predictor_vars_test[i] - predictor_vars_test[i].mean(0)[None, :] for i in
+                                range(ntask)}
+
+    signal = np.atleast_1d(signal)
+
+    if signal.shape == (1,):
+        beta = float(signal[0]) * np.ones((p,ntask))
+        global_nulls = np.random.choice(p, int(round(global_sparsity * p)), replace=False)
+        beta[global_nulls, :] = np.zeros((ntask,))
+        for i in np.delete(range(p), global_nulls):
+            beta[i, np.random.choice(ntask, int(round(task_sparsity * ntask)), replace=False)] = 0.
+
+    else:
+        beta = np.ones((p,ntask))
+        nsignal = int(round(global_sparsity * p))
+        global_nulls = np.random.choice(p, nsignal, replace=False)
+        beta[global_nulls, :] = np.zeros((ntask,))
+
+        #print(np.delete(range(p), global_nulls))
+        for i in np.delete(range(p), global_nulls):
+            null_positions = np.random.choice(ntask, int(round(task_sparsity * ntask)), replace=False)
+            beta[i, null_positions] = 0.
+            non_null_positions = np.setdiff1d(np.arange(ntask), null_positions)
+            beta[i, non_null_positions] = np.linspace(float(signal[0]), float(signal[1]), num=ntask-null_positions.shape[0])
+
+    if random_signs:
+        beta *= (2 * np.random.binomial(1, 0.5, size=(p,ntask)) - 1.)
+
+    beta /= np.sqrt(nsamples_train)
+
+    if scale:
+        scalings_train = {i: predictor_vars_train[i].std(0) * np.sqrt(nsamples_train[i]) for i in range(ntask)}
+        predictor_vars_train = {i: predictor_vars_train[i]/(scalings_train[i][None, :]) for i in range(ntask)}
+        predictor_vars_test = {i: predictor_vars_test[i] / (scalings_train[i][None, :]) for i in range(ntask)}
+        beta *= np.sqrt(nsamples_train)
+
+    active = np.zeros((p, ntask), np.bool)
+    active[beta != 0] = True
+
+    # noise model
+    def _noise(n, cov):
+        sample = np.random.multivariate_normal(np.zeros(n),cov)
+        return sample
+
+    cov_response_randomization = block_diag(cov, np.identity(p*ntask))
+    gaussian_noise_train = _noise(nsamples_train.sum() + p*ntask, cov_response_randomization)
+    gaussian_noise_test = _noise(nsamples_test.sum(), cov)
+    response_vars_train = {}
+    response_vars_test = {}
+    nsamples_train_cumsum = np.cumsum([nsamples_train[i] for i in range(ntask)])
+    nsamples_test_cumsum = np.cumsum([nsamples_test[i] for i in range(ntask)])
+    for i in range(ntask):
+        if i == 0:
+            response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]) + gaussian_noise_train[:nsamples_train_cumsum[i]])
+            response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i]) + gaussian_noise_test[:nsamples_test_cumsum[i]])
+        else:
+            response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]) + gaussian_noise_train[nsamples_train_cumsum[i-1]:nsamples_train_cumsum[i]])
+            response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i]) + gaussian_noise_test[nsamples_test_cumsum[i - 1]:
+                                                                                nsamples_test_cumsum[i]])
+
+    return response_vars_train, predictor_vars_train, response_vars_test, predictor_vars_test, beta * np.diag(cov)[0], gaussian_noise_train[nsamples_train.sum():], np.nonzero(active)
 
 def logistic_multitask_instance(ntask,
                                 nsamples,

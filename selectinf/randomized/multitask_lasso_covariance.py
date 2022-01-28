@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.linalg import block_diag
 from scipy.stats import norm as ndist
+import random
 
 import regreg.api as rr
 from .randomization import randomization
@@ -40,6 +41,8 @@ class multi_task_lasso():
         (self.initial_solns,
          self.initial_subgrads,
          penalty_weight) = self._solve_multitask_problem(perturbations=perturbations)
+
+        #print(self.initial_subgrads)
 
         ##setting up some initial objects to form our K.K.T map which loops over the K regression tasks
 
@@ -230,9 +233,9 @@ class multi_task_lasso():
         self.omegas = omegas
         self.active_signs = active_signs
 
-        print("check signs of observed opt_states ",
-              ((self.linear_con.dot(observed_opt_states) - self.offset_con) < 0).sum(),
-              self.linear_con.shape[0], opt_vars, observed_opt_states.shape[0], self.seltasks.sum())
+        print(
+        "check signs of observed opt_states ", ((self.linear_con.dot(observed_opt_states) - self.offset_con) < 0).sum(),
+        self.linear_con.shape[0], opt_vars, observed_opt_states.shape[0], self.seltasks.sum())
         print("check  K.K.T. map",
               np.allclose(omegas, self.observed_score_states + self.opt_linears.dot(
                   self.observed_opt_states) + self.opt_offsets, atol=1e-05))
@@ -264,12 +267,12 @@ class multi_task_lasso():
         return cond_mean, cond_cov, cond_precision, logdens_linear
 
     def multitask_inference_hetero(self,
-                                   V,
-                                   level=0.9,
-                                   dispersions=None):
+                                   precision,
+                                   level=0.9):
 
         self._setup_implied_gaussian()
-        observed_target, cov_target, cov_target_score, prec_target = self.multitask_target_hetero(V,dispersions=dispersions)
+        observed_target, cov_target, cov_target_score = self.multitask_target_hetero(precision)
+        prec_target = np.linalg.inv(cov_target)
 
         observed_target = np.atleast_1d(observed_target)
 
@@ -313,8 +316,9 @@ class multi_task_lasso():
                                                   self.offset_con,
                                                   step=1.,
                                                   nstep=10000,
-                                                  min_its=5000,
+                                                  min_its=1000,
                                                   tol=1.e-12)
+        #its 500, tol e-5
 
         final_estimator = cov_target.dot(_prec).dot(observed_target) \
                           + cov_target.dot(target_lin.T.dot(prec_opt.dot(cond_mean - soln))) + C
@@ -335,50 +339,34 @@ class multi_task_lasso():
         return final_estimator, observed_info_mean, Z_scores, pvalues, intervals
 
     def multitask_target_hetero(self,
-                                V,
-                                dispersions=None):
+                                precision):
 
-        observed_targets = []
-        cov_targets = np.array([])
-        prec_targets = np.array([])
-        crosscov_target_scores = np.array([])
-
+        response = np.array([])
+        selected = np.array([])
+        full = np.array([])
         for i in range(self.ntask):
 
-            print(i)
-
             X, y = self.loglikes[i].data
-            n, p = X.shape
             features = self._active[:, i]
-            W = self.loglikes[i].saturated_loss.hessian(X.dot(self.beta_bar[:, i]))
-
             Xfeat = X[:, features]
-            Vfeat = V[:, features]
-            Qfeat = Xfeat.T.dot(W[:, None] * Xfeat)
 
-            observed_target = np.linalg.pinv(Xfeat).dot(y)
+            response = np.append(response,y)
+            full = block_diag(full,X)
+            selected = block_diag(selected,Xfeat)
 
-            cov_target = np.linalg.inv(Qfeat)
-            _score_linear = -Xfeat.T.dot(W[:, None] * X).T
 
-            crosscov_target_score = _score_linear.dot(cov_target)
+        selected = selected[1:,:]
+        full = full[1:,:]
+        cov_targets = np.linalg.inv(selected.T.dot(precision).dot(selected))
+        observed_targets = cov_targets.dot(selected.T.dot(precision).dot(response))
+        crosscov_target_scores = -cov_targets.dot(selected.T.dot(full))
 
-            if dispersions is None:  # use Pearson's X^2
-                dispersion = ((y - self.loglikes[i].saturated_loss.mean_function(
-                    Xfeat.dot(observed_target))) ** 2 / W).sum() / (n - Xfeat.shape[1])
-            else:
-                dispersion = dispersions[i]
-
-            observed_targets.extend(Vfeat.dot(observed_target))
-            crosscov_target_scores = block_diag(crosscov_target_scores, Vfeat.dot(crosscov_target_score.T * dispersion))
-            cov_targets = block_diag(cov_targets, Vfeat.dot(cov_target * dispersion).dot(Vfeat.T))
-            prec_targets = block_diag(prec_targets, np.linalg.inv(Vfeat.dot(cov_target * dispersion).dot(Vfeat.T)))
-
-        return np.asarray(observed_targets), cov_targets[1:, :], crosscov_target_scores[1:, :], prec_targets[1:, :]
+        return np.asarray(observed_targets), cov_targets, crosscov_target_scores
 
     def _solve_randomized_problem(self,
                                   penalty,
                                   solve_args={'tol': 1.e-12, 'min_its': 50}):
+        #toll e-12
 
         quad_list = [rr.identity_quadratic(self.ridge_terms[i],
                                            0,
@@ -396,7 +384,7 @@ class multi_task_lasso():
 
         return initial_solns, initial_subgrads
 
-    def _solve_multitask_problem(self, perturbations=None, num_iter=1000, atol=1.e-5):
+    def _solve_multitask_problem(self, perturbations=None, num_iter=1000, atol=1.e-3):
 
         if perturbations is not None:
             self._initial_omega = perturbations
@@ -423,6 +411,7 @@ class multi_task_lasso():
             solution_current = self._solve_randomized_problem(penalty=penalty_current)
 
             beta = solution_current[0].T
+
 
             if np.sum(np.fabs(beta_prev - beta)) < atol:
                 break
