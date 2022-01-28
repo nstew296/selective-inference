@@ -77,7 +77,9 @@ responses_train[10] = Y11[train]
 responses_validate[10] = Y11[validate]
 responses_test[10] = Y11[test]
 
-V = np.genfromtxt('V.csv', delimiter=',')[1:,]
+print("here")
+
+V = np.genfromtxt('V.csv', delimiter=',')[1:,:]
 
 glavaan = np.genfromtxt('general_g.csv', delimiter=',')[1:]
 
