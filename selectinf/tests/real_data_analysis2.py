@@ -6,7 +6,7 @@ from scipy.stats import t as tdist
 from scipy.stats import norm as ndist
 import regreg.api as rr
 from selectinf.randomized.randomization import randomization
-from selectinf.randomized.multitask_lasso import multi_task_lasso
+from selectinf.randomized.multitask_lasso_pcr import multi_task_lasso
 np.random.seed(5)
 
 responses_train = {}
@@ -15,6 +15,8 @@ responses_test = {}
 
 X = np.genfromtxt('task1.csv', delimiter=',')[1:,:-1]
 Y1 = np.genfromtxt('task1.csv', delimiter=',')[1:,-1]
+
+print("hi")
 
 samples = np.arange(np.int(np.shape(X)[0]))
 train = np.random.choice(samples, size=np.int(0.8*np.shape(X)[0]), replace=False)
