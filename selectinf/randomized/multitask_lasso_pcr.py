@@ -264,12 +264,12 @@ class multi_task_lasso():
         return cond_mean, cond_cov, cond_precision, logdens_linear
 
     def multitask_inference_hetero(self,
+                                   V,
                                    level=0.9,
                                    dispersions=None):
 
         self._setup_implied_gaussian()
-        observed_target, cov_target, cov_target_score = self.multitask_target_hetero(dispersions=dispersions)
-        prec_target = np.linalg.inv(cov_target)
+        observed_target, cov_target, cov_target_score, prec_target = self.multitask_target_hetero(V,dispersions=dispersions)
 
         observed_target = np.atleast_1d(observed_target)
 
@@ -335,10 +335,12 @@ class multi_task_lasso():
         return final_estimator, observed_info_mean, Z_scores, pvalues, intervals
 
     def multitask_target_hetero(self,
+                                V,
                                 dispersions=None):
 
         observed_targets = []
         cov_targets = np.array([])
+        prec_targets = np.array([])
         crosscov_target_scores = np.array([])
 
         for i in range(self.ntask):
@@ -351,6 +353,7 @@ class multi_task_lasso():
             W = self.loglikes[i].saturated_loss.hessian(X.dot(self.beta_bar[:, i]))
 
             Xfeat = X[:, features]
+            Vfeat = V[:, features]
             Qfeat = Xfeat.T.dot(W[:, None] * Xfeat)
 
             observed_target = np.linalg.pinv(Xfeat).dot(y)
@@ -366,11 +369,12 @@ class multi_task_lasso():
             else:
                 dispersion = dispersions[i]
 
-            observed_targets.extend(observed_target)
-            crosscov_target_scores = block_diag(crosscov_target_scores, crosscov_target_score.T * dispersion)
-            cov_targets = block_diag(cov_targets, cov_target * dispersion)
+            observed_targets.extend(Vfeat.dot(observed_target))
+            crosscov_target_scores = block_diag(crosscov_target_scores, Vfeat.dot(crosscov_target_score.T * dispersion))
+            cov_targets = block_diag(cov_targets, Vfeat.dot(cov_target * dispersion).dot(Vfeat.T))
+            prec_targets = block_diag(prec_targets, np.linalg.inv(Vfeat.dot(cov_target * dispersion).dot(Vfeat.T)))
 
-        return np.asarray(observed_targets), cov_targets[1:, :], crosscov_target_scores[1:, :]
+        return np.asarray(observed_targets), cov_targets[1:, :], crosscov_target_scores[1:, :], prec_targets[1:, :]
 
     def _solve_randomized_problem(self,
                                   penalty,
