@@ -17,7 +17,7 @@ task_sparsity = 0.2
 
 
 length_path = 8
-lambdamin = 3.75
+lambdamin = 1.0
 lambdamax = 4.5
 feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
 print(feature_weight_list)
