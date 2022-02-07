@@ -27,7 +27,7 @@ def test_multitask_lasso_hetero(predictor_vars_train,
     feature_weight = weight * np.ones(p)
     randomizer_scales = randomizer_scale * np.array([sigma[i] for i in range(ntask)])
     initial_omega = np.array(
-        [randomizer_scales[i] * gaussian_noise[(i * p):((i + 1) * p)] for i in range(ntask)]).T
+        [randomizer_scales[i] * gaussian_noise[p*i:p*(i+1)] for i in range(ntask)]).T
 
     if link == "identity":
         try:
@@ -431,8 +431,7 @@ def test_single_task_lasso_posi_hetero(predictor_vars_train,
                                            ridge_term=0.,
                                            randomizer_scale=randomizer_scale)
 
-        initial_omega = np.array(
-            [randomizer_scale * sigma[i] * gaussian_noise[(i * p):((i + 1) * p)][j] for j in range(p)]).T
+        initial_omega = np.array(randomizer_scale * sigma[i] * gaussian_noise[p*i:p*(i+1)]).T
         signs = single_task_lasso.fit(perturb=initial_omega)
         nonzero = signs != 0
 
@@ -590,29 +589,20 @@ def test_coverage(weight, signal, p, ts, gs, nsim=100):
 
             for i in range(ntask):
                 if i == 0:
-                    response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i] / sigma[i]) + gaussian_noise[
-                                                                                                   :
-                                                                                                   nsamples_train_cumsum[
-                                                                                                       i]]) * sigma[i]
-                    response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i] / sigma[i]) + gaussian_noise[
-                                                                                                 nsamples.sum()
-                                                                                                 :nsamples.sum() +
-                                                                                                  nsamples_test_cumsum[
-                                                                                                      i]]) * \
-                                            sigma[i]
+                    response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i] / sigma[i])
+                                              + gaussian_noise[:nsamples_train_cumsum[i]]) * sigma[i]
+                    response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i] / sigma[i])
+                                             + gaussian_noise[nsamples.sum():nsamples.sum()
+                                                                             + nsamples_test_cumsum[i]]) * sigma[i]
                 else:
-                    response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]) + gaussian_noise[
-                                                                                        nsamples_train_cumsum[
-                                                                                            i - 1]:
-                                                                                        nsamples_train_cumsum[i]]) * \
+                    response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]/ sigma[i])
+                                              + gaussian_noise[nsamples_train_cumsum[i-1]: nsamples_train_cumsum[i]]) * \
                                              sigma[i]
-                    response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i]) + gaussian_noise[
-                                                                                      nsamples.sum() +
-                                                                                      nsamples_test_cumsum[
-                                                                                          i - 1]: nsamples.sum() +
+                    response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i]/ sigma[i]) +
+                                             gaussian_noise[nsamples.sum() + nsamples_test_cumsum[i-1]: nsamples.sum() +
                                                                                                   nsamples_test_cumsum[
-                                                                                                      i]]) * sigma[
-                                                i]
+                                                                                                      i]]) * sigma[i]
+            gaussian_noise = gaussian_noise[nsamples.sum() + nsamples_test.sum():]
 
         print(n, "n sim")
         print(weight, "weight")

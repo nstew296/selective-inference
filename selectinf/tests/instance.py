@@ -431,8 +431,7 @@ def gaussian_multitask_instance(ntask,
     if scale:
         scalings_train = {i: predictor_vars_train[i].std(0) * np.sqrt(nsamples_train[i]) for i in range(ntask)}
         predictor_vars_train = {i: predictor_vars_train[i]/(scalings_train[i][None, :]) for i in range(ntask)}
-        scalings_test = {i: predictor_vars_test[i].std(0) * np.sqrt(nsamples_train[i]) for i in range(ntask)}
-        predictor_vars_test = {i: predictor_vars_test[i] / (scalings_test[i][None, :]) for i in range(ntask)}
+        predictor_vars_test = {i: predictor_vars_test[i] / (scalings_train[i][None, :]) for i in range(ntask)}
         beta *= np.sqrt(nsamples_train)
 
     active = np.zeros((p, ntask), np.bool)

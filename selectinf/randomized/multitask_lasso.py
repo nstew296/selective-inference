@@ -343,8 +343,6 @@ class multi_task_lasso():
 
         for i in range(self.ntask):
 
-            print(i)
-
             X, y = self.loglikes[i].data
             n, p = X.shape
             features = self._active[:, i]
