@@ -22,9 +22,9 @@ df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 sparsity_list = [0.80,0.85,0.9,0.95]
 n_list = [100,100,100,100]
 ##n_list = [5,5,5,20,20]
-coverage_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(sparsity_list))}
-length_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(sparsity_list))}
-f1_by_ts = {j: [[], [], [], [], [], []] for j in range(len(sparsity_list))}
+coverage_by_gs = {j: [[], [], [], [], [], [], []] for j in range(len(sparsity_list))}
+length_by_gs = {j: [[], [], [], [], [], [], []] for j in range(len(sparsity_list))}
+f1_by_gs = {j: [[], [], [], [], [], []] for j in range(len(sparsity_list))}
 
 
 for j in range(len(sparsity_list)):
@@ -123,15 +123,20 @@ for j in range(len(sparsity_list)):
     idx_min_k_random_lasso = np.argmin(single_selective_error)
     idx_min_k_random_lasso2 = np.argmin(single_selective_error2)
 
+    #Convert sensitivity and specificity to true positive and false positive rates
+    #First column gives false positive rate and second column gives true positive rate
     selective_tp_fp_mat = np.asarray(
         [np.asarray([1.0 - np.asarray(selective_specificity)[idx_min_random_multitask, :][n]
                      for n in range(n_list[j])]), np.asarray(selective_sensitivity)[idx_min_random_multitask, :]]).T
+
+    #Use true positive and false positive counts to find f1
+    # f1 = (2TP/(2TP + FP + FN) https://en.wikipedia.org/wiki/F-score
     selective_f1 = np.asarray(
         [2.0 * selective_tp_fp_mat[n, 1] * positive / (2.0 * selective_tp_fp_mat[n, 1] * positive +
                                                        selective_tp_fp_mat[n, 0] * negative + (1.0 -
                                                        selective_tp_fp_mat[n, 1]) * positive) for n in range(n_list[j])])
 
-    f1_by_ts[j][0] = selective_f1
+    f1_by_gs[j][0] = selective_f1
 
     selective2_tp_fp_mat = np.asarray(
         [np.asarray([1.0 - np.asarray(selective_specificity2)[idx_min_random_multitask2, :][n]
@@ -141,7 +146,7 @@ for j in range(len(sparsity_list)):
                                                        selective2_tp_fp_mat[n, 0] * negative + (1.0 -
                                                        selective2_tp_fp_mat[n, 1]) * positive) for n in range(n_list[j])])
 
-    f1_by_ts[j][1] = selective2_f1
+    f1_by_gs[j][1] = selective2_f1
 
     ds_tp_fp_mat = np.asarray(
         [np.asarray([1.0 - np.asarray(ds_specificity)[idx_min_data_splitting, :][n]
@@ -151,7 +156,7 @@ for j in range(len(sparsity_list)):
                                                        ds_tp_fp_mat[n, 0] * negative + (1.0 -
                                                         ds_tp_fp_mat[ n, 1]) * positive) for n in range(n_list[j])])
 
-    f1_by_ts[j][2] = ds_f1
+    f1_by_gs[j][2] = ds_f1
 
     ds2_tp_fp_mat = np.asarray(
         [np.asarray([1.0 - np.asarray(ds_specificity2)[idx_min_data_splitting2, :][n]
@@ -162,7 +167,7 @@ for j in range(len(sparsity_list)):
                                                                                  ds2_tp_fp_mat[n, 1]) * positive) for n
          in range(n_list[j])])
 
-    f1_by_ts[j][3] = ds2_f1
+    f1_by_gs[j][3] = ds2_f1
 
     single_task_tp_fp_mat = np.asarray(
         [np.asarray([1.0 - np.asarray(single_task_specificity)[idx_min_k_random_lasso, :][n]
@@ -173,7 +178,7 @@ for j in range(len(sparsity_list)):
                                                                                  single_task_tp_fp_mat[n, 1]) * positive) for n
          in range(n_list[j])])
 
-    f1_by_ts[j][4] = single_task_f1
+    f1_by_gs[j][4] = single_task_f1
 
     single_task2_tp_fp_mat = np.asarray(
         [np.asarray([1.0 - np.asarray(single_task_specificity2)[idx_min_k_random_lasso2, :][n]
@@ -187,31 +192,31 @@ for j in range(len(sparsity_list)):
          for n
          in range(n_list[j])])
 
-    f1_by_ts[j][5] = single_task2_f1
+    f1_by_gs[j][5] = single_task2_f1
 
     print(np.mean(selective_f1),np.mean(selective2_f1),np.mean(ds_f1),np.mean(ds2_f1),np.mean(single_task_f1),np.mean(single_task2_f1),"F1 score means")
 
 
-    coverage_by_ts[j][0] = selective_coverage[idx_min_random_multitask]
-    length_by_ts[j][0] = selective_lengths[idx_min_random_multitask]
+    coverage_by_gs[j][0] = selective_coverage[idx_min_random_multitask]
+    length_by_gs[j][0] = selective_lengths[idx_min_random_multitask]
 
-    coverage_by_ts[j][1] = selective_coverage2[idx_min_random_multitask2]
-    length_by_ts[j][1] = selective_lengths2[idx_min_random_multitask2]
+    coverage_by_gs[j][1] = selective_coverage2[idx_min_random_multitask2]
+    length_by_gs[j][1] = selective_lengths2[idx_min_random_multitask2]
 
-    coverage_by_ts[j][2] = naive_coverage[idx_min_naive_multitask]
-    length_by_ts[j][2] = naive_lengths[idx_min_naive_multitask]
+    coverage_by_gs[j][2] = naive_coverage[idx_min_naive_multitask]
+    length_by_gs[j][2] = naive_lengths[idx_min_naive_multitask]
 
-    coverage_by_ts[j][3] = ds_coverage[idx_min_data_splitting]
-    length_by_ts[j][3] = ds_lengths[idx_min_data_splitting]
+    coverage_by_gs[j][3] = ds_coverage[idx_min_data_splitting]
+    length_by_gs[j][3] = ds_lengths[idx_min_data_splitting]
 
-    coverage_by_ts[j][4] = ds_coverage2[idx_min_data_splitting2]
-    length_by_ts[j][4] = ds_lengths2[idx_min_data_splitting2]
+    coverage_by_gs[j][4] = ds_coverage2[idx_min_data_splitting2]
+    length_by_gs[j][4] = ds_lengths2[idx_min_data_splitting2]
 
-    coverage_by_ts[j][5] = single_selective_coverage[idx_min_k_random_lasso]
-    length_by_ts[j][5] = single_selective_lengths[idx_min_k_random_lasso]
+    coverage_by_gs[j][5] = single_selective_coverage[idx_min_k_random_lasso]
+    length_by_gs[j][5] = single_selective_lengths[idx_min_k_random_lasso]
 
-    coverage_by_ts[j][6] = single_selective_coverage2[idx_min_k_random_lasso2]
-    length_by_ts[j][6] = single_selective_lengths2[idx_min_k_random_lasso2]
+    coverage_by_gs[j][6] = single_selective_coverage2[idx_min_k_random_lasso2]
+    length_by_gs[j][6] = single_selective_lengths2[idx_min_k_random_lasso2]
 
 length = len(sparsity_list)
 def set_box_color(bp, color,linestyle):
@@ -225,12 +230,12 @@ ax1 = fig.add_subplot(131)
 ax2 = fig.add_subplot(132)
 ax3 = fig.add_subplot(133)
 plt.sca(ax1)
-first = plt.boxplot([coverage_by_ts[j][0] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
-second = plt.boxplot([coverage_by_ts[j][1] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.3, sym='', widths=0.3)
-third = plt.boxplot([coverage_by_ts[j][3] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.6, sym='', widths=0.3)
-fourth = plt.boxplot([coverage_by_ts[j][4] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.9, sym='', widths=0.3)
-fifth = plt.boxplot([coverage_by_ts[j][5] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.2, sym='',widths=0.3)
-sixth = plt.boxplot([coverage_by_ts[j][6] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.5, sym='',widths=0.3)
+first = plt.boxplot([coverage_by_gs[j][0] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
+second = plt.boxplot([coverage_by_gs[j][1] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.3, sym='', widths=0.3)
+third = plt.boxplot([coverage_by_gs[j][3] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.6, sym='', widths=0.3)
+fourth = plt.boxplot([coverage_by_gs[j][4] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.9, sym='', widths=0.3)
+fifth = plt.boxplot([coverage_by_gs[j][5] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.2, sym='',widths=0.3)
+sixth = plt.boxplot([coverage_by_gs[j][6] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.5, sym='',widths=0.3)
 set_box_color(first, '#2b8cbe','solid')  # colors are from http://colorbrewer2.org/
 set_box_color(second, '#6baed6','--')
 set_box_color(third, '#238443','solid')
@@ -251,12 +256,12 @@ plt.ylabel('Coverage per Simulation',fontsize=18)
 plt.yticks(fontsize=14)
 
 plt.sca(ax2)
-first = plt.boxplot([length_by_ts[j][0] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
-second = plt.boxplot([length_by_ts[j][1] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 +.3, sym='', widths=0.3)
-third = plt.boxplot([length_by_ts[j][3] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + .6, sym='', widths=0.3)
-fourth = plt.boxplot([length_by_ts[j][4] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.9, sym='', widths=0.3)
-fifth = plt.boxplot([length_by_ts[j][5] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.2, sym='',widths=0.3)
-sixth = plt.boxplot([length_by_ts[j][6] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.5, sym='',widths=0.3)
+first = plt.boxplot([length_by_gs[j][0] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
+second = plt.boxplot([length_by_gs[j][1] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 +.3, sym='', widths=0.3)
+third = plt.boxplot([length_by_gs[j][3] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + .6, sym='', widths=0.3)
+fourth = plt.boxplot([length_by_gs[j][4] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.9, sym='', widths=0.3)
+fifth = plt.boxplot([length_by_gs[j][5] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.2, sym='',widths=0.3)
+sixth = plt.boxplot([length_by_gs[j][6] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.5, sym='',widths=0.3)
 set_box_color(first, '#2b8cbe','solid')  # colors are from http://colorbrewer2.org/
 set_box_color(second, '#6baed6','--')
 set_box_color(third, '#238443','solid')
@@ -270,12 +275,12 @@ plt.ylabel('Interval Length',fontsize=18)
 plt.yticks(fontsize=14)
 
 plt.sca(ax3)
-first = plt.boxplot([f1_by_ts[j][0] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
-second = plt.boxplot([f1_by_ts[j][1] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 +.3, sym='', widths=0.3)
-third = plt.boxplot([f1_by_ts[j][2] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + .6, sym='', widths=0.3)
-fourth = plt.boxplot([f1_by_ts[j][3] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.9, sym='', widths=0.3)
-fifth = plt.boxplot([f1_by_ts[j][4] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.2, sym='',widths=0.3)
-sixth = plt.boxplot([f1_by_ts[j][5] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.5, sym='',widths=0.3)
+first = plt.boxplot([f1_by_gs[j][0] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
+second = plt.boxplot([f1_by_gs[j][1] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 +.3, sym='', widths=0.3)
+third = plt.boxplot([f1_by_gs[j][2] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + .6, sym='', widths=0.3)
+fourth = plt.boxplot([f1_by_gs[j][3] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.9, sym='', widths=0.3)
+fifth = plt.boxplot([f1_by_gs[j][4] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.2, sym='',widths=0.3)
+sixth = plt.boxplot([f1_by_gs[j][5] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.5, sym='',widths=0.3)
 set_box_color(first, '#2b8cbe','solid')  # colors are from http://colorbrewer2.org/
 set_box_color(second, '#6baed6','--')
 set_box_color(third, '#238443','solid')

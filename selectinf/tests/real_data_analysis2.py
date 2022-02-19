@@ -9,86 +9,33 @@ from selectinf.randomized.randomization import randomization
 from selectinf.randomized.multitask_lasso import multi_task_lasso
 np.random.seed(5)
 
+ntask = 11
+
+#Load fmri and cognitive task data
+predictors_train = np.genfromtxt('train.csv', delimiter=',')[1:,:-12]
+predictors_validate = np.genfromtxt('validate.csv', delimiter=',')[1:,:-12]
+predictors_test = np.genfromtxt('test.csv', delimiter=',')[1:,:-12]
+
 responses_train = {}
 responses_validate = {}
 responses_test = {}
 
-X = np.genfromtxt('task1.csv', delimiter=',')[1:,:-1]
-Y1 = np.genfromtxt('task1.csv', delimiter=',')[1:,-1]
+for i in range(ntask):
+    responses_train[i] = np.genfromtxt('train.csv', delimiter=',')[1:,-ntask+i]
+    responses_validate[i] = np.genfromtxt('validate.csv', delimiter=',')[1:,-ntask+i]
+    responses_test[i] = np.genfromtxt('test.csv', delimiter=',')[1:,-ntask+i]
 
-print("hi")
-
-samples = np.arange(np.int(np.shape(X)[0]))
-train = np.random.choice(samples, size=np.int(0.8*np.shape(X)[0]), replace=False)
-validate = np.random.choice(np.setdiff1d(samples, train),size=np.int(0.1*np.shape(X)[0]), replace=False)
-test = np.setdiff1d(np.setdiff1d(samples, train),validate)
-predictors_train = X[train,:]
-predictors_validate = X[validate,:]
-predictors_test = X[test,:]
-responses_train[0] = Y1[train]
-responses_validate[0] = Y1[validate]
-responses_test[0] = Y1[test]
-
-Y2 = np.genfromtxt('task2.csv', delimiter=',')[1:,-1]
-responses_train[1] = Y2[train]
-responses_validate[1] = Y2[validate]
-responses_test[1] = Y2[test]
-
-Y3 = np.genfromtxt('task3.csv', delimiter=',')[1:,-1]
-responses_train[2] = Y3[train]
-responses_validate[2] = Y3[validate]
-responses_test[2] = Y3[test]
-
-Y4 = np.genfromtxt('task4.csv', delimiter=',')[1:,-1]
-responses_train[3] = Y4[train]
-responses_validate[3] = Y4[validate]
-responses_test[3] = Y4[test]
-
-Y5 = np.genfromtxt('task5.csv', delimiter=',')[1:,-1]
-responses_train[4] = Y5[train]
-responses_validate[4] = Y5[validate]
-responses_test[4] = Y5[test]
-
-Y6 = np.genfromtxt('task6.csv', delimiter=',')[1:,-1]
-responses_train[5] = Y6[train]
-responses_validate[5] = Y6[validate]
-responses_test[5] = Y6[test]
-
-Y7 = np.genfromtxt('task7.csv', delimiter=',')[1:,-1]
-responses_train[6] = Y7[train]
-responses_validate[6] = Y7[validate]
-responses_test[6] = Y7[test]
-
-Y8 = np.genfromtxt('task8.csv', delimiter=',')[1:,-1]
-responses_train[7] = Y8[train]
-responses_validate[7] = Y8[validate]
-responses_test[7] = Y8[test]
-
-Y9 = np.genfromtxt('task9.csv', delimiter=',')[1:,-1]
-responses_train[8] = Y9[train]
-responses_validate[8] = Y9[validate]
-responses_test[8] = Y9[test]
-
-Y10 = np.genfromtxt('task10.csv', delimiter=',')[1:,-1]
-responses_train[9] = Y10[train]
-responses_validate[9] = Y10[validate]
-responses_test[9] = Y10[test]
-
-Y11 = np.genfromtxt('task11.csv', delimiter=',')[1:,-1]
-responses_train[10] = Y11[train]
-responses_validate[10] = Y11[validate]
-responses_test[10] = Y11[test]
-
-print("here")
-
+#PC loadings and singular values
 V = np.genfromtxt('V.csv', delimiter=',')[1:,:]
+sv = np.genfromtxt('lambda.csv', delimiter=',')[1:]
 
-glavaan = np.genfromtxt('general_g.csv', delimiter=',')[1:]
+#g factor
+g_train = np.genfromtxt('train.csv', delimiter=',')[1:,-12]
+g_test = np.genfromtxt('test.csv', delimiter=',')[1:,-12]
 
 print("HI")
 
-ntask = 11
-
+#Generate randomization variable
 def _noise(n, df=np.inf):
     if df == np.inf:
         return np.random.standard_normal(n)
@@ -96,8 +43,15 @@ def _noise(n, df=np.inf):
         sd_t = np.std(tdist.rvs(df, size=50000))
     return tdist.rvs(df, size=n) / sd_t
 
+noise = _noise(predictors_train.shape[1])
+
+#Function to perform randomized model selection and conduct post-selection inference
+#Takes as input the training data, validation data, testing data, lambda path (weight list), randomization variable, and randomizer scale
+#Returns the selective MLE, post-selection intervals, and interval lengths
+#Also returns a dictionary of selected features by task, a dictionary of significant features by task, and performance metrics on the testing data
+
 def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_validate,predictor_vars_test,response_train,
-                                        response_validate,response_test,weight_list,rand_scale=0.7):
+                                        response_validate,response_test,weight_list,noise,rand_scale=0.7):
 
     sample_sizes = predictor_vars_train.shape[0]
     sample_sizes_validate = predictor_vars_validate.shape[0]
@@ -110,15 +64,15 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
     active_dict = {}
     error_list = []
 
-    #Post-selection intervals
+    #Setup for post-selection inference
     noise_levels = []
     for i in range(ntask):
         noise_levels.append(np.sqrt(np.sum(np.array(response_train[i] - (predictor_vars_train).dot(
-            np.linalg.pinv((predictor_vars_train)).dot(response_train[i]))) ** 2) / (sample_sizes - nfeatures -1)))
+            np.linalg.pinv((predictor_vars_train)).dot(response_train[i]))) ** 2) / (sample_sizes - nfeatures)))
     dispersions = [noise_levels[i] ** 2 for i in range(len(noise_levels))]
     randomizer_scales = rand_scale * np.asarray([noise_levels[i] for i in range(ntask)])
     randomizers = {i: randomization.isotropic_gaussian((nfeatures,), randomizer_scales[i]) for i in range(ntask)}
-    perturbations = np.array([randomizer_scales[i] * _noise(nfeatures) for i in range(ntask)]).T
+    perturbations = np.array([randomizer_scales[i] * noise for i in range(ntask)]).T
 
     #Perform inference for given tuning parameter
     for weight in weight_list:
@@ -129,12 +83,14 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
         multi_lasso = multi_task_lasso(loglikes, np.asarray(feature_weight), ridge_terms, randomizers, nfeatures, ntask, None)
         active_signs = multi_lasso.fit(perturbations=perturbations)
         estimate, observed_info_mean, Z_scores, pvalues, intervals = multi_lasso.multitask_inference_hetero(dispersions=dispersions)
+
+        #Track the active variables, selective MLE, post-selection intervals, and coefficient of varation for each lambda
         estimates_dict[weight] = estimate
         coef_var_dict[weight] = np.sqrt(np.diag(observed_info_mean)) / np.abs(estimate)
         intervals_dict[weight] = intervals
         active_dict[weight] = active_signs
 
-        #Caculate error on hold out data
+        #Caculate error on validation data for given lambda
         if (active_signs != 0).sum() > 0:
             error = 0
             idx = 0
@@ -143,12 +99,14 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
                 if idx_new == 0:
                     error += np.sqrt(np.sum(np.square(response_validate[j])) / sample_sizes_validate)
                 else:
+                    #If there are no active predictors for task j
                     error += np.sqrt(np.sum(
                         np.square((response_validate[j] - (predictor_vars_validate)[:, (active_signs[:, j] != 0)].dot(
                             estimate[idx:idx + idx_new])))) / sample_sizes_validate)
                 idx = idx + idx_new
 
         else:
+            #If there are no active predictors for any task
             error = 0
             for j in range(ntask):
                 error += np.qrt((np.linalg.norm(response_validate[j], 2) ** 2) / sample_sizes_validate)
@@ -162,7 +120,7 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
     final_intervals = intervals_dict[weight_list[lambda_1se]]
     final_coefs_var = coef_var_dict[weight_list[lambda_1se]]
 
-    #Caculate final error on test set
+    #Caculate final testing error and predictive r on test set
     if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
         final_error = 0
         predictive_r = []
@@ -185,13 +143,16 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
         for j in range(ntask):
             final_error += np.sqrt(np.linalg.norm(response_test[j], 2) ** 2 / sample_sizes_test)
 
+    #Average final testing error by task
     final_avg_error = final_error/ntask
 
+    #Identify intervals that do not cover zero
     all_variables = {}
     significant = [final_intervals[j, 0] > 0 or final_intervals[j, 1] < 0 for j in range(np.shape(final_intervals)[0])]
     significant_variables = {}
     placeholder = 0
     for i in range(ntask):
+        #Identify variables (by task) corresponding to the significant intervals
         active_ = active_dict[weight_list[lambda_1se]][:, i] != 0
         new_placeholder = np.sum(active_)
         all_variables[i] = np.nonzero(active_)[0]
@@ -203,12 +164,11 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
     return(final_estimates, final_intervals,selective_interval_lengths,all_variables,significant_variables,
            final_avg_error,predictive_r,final_coefs_var)
 
-
+#Similar function for data splitting
 def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_inference,predictor_vars_validate,
                                       predictor_vars_test,response_selection,response_inference,
                                         response_validate,response_test,weight_list,split=0.5):
 
-    sample_sizes = predictor_vars_selection.shape[0]
     sample_sizes_inference = predictor_vars_inference.shape[0]
     sample_sizes_validate = predictor_vars_validate.shape[0]
     sample_sizes_test = predictor_vars_test.shape[0]
@@ -216,7 +176,7 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
     nfeatures = predictor_vars_selection.shape[1]
     noise_levels = []
     for i in range(ntask):
-       noise_levels.append(np.sqrt(np.sum(np.asarray(response_inference[i] - predictor_vars_inference.dot(np.linalg.pinv(predictor_vars_inference).dot(response_inference[i])))**2)/(sample_sizes_inference-nfeatures-1)))
+       noise_levels.append(np.sqrt(np.sum(np.asarray(response_inference[i] - predictor_vars_inference.dot(np.linalg.pinv(predictor_vars_inference).dot(response_inference[i])))**2)/(sample_sizes_inference-nfeatures)))
     dispersions = [noise_levels[i]**2 for i in range(len(noise_levels))]
     randomizers = None
     estimates_dict = {}
@@ -283,7 +243,7 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
     final_intervals = intervals_dict[weight_list[lambda_1se]][1:, ]
     final_coefs_var = coef_var_dict[weight_list[lambda_1se]]
 
-    #Caculate final error on test set
+    #Caculate final error and predictive r on test set
     if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
         final_error = 0
         predictive_r = []
@@ -324,21 +284,25 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
     return (final_estimates, final_intervals, ds_interval_lengths, all_variables_ds, significant_variables,
             final_avg_error, predictive_r, final_coefs_var)
 
+#Compare selective inference with 50/50 data split
 final_estimates_rand1, final_intervals_rand1, selective1_intervals, all_variables_rand1, significant_variables_rand1, final_err_rand1, pred_r_rand1, coefs_var_rand1 = \
     rand_multi_task_selection_inference(predictors_train,predictors_validate,predictors_test, responses_train,
-                                        responses_validate, responses_test,weight_list = np.arange(43,50,0.3),rand_scale=1.0)
+                                        responses_validate, responses_test,np.arange(43,50,2.0),noise,rand_scale=1.0)
 
 print(final_err_rand1, "Average testing error per task, rand scale 1.0")
 print(pred_r_rand1, "Predictive r, rand scale 1.0")
 print(np.mean(selective1_intervals),"Mean interval length, rand scale 1.0")
 print(np.std(selective1_intervals), "Sd interval length, rand scale 1.0")
-print(len(selective1_intervals),"Number selected")
-print(np.sum([len(significant_variables_rand1[i]) for i in range(len(significant_variables_rand1))]),"Sum of significant across tasks")
+print(len(selective1_intervals),"Number selected in total (out of p*K)")
+print(np.sum([len(significant_variables_rand1[i]) for i in range(len(significant_variables_rand1))]),"Sum of significant PCs in total (out of p*K)")
+print(significant_variables_rand1,"Significant PCs by task, rand scale 1.0")
 
+#Estimate original coefficients
 running_counter = 0
 original_coef_approx = np.zeros((np.shape(V)[0],ntask))
 for i in range(ntask):
-    original_coef_approx[:,i] = V[:,all_variables_rand1[i]].dot(final_estimates_rand1[running_counter:running_counter+len(all_variables_rand1[i])])
+    singular_values = sv[all_variables_rand1[i]]
+    original_coef_approx[:,i] = V[:,all_variables_rand1[i]].dot(np.divide(final_estimates_rand1[running_counter:running_counter+len(all_variables_rand1[i])],singular_values))
     running_counter += len(all_variables_rand1[i])
 np.savetxt("original_approx1.csv",original_coef_approx,delimiter=",")
 
@@ -348,7 +312,7 @@ for i in range(ntask):
     match_length_indx[i] = selective1_intervals[start:start+len(all_variables_rand1[i])]
     start += len(all_variables_rand1[i])
 
-#Predict g
+#Predict g from 11 task scores
 #Task scores
 task_scores = []
 start = 0
@@ -357,7 +321,7 @@ for i in range(ntask):
     start += len(all_variables_rand1[i])
 
 #Estimate coefficients
-y = np.asarray(glavaan[train])
+y = np.asarray(g_train)
 observed_target = (np.linalg.pinv(task_scores).T).dot(y)
 
 #Predicted g
@@ -369,10 +333,32 @@ for i in range(ntask):
 test_task_scores = np.asarray(test_task_scores)
 
 pred_g = (test_task_scores.T).dot(observed_target)
-pred_r_general = np.corrcoef(glavaan[test],pred_g)
-print("general pred r, rand scale 1.0",pred_r_general)
+pred_r_general = np.corrcoef(g_test,pred_g)
+print("pred r for g using task predictions, rand scale 1.0",pred_r_general)
 
-#Data splitting
+#Predict g with just significant PCs
+all_significant_predictors = np.asarray([])
+for i in range(ntask):
+    all_significant_predictors = np.union1d(all_significant_predictors,significant_variables_rand1[i])
+print(all_significant_predictors)
+all_significant_predictors = np.asarray([np.int(all_significant_predictors[i]) for i in range(len(all_significant_predictors))])
+
+#Estimate coefficients
+X = predictors_train
+y = g_train
+observed_target = np.linalg.pinv(X[:, all_significant_predictors]).dot(y)
+
+#Predicted g
+pred_y = predictors_test[:, all_significant_predictors].dot(observed_target)
+pred_r_general = np.corrcoef(g_test,pred_y)
+print("pred r for g using significant PCs, rand scale 1.0",pred_r_general)
+
+#Estimate original coefficients for g with just significant PCs
+singular_values = sv[all_significant_predictors]
+original_coef_approx_g = V[:,all_significant_predictors].dot(np.divide(observed_target,singular_values))
+np.savetxt("original_coef_approx_g1.csv",original_coef_approx_g,delimiter=",")
+
+#Data splitting 50/50
 sample_sizes = predictors_train.shape[0]
 samples = np.arange(np.int(sample_sizes))
 selection = np.random.choice(samples, size=np.int(0.5 * sample_sizes), replace=False)
@@ -385,14 +371,15 @@ predictors_inference = predictors_train[inference,:]
 
 final_estimates_ds50, final_intervals_ds50, ds50_intervals, all_variables_ds50, significant_variables_ds50, final_err_ds50, pred_r_ds50, coefs_var_ds50 = \
     ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
-                                        responses_validate, responses_test, weight_list = np.arange(20,40,0.3),split=0.5)
+                                        responses_validate, responses_test, weight_list = np.arange(25,35,1.0),split=0.5)
 
 print(final_err_ds50, "Average testing error per task, data split 50/50")
 print(pred_r_ds50, "Predictive r, data split 50/50")
 print(np.mean(ds50_intervals),"Mean interval length, data split 50/50")
 print(np.std(ds50_intervals), "Sd interval length, data split 50/50")
-print(len(ds50_intervals),"Number selected")
-print(np.sum([len(significant_variables_ds50[i]) for i in range(len(significant_variables_ds50))]),"Sum of significant across tasks")
+print(len(ds50_intervals),"Number selected in total")
+print(np.sum([len(significant_variables_ds50[i]) for i in range(len(significant_variables_ds50))]),"Sum of significant PCs in total")
+
 
 match_length_indx2 = {}
 start2 = 0
@@ -409,7 +396,7 @@ for i in range(ntask):
     start += len(all_variables_ds50[i])
 
 #Estimate coefficients
-y = np.asarray(glavaan[train])
+y = np.asarray(g_train)
 observed_target = (np.linalg.pinv(task_scores).T).dot(y)
 
 #Predicted g
@@ -421,7 +408,7 @@ for i in range(ntask):
 test_task_scores = np.asarray(test_task_scores)
 
 pred_g = (test_task_scores.T).dot(observed_target)
-pred_r_general = np.corrcoef(glavaan[test],pred_g)
+pred_r_general = np.corrcoef(g_test,pred_g)
 print("general pred r, data split 50/50",pred_r_general)
 
 common = {i:np.intersect1d(all_variables_rand1[i],all_variables_ds50[i]) for i in range(ntask)}
@@ -436,22 +423,25 @@ for i in range(ntask):
 print(common_lengths)
 
 #-----------------------------------------------------------------
+#Compare selective inference to data splitting 67/33
 
 final_estimates_rand07, final_intervals_rand07, selective07_intervals, all_variables_rand07, significant_variables_rand07, final_err_rand07, pred_r_rand07, coefs_var_rand07 = \
     rand_multi_task_selection_inference(predictors_train,predictors_validate,predictors_test, responses_train,
-                                        responses_validate, responses_test,weight_list = np.arange(43,55,0.3),rand_scale=0.7)
+                                        responses_validate, responses_test,np.arange(41,50,2.0),noise,rand_scale=0.7)
 
 print(final_err_rand07, "Average testing error per task, rand scale 0.7")
 print(pred_r_rand07, "Predictive r, rand scale 0.7")
 print(np.mean(selective07_intervals),"Mean interval length, rand scale 0.7")
 print(np.std(selective07_intervals), "Sd interval length, rand scale 0.7")
-print(np.sum([len(all_variables_rand07[i]) for i in range(len(all_variables_rand07))]),"Sum of selected across tasks")
-print(np.sum([len(significant_variables_rand07[i]) for i in range(len(significant_variables_rand07))]),"Sum of significant across tasks")
+print(np.sum([len(all_variables_rand07[i]) for i in range(len(all_variables_rand07))]),"Sum of selected in total")
+print(np.sum([len(significant_variables_rand07[i]) for i in range(len(significant_variables_rand07))]),"Sum of significant in total")
+print(significant_variables_rand07,"Significant PCs by task")
 
 running_counter = 0
 original_coef_approx = np.zeros((np.shape(V)[0],ntask))
 for i in range(ntask):
-    original_coef_approx[:,i] = V[:,all_variables_rand07[i]].dot(final_estimates_rand07[running_counter:running_counter+len(all_variables_rand07[i])])
+    singular_values = sv[all_variables_rand07[i]]
+    original_coef_approx[:,i] = V[:,all_variables_rand07[i]].dot(np.divide(final_estimates_rand07[running_counter:running_counter+len(all_variables_rand07[i])],singular_values))
     running_counter += len(all_variables_rand07[i])
 np.savetxt("original_approx07.csv",original_coef_approx,delimiter=",")
 
@@ -462,7 +452,7 @@ for i in range(ntask):
     match_length_indx[i] = selective07_intervals[start:start+len(all_variables_rand07[i])]
     start += len(all_variables_rand07[i])
 
-#Predict g
+#Predict g using 11 task scores
 #Task scores
 task_scores = []
 start = 0
@@ -471,7 +461,7 @@ for i in range(ntask):
     start += len(all_variables_rand07[i])
 
 #Estimate coefficients
-y = np.asarray(glavaan[train])
+y = np.asarray(g_train)
 observed_target = (np.linalg.pinv(task_scores).T).dot(y)
 
 #Predicted g
@@ -483,8 +473,30 @@ for i in range(ntask):
 test_task_scores = np.asarray(test_task_scores)
 
 pred_g = (test_task_scores.T).dot(observed_target)
-pred_r_general = np.corrcoef(glavaan[test],pred_g)
-print("general pred r, rand scale 0.7",pred_r_general)
+pred_r_general = np.corrcoef(g_test,pred_g)
+print("pred r for g using task scores rand scale 0.7",pred_r_general)
+
+#Predict g with just significant PCs
+all_significant_predictors = np.asarray([])
+for i in range(ntask):
+    all_significant_predictors = np.union1d(all_significant_predictors,significant_variables_rand07[i])
+print(all_significant_predictors)
+all_significant_predictors = np.asarray([np.int(all_significant_predictors[i]) for i in range(len(all_significant_predictors))])
+
+#Estimate coefficients
+X = predictors_train
+y = g_train
+observed_target = np.linalg.pinv(X[:, all_significant_predictors]).dot(y)
+
+#Predicted g
+pred_y = predictors_test[:, all_significant_predictors].dot(observed_target)
+pred_r_general = np.corrcoef(g_test,pred_y)
+print("pred r for g using significant PCs, rand scale .7",pred_r_general)
+
+#Estimate original coefficients for g with just significant PCs
+singular_values = sv[all_significant_predictors]
+original_coef_approx_g = V[:,all_significant_predictors].dot(np.divide(observed_target,singular_values))
+np.savetxt("original_coef_approx_g07.csv",original_coef_approx_g,delimiter=",")
 
 sample_sizes = predictors_train.shape[0]
 samples = np.arange(np.int(sample_sizes))
@@ -497,7 +509,7 @@ predictors_inference = predictors_train[inference,:]
 
 final_estimates_ds67, final_intervals_ds67, ds67_intervals, all_variables_ds67, significant_variables_ds67, final_err_ds67, pred_r_ds67, coefs_var_ds67 = \
     ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
-                                        responses_validate, responses_test,weight_list = np.arange(25,40,0.3),split=0.67)
+                                        responses_validate, responses_test,weight_list = np.arange(18,38,2.0),split=0.67)
 
 print(final_err_ds67, "Average testing error per task, data split 67/33")
 print(pred_r_ds67, "Predictive r, data split 67/33")
@@ -515,7 +527,7 @@ for i in range(ntask):
     start += len(all_variables_ds67[i])
 
 #Estimate coefficients
-y = np.asarray(glavaan[train])
+y = np.asarray(g_train)
 observed_target = (np.linalg.pinv(task_scores).T).dot(y)
 
 #Predicted g
@@ -527,7 +539,7 @@ for i in range(ntask):
 test_task_scores = np.asarray(test_task_scores)
 
 pred_g = (test_task_scores.T).dot(observed_target)
-pred_r_general = np.corrcoef(glavaan[test],pred_g)
+pred_r_general = np.corrcoef(g_test,pred_g)
 print("general pred r, data split 67/33",pred_r_general)
 
 match_length_indx2 = {}
