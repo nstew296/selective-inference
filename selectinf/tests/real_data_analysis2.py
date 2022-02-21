@@ -287,7 +287,7 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
 #Compare selective inference with 50/50 data split
 final_estimates_rand1, final_intervals_rand1, selective1_intervals, all_variables_rand1, significant_variables_rand1, final_err_rand1, pred_r_rand1, coefs_var_rand1 = \
     rand_multi_task_selection_inference(predictors_train,predictors_validate,predictors_test, responses_train,
-                                        responses_validate, responses_test,np.arange(43,50,2.0),noise,rand_scale=1.0)
+                                        responses_validate, responses_test,np.arange(41,50,0.3),noise,rand_scale=1.0)
 
 print(final_err_rand1, "Average testing error per task, rand scale 1.0")
 print(pred_r_rand1, "Predictive r, rand scale 1.0")
@@ -297,7 +297,7 @@ print(len(selective1_intervals),"Number selected in total (out of p*K)")
 print(np.sum([len(significant_variables_rand1[i]) for i in range(len(significant_variables_rand1))]),"Sum of significant PCs in total (out of p*K)")
 print(significant_variables_rand1,"Significant PCs by task, rand scale 1.0")
 
-#Estimate original coefficients
+#Estimate coefficients in original feature space for each of 11 tasks
 running_counter = 0
 original_coef_approx = np.zeros((np.shape(V)[0],ntask))
 for i in range(ntask):
@@ -312,19 +312,12 @@ for i in range(ntask):
     match_length_indx[i] = selective1_intervals[start:start+len(all_variables_rand1[i])]
     start += len(all_variables_rand1[i])
 
-#Predict g from 11 task scores
-#Task scores
-task_scores = []
-start = 0
-for i in range(ntask):
-    task_scores.append(predictors_train[:, all_variables_rand1[i]].dot(final_estimates_rand1[start:start + len(all_variables_rand1[i])]))
-    start += len(all_variables_rand1[i])
-
-#Estimate coefficients
+#Learn weights for g from 11 task scores
+task_scores = np.genfromtxt('train.csv', delimiter=',')[1:,-11:]
 y = np.asarray(g_train)
-observed_target = (np.linalg.pinv(task_scores).T).dot(y)
+weights = np.linalg.pinv(task_scores).dot(y)
 
-#Predicted g
+#Predict g on testing data using 11 estimated task scores
 test_task_scores = []
 start = 0
 for i in range(ntask):
@@ -332,28 +325,21 @@ for i in range(ntask):
     start += len(all_variables_rand1[i])
 test_task_scores = np.asarray(test_task_scores)
 
-pred_g = (test_task_scores.T).dot(observed_target)
+pred_g = (test_task_scores.T).dot(weights)
 pred_r_general = np.corrcoef(g_test,pred_g)
 print("pred r for g using task predictions, rand scale 1.0",pred_r_general)
 
-#Predict g with just significant PCs
+#Model g with just significant PCs
 all_significant_predictors = np.asarray([])
 for i in range(ntask):
     all_significant_predictors = np.union1d(all_significant_predictors,significant_variables_rand1[i])
 print(all_significant_predictors)
 all_significant_predictors = np.asarray([np.int(all_significant_predictors[i]) for i in range(len(all_significant_predictors))])
 
-#Estimate coefficients
-X = predictors_train
-y = g_train
+X = predictors_test
+y = g_test
 observed_target = np.linalg.pinv(X[:, all_significant_predictors]).dot(y)
 
-#Predicted g
-pred_y = predictors_test[:, all_significant_predictors].dot(observed_target)
-pred_r_general = np.corrcoef(g_test,pred_y)
-print("pred r for g using significant PCs, rand scale 1.0",pred_r_general)
-
-#Estimate original coefficients for g with just significant PCs
 singular_values = sv[all_significant_predictors]
 original_coef_approx_g = V[:,all_significant_predictors].dot(np.divide(observed_target,singular_values))
 np.savetxt("original_coef_approx_g1.csv",original_coef_approx_g,delimiter=",")
@@ -371,7 +357,8 @@ predictors_inference = predictors_train[inference,:]
 
 final_estimates_ds50, final_intervals_ds50, ds50_intervals, all_variables_ds50, significant_variables_ds50, final_err_ds50, pred_r_ds50, coefs_var_ds50 = \
     ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
-                                        responses_validate, responses_test, weight_list = np.arange(25,35,1.0),split=0.5)
+                                        responses_validate, responses_test, weight_list = np.arange(20,30,0.3),split=0.5)
+
 
 print(final_err_ds50, "Average testing error per task, data split 50/50")
 print(pred_r_ds50, "Predictive r, data split 50/50")
@@ -387,19 +374,7 @@ for i in range(ntask):
     match_length_indx2[i] = ds50_intervals[start2:start2+len(all_variables_ds50[i])]
     start2 += len(all_variables_ds50[i])
 
-#Predict g
-#Task scores
-task_scores = []
-start = 0
-for i in range(ntask):
-    task_scores.append(predictors_train[:, all_variables_ds50[i]].dot(final_estimates_ds50[start:start + len(all_variables_ds50[i])]))
-    start += len(all_variables_ds50[i])
-
-#Estimate coefficients
-y = np.asarray(g_train)
-observed_target = (np.linalg.pinv(task_scores).T).dot(y)
-
-#Predicted g
+#Predict g on testing data using 11 estimated task scores
 test_task_scores = []
 start = 0
 for i in range(ntask):
@@ -407,9 +382,9 @@ for i in range(ntask):
     start += len(all_variables_ds50[i])
 test_task_scores = np.asarray(test_task_scores)
 
-pred_g = (test_task_scores.T).dot(observed_target)
+pred_g = (test_task_scores.T).dot(weights)
 pred_r_general = np.corrcoef(g_test,pred_g)
-print("general pred r, data split 50/50",pred_r_general)
+print("pred r for j based on estimated task scores, data split 50/50",pred_r_general)
 
 common = {i:np.intersect1d(all_variables_rand1[i],all_variables_ds50[i]) for i in range(ntask)}
 print("common",common)
@@ -427,7 +402,7 @@ print(common_lengths)
 
 final_estimates_rand07, final_intervals_rand07, selective07_intervals, all_variables_rand07, significant_variables_rand07, final_err_rand07, pred_r_rand07, coefs_var_rand07 = \
     rand_multi_task_selection_inference(predictors_train,predictors_validate,predictors_test, responses_train,
-                                        responses_validate, responses_test,np.arange(41,50,2.0),noise,rand_scale=0.7)
+                                        responses_validate, responses_test,np.arange(41,52,0.3),noise,rand_scale=0.7)
 
 print(final_err_rand07, "Average testing error per task, rand scale 0.7")
 print(pred_r_rand07, "Predictive r, rand scale 0.7")
@@ -437,6 +412,7 @@ print(np.sum([len(all_variables_rand07[i]) for i in range(len(all_variables_rand
 print(np.sum([len(significant_variables_rand07[i]) for i in range(len(significant_variables_rand07))]),"Sum of significant in total")
 print(significant_variables_rand07,"Significant PCs by task")
 
+#Estimate coefficients in original feature space
 running_counter = 0
 original_coef_approx = np.zeros((np.shape(V)[0],ntask))
 for i in range(ntask):
@@ -452,19 +428,7 @@ for i in range(ntask):
     match_length_indx[i] = selective07_intervals[start:start+len(all_variables_rand07[i])]
     start += len(all_variables_rand07[i])
 
-#Predict g using 11 task scores
-#Task scores
-task_scores = []
-start = 0
-for i in range(ntask):
-    task_scores.append(predictors_train[:, all_variables_rand07[i]].dot(final_estimates_rand07[start:start + len(all_variables_rand07[i])]))
-    start += len(all_variables_rand07[i])
-
-#Estimate coefficients
-y = np.asarray(g_train)
-observed_target = (np.linalg.pinv(task_scores).T).dot(y)
-
-#Predicted g
+#Predict g on testing data using 11 estimated task scores
 test_task_scores = []
 start = 0
 for i in range(ntask):
@@ -472,32 +436,26 @@ for i in range(ntask):
     start += len(all_variables_rand07[i])
 test_task_scores = np.asarray(test_task_scores)
 
-pred_g = (test_task_scores.T).dot(observed_target)
+pred_g = (test_task_scores.T).dot(weights)
 pred_r_general = np.corrcoef(g_test,pred_g)
-print("pred r for g using task scores rand scale 0.7",pred_r_general)
+print("pred r for g using estimated task scores rand scale 0.7",pred_r_general)
 
-#Predict g with just significant PCs
+#Model g on testing data with just significant PCs from training
 all_significant_predictors = np.asarray([])
 for i in range(ntask):
     all_significant_predictors = np.union1d(all_significant_predictors,significant_variables_rand07[i])
 print(all_significant_predictors)
 all_significant_predictors = np.asarray([np.int(all_significant_predictors[i]) for i in range(len(all_significant_predictors))])
 
-#Estimate coefficients
-X = predictors_train
-y = g_train
+X = predictors_test
+y = g_test
 observed_target = np.linalg.pinv(X[:, all_significant_predictors]).dot(y)
 
-#Predicted g
-pred_y = predictors_test[:, all_significant_predictors].dot(observed_target)
-pred_r_general = np.corrcoef(g_test,pred_y)
-print("pred r for g using significant PCs, rand scale .7",pred_r_general)
-
-#Estimate original coefficients for g with just significant PCs
 singular_values = sv[all_significant_predictors]
 original_coef_approx_g = V[:,all_significant_predictors].dot(np.divide(observed_target,singular_values))
 np.savetxt("original_coef_approx_g07.csv",original_coef_approx_g,delimiter=",")
 
+#Data splitting 67/33
 sample_sizes = predictors_train.shape[0]
 samples = np.arange(np.int(sample_sizes))
 selection = np.random.choice(samples, size=np.int(0.67 * sample_sizes), replace=False)
@@ -509,8 +467,9 @@ predictors_inference = predictors_train[inference,:]
 
 final_estimates_ds67, final_intervals_ds67, ds67_intervals, all_variables_ds67, significant_variables_ds67, final_err_ds67, pred_r_ds67, coefs_var_ds67 = \
     ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
-                                        responses_validate, responses_test,weight_list = np.arange(18,38,2.0),split=0.67)
+                                        responses_validate, responses_test,weight_list = np.arange(24,35,0.3),split=0.67)
 
+#24-38
 print(final_err_ds67, "Average testing error per task, data split 67/33")
 print(pred_r_ds67, "Predictive r, data split 67/33")
 print(np.mean(ds67_intervals),"Mean interval length, data split 67/33")
@@ -519,18 +478,6 @@ print(np.sum([len(all_variables_ds67[i]) for i in range(len(all_variables_ds67))
 print(np.sum([len(significant_variables_ds67[i]) for i in range(len(significant_variables_ds67))]),"Sum of significant across tasks")
 
 #Predict g
-#Task scores
-task_scores = []
-start = 0
-for i in range(ntask):
-    task_scores.append(predictors_train[:, all_variables_ds67[i]].dot(final_estimates_ds67[start:start + len(all_variables_ds67[i])]))
-    start += len(all_variables_ds67[i])
-
-#Estimate coefficients
-y = np.asarray(g_train)
-observed_target = (np.linalg.pinv(task_scores).T).dot(y)
-
-#Predicted g
 test_task_scores = []
 start = 0
 for i in range(ntask):
@@ -538,7 +485,7 @@ for i in range(ntask):
     start += len(all_variables_ds67[i])
 test_task_scores = np.asarray(test_task_scores)
 
-pred_g = (test_task_scores.T).dot(observed_target)
+pred_g = (test_task_scores.T).dot(weights)
 pred_r_general = np.corrcoef(g_test,pred_g)
 print("general pred r, data split 67/33",pred_r_general)
 
