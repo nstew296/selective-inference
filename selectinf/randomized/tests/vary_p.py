@@ -16,7 +16,7 @@ task_sparsity = 0.2
 #task_sparsity = 0.4
 
 
-length_path = 15
+length_path = 8
 lambdamin = 1.0
 lambdamax = 4.5
 feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
@@ -51,7 +51,7 @@ for j in range(len(p_list)):
         print((i,j),"(i,j)")
         weight = [feature_weight_list[i]]*7
         print(weight)
-        sims = test_coverage(weight,[1.0,3.0],p_list[j],task_sparsity,global_sparsity[j],nsim=1)
+        sims = test_coverage(weight,[1.0,3.0],p_list[j],task_sparsity,global_sparsity[j],nsim=3)
         selective_error.append(sims[31])
         selective_error2.append(sims[32])
         naive_error.append(sims[33])
