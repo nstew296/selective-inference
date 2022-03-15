@@ -67,8 +67,8 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
     #Setup for post-selection inference
     noise_levels = []
     for i in range(ntask):
-        noise_levels.append(np.sqrt(np.sum(np.array(response_train[i] - (predictor_vars_train).dot(
-            np.linalg.pinv((predictor_vars_train)).dot(response_train[i]))) ** 2) / (sample_sizes - nfeatures)))
+        noise_levels.append(np.sqrt(np.sum(np.array(response_train[i] - predictor_vars_train.dot(
+            np.linalg.pinv(predictor_vars_train).dot(response_train[i]))) ** 2) / (sample_sizes - nfeatures)))
     dispersions = [noise_levels[i] ** 2 for i in range(len(noise_levels))]
     randomizer_scales = rand_scale * np.asarray([noise_levels[i] for i in range(ntask)])
     randomizers = {i: randomization.isotropic_gaussian((nfeatures,), randomizer_scales[i]) for i in range(ntask)}
@@ -101,7 +101,7 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
                 else:
                     #If there are no active predictors for task j
                     error += np.sqrt(np.sum(
-                        np.square((response_validate[j] - (predictor_vars_validate)[:, (active_signs[:, j] != 0)].dot(
+                        np.square((response_validate[j] - predictor_vars_validate[:, (active_signs[:, j] != 0)].dot(
                             estimate[idx:idx + idx_new])))) / sample_sizes_validate)
                 idx = idx + idx_new
 
@@ -131,9 +131,9 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
                 final_error += np.sqrt(np.sum(np.square(response_test[j])) / sample_sizes_test)
             else:
                 final_error += np.sqrt(np.sum(
-                    np.square((response_test[j] - (predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
+                    np.square((response_test[j] - predictor_vars_test[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
                         estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new])))) / sample_sizes_test)
-                predictive_r.append(np.corrcoef(response_test[j],(predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
+                predictive_r.append(np.corrcoef(response_test[j],predictor_vars_test[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
                         estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))[0,1])
             idx = idx + idx_new
 
@@ -167,7 +167,7 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
 #Similar function for data splitting
 def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_inference,predictor_vars_validate,
                                       predictor_vars_test,response_selection,response_inference,
-                                        response_validate,response_test,weight_list,split=0.5):
+                                        response_validate,response_test,weight_list):
 
     sample_sizes_inference = predictor_vars_inference.shape[0]
     sample_sizes_validate = predictor_vars_validate.shape[0]
@@ -219,7 +219,7 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
                     error += np.sqrt(np.sum(np.square(response_validate[i])) / sample_sizes_validate)
                 else:
                     error += np.sqrt(np.sum(np.square(
-                    response_validate[i] - (predictor_vars_validate)[:, (active_signs[:, i] != 0)].dot(
+                    response_validate[i] - predictor_vars_validate[:, (active_signs[:, i] != 0)].dot(
                         observed_target))) / sample_sizes_validate)
 
 
@@ -254,9 +254,9 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
                 final_error += np.sqrt(np.sum(np.square(response_test[j])) / sample_sizes_test)
             else:
                 final_error += np.sqrt(np.sum(
-                    np.square((response_test[j] - (predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
+                    np.square((response_test[j] - predictor_vars_test[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
                         estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new])))) / sample_sizes_test)
-                predictive_r.append(np.corrcoef(response_test[j], (predictor_vars_test)[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
+                predictive_r.append(np.corrcoef(response_test[j], predictor_vars_test[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
                         estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))[0,1])
             idx = idx + idx_new
 
@@ -334,20 +334,25 @@ all_significant_predictors = np.asarray([])
 for i in range(ntask):
     all_significant_predictors = np.union1d(all_significant_predictors,significant_variables_rand1[i])
 print(all_significant_predictors)
-all_significant_predictors = np.asarray([np.int(all_significant_predictors[i]) for i in range(len(all_significant_predictors))])
+all_significant_predictors = np.asarray([int(all_significant_predictors[i]) for i in range(len(all_significant_predictors))])
 
-X = predictors_test
-y = g_test
+X = predictors_train
+y = g_train
 observed_target = np.linalg.pinv(X[:, all_significant_predictors]).dot(y)
 
 singular_values = sv[all_significant_predictors]
 original_coef_approx_g = V[:,all_significant_predictors].dot(np.divide(observed_target,singular_values))
 np.savetxt("original_coef_approx_g1.csv",original_coef_approx_g,delimiter=",")
 
+#Predict g on testing data with just significant PCs from training
+pred_g = predictors_test[:, all_significant_predictors].dot(observed_target)
+pred_r_general = np.corrcoef(g_test,pred_g)
+print("pred r for g using only significant PCs, rand scale 1.0",pred_r_general)
+
 #Data splitting 50/50
 sample_sizes = predictors_train.shape[0]
-samples = np.arange(np.int(sample_sizes))
-selection = np.random.choice(samples, size=np.int(0.5 * sample_sizes), replace=False)
+samples = np.arange(int(sample_sizes))
+selection = np.random.choice(samples, size=int(0.5 * sample_sizes), replace=False)
 inference = np.setdiff1d(samples, selection)
 responses_selection = {j: responses_train[j][selection] for j in range(ntask)}
 predictors_selection = predictors_train[selection,:]
@@ -357,7 +362,7 @@ predictors_inference = predictors_train[inference,:]
 
 final_estimates_ds50, final_intervals_ds50, ds50_intervals, all_variables_ds50, significant_variables_ds50, final_err_ds50, pred_r_ds50, coefs_var_ds50 = \
     ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
-                                        responses_validate, responses_test, weight_list = np.arange(20,30,0.3),split=0.5)
+                                        responses_validate, responses_test, weight_list = np.arange(20,30,0.3))
 
 
 print(final_err_ds50, "Average testing error per task, data split 50/50")
@@ -445,20 +450,26 @@ all_significant_predictors = np.asarray([])
 for i in range(ntask):
     all_significant_predictors = np.union1d(all_significant_predictors,significant_variables_rand07[i])
 print(all_significant_predictors)
-all_significant_predictors = np.asarray([np.int(all_significant_predictors[i]) for i in range(len(all_significant_predictors))])
+all_significant_predictors = np.asarray([int(all_significant_predictors[i]) for i in range(len(all_significant_predictors))])
 
-X = predictors_test
-y = g_test
+X = predictors_train
+y = g_train
 observed_target = np.linalg.pinv(X[:, all_significant_predictors]).dot(y)
 
 singular_values = sv[all_significant_predictors]
 original_coef_approx_g = V[:,all_significant_predictors].dot(np.divide(observed_target,singular_values))
 np.savetxt("original_coef_approx_g07.csv",original_coef_approx_g,delimiter=",")
 
+#Predict g on testing data with just significant PCs from training
+
+pred_g = predictors_test[:, all_significant_predictors].dot(observed_target)
+pred_r_general = np.corrcoef(g_test,pred_g)
+print("pred r for g using only significant PCs, rand scale 0.7",pred_r_general)
+
 #Data splitting 67/33
 sample_sizes = predictors_train.shape[0]
-samples = np.arange(np.int(sample_sizes))
-selection = np.random.choice(samples, size=np.int(0.67 * sample_sizes), replace=False)
+samples = np.arange(int(sample_sizes))
+selection = np.random.choice(samples, size=int(0.67 * sample_sizes), replace=False)
 inference = np.setdiff1d(samples, selection)
 responses_selection = {j: responses_train[j][selection] for j in range(ntask)}
 predictors_selection = predictors_train[selection,:]
@@ -467,7 +478,7 @@ predictors_inference = predictors_train[inference,:]
 
 final_estimates_ds67, final_intervals_ds67, ds67_intervals, all_variables_ds67, significant_variables_ds67, final_err_ds67, pred_r_ds67, coefs_var_ds67 = \
     ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
-                                        responses_validate, responses_test,weight_list = np.arange(24,35,0.3),split=0.67)
+                                        responses_validate, responses_test,weight_list = np.arange(24,35,0.3))
 
 #24-38
 print(final_err_ds67, "Average testing error per task, data split 67/33")
@@ -544,12 +555,12 @@ ax2 = fig.add_subplot(131)
 plt.sca(ax2)
 first = plt.boxplot([selective07_intervals], positions=np.asarray([1]), sym='', widths=0.3)
 second = plt.boxplot([selective1_intervals], positions=np.asarray([1.8]), sym='', widths=0.3)
-fourth = plt.boxplot([ds67_intervals], positions=np.asarray([1.3]), sym='', widths=0.3)
-fifth = plt.boxplot([ds50_intervals], positions=np.asarray([2.1]), sym='', widths=0.3)
+third = plt.boxplot([ds67_intervals], positions=np.asarray([1.3]), sym='', widths=0.3)
+fourth = plt.boxplot([ds50_intervals], positions=np.asarray([2.1]), sym='', widths=0.3)
 set_box_color(first, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
 set_box_color(second, '#6baed6', '--')
-set_box_color(fourth, '#238443', 'solid')
-set_box_color(fifth, '#31a354', '--')
+set_box_color(third, '#238443', 'solid')
+set_box_color(fourth, '#31a354', '--')
 plt.xlim(0.7, 2.4)
 plt.tight_layout()
 plt.plot([], c='#2b8cbe', label='MTL (0.7) + SI', linewidth=2.5)
@@ -568,12 +579,12 @@ ax3 = fig.add_subplot(132)
 plt.sca(ax3)
 first = plt.boxplot([coefs_var_rand07], positions=np.asarray([1]), sym='', widths=0.3)
 second = plt.boxplot([coefs_var_rand1], positions=np.asarray([1.8]), sym='', widths=0.3)
-fourth = plt.boxplot([coefs_var_ds67], positions=np.asarray([1.3]), sym='', widths=0.3)
-fifth = plt.boxplot([coefs_var_ds50], positions=np.asarray([2.1]), sym='', widths=0.3)
+third = plt.boxplot([coefs_var_ds67], positions=np.asarray([1.3]), sym='', widths=0.3)
+fourth= plt.boxplot([coefs_var_ds50], positions=np.asarray([2.1]), sym='', widths=0.3)
 set_box_color(first, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
 set_box_color(second, '#6baed6', '--')
-set_box_color(fourth, '#238443', 'solid')
-set_box_color(fifth, '#31a354', '--')
+set_box_color(third, '#238443', 'solid')
+set_box_color(fourth, '#31a354', '--')
 plt.xlim(0.7, 2.4)
 plt.tight_layout()
 plt.ylabel('Coefficient of Variation for Estimated Effects', fontsize=18)

@@ -6,7 +6,7 @@ import pandas as pd
 from selectinf.randomized.tests.test_multitask_lasso import test_coverage
 
 k=5
-p=100
+p=250
 global_sparsity = 0.90
 #task_sparsity = 0.4
 #task_sparsity = 0.2
@@ -18,8 +18,6 @@ lambdamax = 5.0
 #feature_weight_list = np.exp(weights)
 feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
 print(feature_weight_list)
-
-df = pd.DataFrame(columns=['Task Sparsity', 'Method', 'Coverage', 'Length'])
 
 
 sparsity_list = [0.0,0.2,0.4,0.6]
@@ -313,7 +311,7 @@ common_format(ax3)
 ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.2)
 ax1.legend(loc='lower left', bbox_to_anchor=(0.6, -0.45),fontsize=20,ncol=3)
-plt.savefig('vary_task_sparsity_p100.png', bbox_inches='tight')
+plt.savefig('vary_task_sparsity_p250.png', bbox_inches='tight')
 
 
 
