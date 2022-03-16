@@ -442,7 +442,7 @@ print(SNR / (1 + SNR), "PVE")
 length_path = 8
 nsim = 100
 lambdamin = 0.5
-lambdamax = 3.5
+lambdamax = 4.0
 feature_weight_list = np.arange(lambdamin, lambdamax, (lambdamax - lambdamin) / (length_path))
 print(feature_weight_list)
 
