@@ -12,9 +12,8 @@ global_sparsity = [0.9375,0.975,0.9875,0.99375]
 #task_sparsity = 0.4
 task_sparsity = 0.2
 
-length_path = 3
-#lambdamin = 1.0
-lambdamin = 2.0
+length_path = 15
+lambdamin = 1.0
 lambdamax = 4.5
 feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
 print(feature_weight_list)
@@ -22,7 +21,7 @@ print(feature_weight_list)
 p_list = [100,250,500,1000]
 #n_list = [100,100,100]
 #p_list = [100,250,500,750]
-n_list = [2,2,2,2]
+n_list = [100,100,100,100]
 coverage_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 length_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 f1_by_p = {j: [[], [], [], [], [], []] for j in range(len(p_list))}

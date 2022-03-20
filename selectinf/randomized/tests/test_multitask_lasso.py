@@ -11,7 +11,7 @@ from selectinf.randomized.lasso import lasso, selected_targets
 
 
 #Compute intervals, pivots, coverage, sensitivity, specificity, and testing error for post-selection inference
-def test_multitask_lasso_hetero(predictor_vars_train,
+def test_multitask_lasso_selective_inference(predictor_vars_train,
                                 response_vars_train,
                                 predictor_vars_test,
                                 response_vars_test,
@@ -144,7 +144,7 @@ def test_multitask_lasso_hetero(predictor_vars_train,
                                                    0], pivot, sensitivity_inference, specificity_inference, error
 
 #Compute intervals, pivots, coverage, sensitivity, specificity, and testing error for naive inference
-def test_multitask_lasso_naive_hetero(predictor_vars_train,
+def test_multitask_lasso_naive(predictor_vars_train,
                                       response_vars_train,
                                       predictor_vars_test,
                                       response_vars_test,
@@ -404,7 +404,7 @@ def test_multitask_lasso_data_splitting(predictor_vars_train,
 
 
 #Compute intervals, pivots, coverage, sensitivity, specificity, and testing error for single-task post-selection inference
-def test_single_task_lasso_posi_hetero(predictor_vars_train,
+def test_single_task_lasso_selective_inference(predictor_vars_train,
                                        response_vars_train,
                                        predictor_vars_test,
                                        response_vars_test,
@@ -490,66 +490,50 @@ def test_single_task_lasso_posi_hetero(predictor_vars_train,
     return np.asarray(coverage), CIs[1:, 1] - CIs[1:, 0], np.asarray(
         pivot), sensitivity_inference, specificity_inference, error
 
+
+def _noise(n, df=np.inf):
+    if df == np.inf:
+        return np.random.standard_normal(n)
+    else:
+        sd_t = np.std(tdist.rvs(df, size=50000))
+    return tdist.rvs(df, size=n) / sd_t
+
+#################
 #Function to generate simulation data
-#Ttests four methods (selective inference, naive inference, data splitting, and single-task selective inference)
+#Tests four methods (selective inference, naive inference, data splitting, and single-task selective inference)
 #Takes as input a list of lambda values for each method, a signal parameter, the regression dimension p, the task sparsity and global sparsity rates, and the number of simulations
 #Returns the coverage, interval length, sensitivity, and specificity for each method and simulation
 #Returns average testing error across simulations for each method at the specified tuning parameters
-def test_coverage(weight, signal, p, ts, gs, nsim=100):
+#################
+
+
+def test_inference(weight, signal, p, ts, gs, nsim=100):
     np.random.seed(5)
     #Track intervals, pivots, sensitivity, specificity, and testing error for selective inference v1
-    cov = []
-    len = []
-    pivots = []
-    sensitivity_list = []
-    specificity_list = []
-    test_error_list = []
+    cov, len1, pivots, sensitivity_list, specificity_list, test_error_list = ([] for _ in range(6))
 
     # Track intervals, pivots, sensitivity, specificity, and testing error for selective inference v2
-    cov2 = []
-    len2 = []
-    pivots2 = []
-    sensitivity_list2 = []
-    specificity_list2 = []
-    test_error_list2 = []
+    cov2, len2, pivots2, sensitivity_list2, specificity_list2, test_error_list2 = ([] for _ in range(6))
 
     # Track intervals, pivots, sensitivity, specificity, and testing error for naive inference
-    cov_naive = []
-    len_naive = []
-    pivots_naive = []
-    sensitivity_list_naive = []
-    specificity_list_naive = []
-    naive_test_error_list = []
+    cov_naive, len_naive, pivots_naive, sensitivity_list_naive, specificity_list_naive, naive_test_error_list \
+        = ([] for _ in range(6))
 
     # Track intervals, pivots, sensitivity, specificity, and testing error for data splitting v1
-    cov_data_splitting = []
-    len_data_splitting = []
-    pivots_data_splitting = []
-    sensitivity_list_ds = []
-    specificity_list_ds = []
-    data_splitting_test_error_list = []
+    cov_data_splitting, len_data_splitting, pivots_data_splitting, sensitivity_list_ds, specificity_list_ds, \
+        data_splitting_test_error_list = ([] for _ in range(6))
 
     # Track intervals, pivots, sensitivity, specificity, and testing error for data splitting v2
-    cov_data_splitting2 = []
-    len_data_splitting2 = []
-    pivots_data_splitting2 = []
-    sensitivity_list_ds2 = []
-    specificity_list_ds2 = []
-    data_splitting_test_error_list2 = []
+    cov_data_splitting2, len_data_splitting2, pivots_data_splitting2, sensitivity_list_ds2, \
+        specificity_list_ds2, data_splitting_test_error_list2 = ([] for _ in range(6))
 
-    # Track intervals, pivots, sensitivity, specificity, and testing error for single-task selective inference v1
-    cov_single_task_selective = []
-    len_single_task_selective = []
-    sensitivity_list_single_task_selective = []
-    specificity_list_single_task_selective = []
-    single_task_selective_test_error_list = []
+    # Track intervals, sensitivity, specificity, and testing error for single-task selective inference v1
+    cov_single_task_selective, len_single_task_selective, sensitivity_list_single_task_selective, \
+        specificity_list_single_task_selective, single_task_selective_test_error_list = ([] for _ in range(5))
 
-    #Track intervals, pivots, sensitivity, specificity, and testing error for single-task selective inference v2
-    cov_single_task_selective2 = []
-    len_single_task_selective2 = []
-    sensitivity_list_single_task_selective2 = []
-    specificity_list_single_task_selective2 = []
-    single_task_selective_test_error_list2 = []
+    #Track intervals, sensitivity, specificity, and testing error for single-task selective inference v2
+    cov_single_task_selective2, len_single_task_selective2, sensitivity_list_single_task_selective2, \
+        specificity_list_single_task_selective2, single_task_selective_test_error_list2 = ([] for _ in range(5))
 
     #Generate training and testing data
     ntask = 5
@@ -565,18 +549,18 @@ def test_coverage(weight, signal, p, ts, gs, nsim=100):
     nsamples_test = nsamples_test.astype(int)
     signal = np.sqrt(signal_fac * 2 * np.log(p))
 
-    response_vars_train, predictor_vars_train, response_vars_test, predictor_vars_test, beta, gaussian_noise = gaussian_multitask_instance(
-        ntask,
-        nsamples,
-        nsamples_test,
-        p,
-        global_sparsity,
-        task_sparsity,
-        sigma,
-        signal,
-        rhos,
-        random_signs=True,
-        equicorrelated=True)[:6]
+    response_vars_train, predictor_vars_train, response_vars_test, predictor_vars_test, beta, gaussian_noise = \
+        gaussian_multitask_instance(ntask,
+                                    nsamples,
+                                    nsamples_test,
+                                    p,
+                                    global_sparsity,
+                                    task_sparsity,
+                                    sigma,
+                                    signal,
+                                    rhos,
+                                    random_signs=True,
+                                    equicorrelated=True)[:6]
 
     #Print SNR, PVE
     SIG = np.full((p, p), 0.3)
@@ -592,13 +576,6 @@ def test_coverage(weight, signal, p, ts, gs, nsim=100):
         #Compute new responses from the new errors
         if n >= 1:
 
-            def _noise(n, df=np.inf):
-                if df == np.inf:
-                    return np.random.standard_normal(n)
-                else:
-                    sd_t = np.std(tdist.rvs(df, size=50000))
-                return tdist.rvs(df, size=n) / sd_t
-
             gaussian_noise = _noise(nsamples.sum() + nsamples_test.sum() + p * ntask)
             response_vars_train = {}
             response_vars_test = {}
@@ -611,53 +588,53 @@ def test_coverage(weight, signal, p, ts, gs, nsim=100):
                                               + gaussian_noise[:nsamples_train_cumsum[i]]) * sigma[i]
                     response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i] / sigma[i])
                                              + gaussian_noise[nsamples.sum():nsamples.sum()
-                                                                             + nsamples_test_cumsum[i]]) * sigma[i]
+                                             + nsamples_test_cumsum[i]]) * sigma[i]
                 else:
                     response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]/ sigma[i])
-                                              + gaussian_noise[nsamples_train_cumsum[i-1]: nsamples_train_cumsum[i]]) * \
+                                              + gaussian_noise[nsamples_train_cumsum[i-1]: nsamples_train_cumsum[i]]) *\
                                              sigma[i]
                     response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i]/ sigma[i]) +
                                              gaussian_noise[nsamples.sum() + nsamples_test_cumsum[i-1]: nsamples.sum() +
-                                                                                                  nsamples_test_cumsum[
-                                                                                                      i]]) * sigma[i]
+                                             nsamples_test_cumsum[i]]) * sigma[i]
+
             gaussian_noise = gaussian_noise[nsamples.sum() + nsamples_test.sum():]
 
         print(n, "n sim")
         print(weight, "weight")
 
         #Record results for multi-task selective inference v1
-        coverage, length, pivot, sns, spc, err = test_multitask_lasso_hetero(predictor_vars_train,
-                                                                             response_vars_train,
-                                                                             predictor_vars_test,
-                                                                             response_vars_test,
-                                                                             beta,
-                                                                             gaussian_noise,
-                                                                             sigma,
-                                                                             link="identity",
-                                                                             weight=weight[0],
-                                                                             randomizer_scale=0.7)
+        coverage, length, pivot, sns, spc, err = test_multitask_lasso_selective_inference(predictor_vars_train,
+                                                                                          response_vars_train,
+                                                                                          predictor_vars_test,
+                                                                                          response_vars_test,
+                                                                                          beta,
+                                                                                          gaussian_noise,
+                                                                                          sigma,
+                                                                                          link="identity",
+                                                                                          weight=weight[0],
+                                                                                          randomizer_scale=0.7)
 
-        if coverage != []:
+        if list(coverage):
             cov.append(np.mean(np.asarray(coverage)))
-            len.extend(length)
+            len1.extend(length)
             pivots.extend(pivot)
         sensitivity_list.append(sns)
         specificity_list.append(spc)
         test_error_list.append(err)
 
         # Record results for multi-task selective inference v2
-        coverage2, length2, pivot2, sns2, spc2, err2 = test_multitask_lasso_hetero(predictor_vars_train,
-                                                                                   response_vars_train,
-                                                                                   predictor_vars_test,
-                                                                                   response_vars_test,
-                                                                                   beta,
-                                                                                   gaussian_noise,
-                                                                                   sigma,
-                                                                                   link="identity",
-                                                                                   weight=weight[1],
-                                                                                   randomizer_scale=1.0)
+        coverage2, length2, pivot2, sns2, spc2, err2 = test_multitask_lasso_selective_inference(predictor_vars_train,
+                                                                                                response_vars_train,
+                                                                                                predictor_vars_test,
+                                                                                                response_vars_test,
+                                                                                                beta,
+                                                                                                gaussian_noise,
+                                                                                                sigma,
+                                                                                                link="identity",
+                                                                                                weight=weight[1],
+                                                                                                randomizer_scale=1.0)
 
-        if coverage2 != []:
+        if list(coverage2):
             cov2.append(np.mean(np.asarray(coverage2)))
             len2.extend(length2)
             pivots2.extend(pivot2)
@@ -666,17 +643,17 @@ def test_coverage(weight, signal, p, ts, gs, nsim=100):
         test_error_list2.append(err2)
 
         # Record results for naive inference
-        coverage_naive, length_naive, pivot_naive, naive_sensitivity, naive_specificity, naive_err = test_multitask_lasso_naive_hetero(
-            predictor_vars_train,
-            response_vars_train,
-            predictor_vars_test,
-            response_vars_test,
-            beta,
-            sigma,
-            weight[2],
-            link="identity")
+        coverage_naive, length_naive, pivot_naive, naive_sensitivity, naive_specificity, naive_err = \
+            test_multitask_lasso_naive(predictor_vars_train,
+                                       response_vars_train,
+                                       predictor_vars_test,
+                                       response_vars_test,
+                                       beta,
+                                       sigma,
+                                       weight[2],
+                                       link="identity")
 
-        if coverage_naive != []:
+        if list(coverage_naive):
             cov_naive.append(np.mean(np.asarray(coverage_naive)))
             len_naive.extend(length_naive)
             pivots_naive.extend(pivot_naive)
@@ -685,18 +662,18 @@ def test_coverage(weight, signal, p, ts, gs, nsim=100):
         naive_test_error_list.append(naive_err)
 
         # Record results for data splitting v1
-        coverage_data_splitting, length_data_splitting, pivot_data_splitting, sns_ds, spc_ds, ds_error = test_multitask_lasso_data_splitting(
-            predictor_vars_train,
-            response_vars_train,
-            predictor_vars_test,
-            response_vars_test,
-            beta,
-            sigma,
-            weight[3],
-            split=0.67,
-            link="identity")
+        coverage_data_splitting, length_data_splitting, pivot_data_splitting, sns_ds, spc_ds, ds_error = \
+            test_multitask_lasso_data_splitting(predictor_vars_train,
+                                                response_vars_train,
+                                                predictor_vars_test,
+                                                response_vars_test,
+                                                beta,
+                                                sigma,
+                                                weight[3],
+                                                split=0.67,
+                                                link="identity")
 
-        if coverage_data_splitting != []:
+        if list(coverage_data_splitting):
             cov_data_splitting.append(np.mean(np.asarray(coverage_data_splitting)))
             len_data_splitting.extend(length_data_splitting)
             pivots_data_splitting.extend(pivot_data_splitting)
@@ -705,18 +682,18 @@ def test_coverage(weight, signal, p, ts, gs, nsim=100):
         data_splitting_test_error_list.append(ds_error)
 
         # Record results for data splitting v2
-        coverage_data_splitting2, length_data_splitting2, pivot_data_splitting2, sns_ds2, spc_ds2, ds_error2 = test_multitask_lasso_data_splitting(
-            predictor_vars_train,
-            response_vars_train,
-            predictor_vars_test,
-            response_vars_test,
-            beta,
-            sigma,
-            weight[4],
-            split=0.5,
-            link="identity")
+        coverage_data_splitting2, length_data_splitting2, pivot_data_splitting2, sns_ds2, spc_ds2, ds_error2 = \
+            test_multitask_lasso_data_splitting(predictor_vars_train,
+                                                response_vars_train,
+                                                predictor_vars_test,
+                                                response_vars_test,
+                                                beta,
+                                                sigma,
+                                                weight[4],
+                                                split=0.5,
+                                                link="identity")
 
-        if coverage_data_splitting2 != []:
+        if list(coverage_data_splitting2):
             cov_data_splitting2.append(np.mean(np.asarray(coverage_data_splitting2)))
             len_data_splitting2.extend(length_data_splitting2)
             pivots_data_splitting2.extend(pivot_data_splitting2)
@@ -725,19 +702,19 @@ def test_coverage(weight, signal, p, ts, gs, nsim=100):
         data_splitting_test_error_list2.append(ds_error2)
 
         # Record results for single-task selective inference v1
-        coverage_single_task_selective, length_single_task_selective, pivot_single_task_selective, sns_single_task, spc_single_task, err_single_selective = test_single_task_lasso_posi_hetero(
-            predictor_vars_train,
-            response_vars_train,
-            predictor_vars_test,
-            response_vars_test,
-            beta,
-            gaussian_noise,
-            sigma,
-            weight[5],
-            randomizer_scale=0.7,
-            link="identity")
+        coverage_single_task_selective, length_single_task_selective, pivot_single_task_selective, sns_single_task, \
+            spc_single_task, err_single_selective = test_single_task_lasso_selective_inference(predictor_vars_train,
+                                                                                               response_vars_train,
+                                                                                               predictor_vars_test,
+                                                                                               response_vars_test,
+                                                                                               beta,
+                                                                                               gaussian_noise,
+                                                                                               sigma,
+                                                                                               weight[5],
+                                                                                               randomizer_scale=0.7,
+                                                                                               link="identity")
 
-        if coverage_single_task_selective != []:
+        if list(coverage_single_task_selective):
             cov_single_task_selective.append(np.mean(np.asarray(coverage_single_task_selective)))
             len_single_task_selective.extend(length_single_task_selective)
         sensitivity_list_single_task_selective.append(sns_single_task)
@@ -745,19 +722,19 @@ def test_coverage(weight, signal, p, ts, gs, nsim=100):
         single_task_selective_test_error_list.append(err_single_selective)
 
         # Record results for multi-task selective inference v2
-        coverage_single_task_selective2, length_single_task_selective2, pivot_single_task_selective2, sns_single_task2, spc_single_task2, err_single_selective2 = test_single_task_lasso_posi_hetero(
-            predictor_vars_train,
-            response_vars_train,
-            predictor_vars_test,
-            response_vars_test,
-            beta,
-            gaussian_noise,
-            sigma,
-            weight[6],
-            randomizer_scale=1.0,
-            link="identity")
+        coverage_single_task_selective2, length_single_task_selective2, pivot_single_task_selective2, sns_single_task2,\
+            spc_single_task2, err_single_selective2 = test_single_task_lasso_selective_inference(predictor_vars_train,
+                                                                                                 response_vars_train,
+                                                                                                 predictor_vars_test,
+                                                                                                 response_vars_test,
+                                                                                                 beta,
+                                                                                                 gaussian_noise,
+                                                                                                 sigma,
+                                                                                                 weight[6],
+                                                                                                 randomizer_scale=1.0,
+                                                                                                 link="identity")
 
-        if coverage_single_task_selective2 != []:
+        if list(coverage_single_task_selective2):
             cov_single_task_selective2.append(np.mean(np.asarray(coverage_single_task_selective2)))
             len_single_task_selective2.extend(length_single_task_selective2)
         sensitivity_list_single_task_selective2.append(sns_single_task2)
@@ -770,21 +747,41 @@ def test_coverage(weight, signal, p, ts, gs, nsim=100):
         print("data splitting v1 coverage so far ", np.mean(np.asarray(cov_data_splitting)))
         print("single-task selective inference v1 coverage so far ", np.mean(np.asarray(cov_single_task_selective)))
 
-    return ([pivots, pivots_naive, pivots_data_splitting,
-             np.asarray(cov), np.asarray(cov2), np.asarray(cov_naive), np.asarray(cov_data_splitting),
-             np.asarray(cov_data_splitting2), np.asarray(cov_single_task_selective),
-             np.asarray(cov_single_task_selective2),
-             np.asarray(len), np.asarray(len2), np.asarray(len_naive), np.asarray(len_data_splitting),
-             np.asarray(len_data_splitting2), np.asarray(len_single_task_selective),
-             np.asarray(len_single_task_selective2),
-             np.asarray(sensitivity_list), np.asarray(sensitivity_list2), np.asarray(sensitivity_list_naive),
-             np.asarray(sensitivity_list_ds), np.asarray(sensitivity_list_ds2),
-             np.asarray(sensitivity_list_single_task_selective),
-             np.asarray(sensitivity_list_single_task_selective2), np.asarray(specificity_list),
-             np.asarray(specificity_list2), np.asarray(specificity_list_naive), np.asarray(specificity_list_ds),
-             np.asarray(specificity_list_ds2), np.asarray(specificity_list_single_task_selective),
-             np.asarray(specificity_list_single_task_selective2), np.mean(np.asarray(test_error_list)),
-             np.mean(np.asarray(test_error_list2)), np.mean(np.asarray(naive_test_error_list)),
-             np.mean(np.asarray(data_splitting_test_error_list)), np.mean(np.asarray(data_splitting_test_error_list2)),
-             np.mean(np.asarray(single_task_selective_test_error_list)),
-             np.mean(np.asarray(single_task_selective_test_error_list2))])
+    return ({"MTL_SI_07_pivots": pivots,
+             "Naive_pivots": pivots_naive,
+             "DS_67_pivots": pivots_data_splitting,
+             "MTL_SI_07_coverage": np.asarray(cov),
+             "MTL_SI_1_coverage": np.asarray(cov2),
+             "Naive_coverage": np.asarray(cov_naive),
+             "DS_67_coverage": np.asarray(cov_data_splitting),
+             "DS_50_coverage": np.asarray(cov_data_splitting2),
+             "LASSO_SI_07_coverage": np.asarray(cov_single_task_selective),
+             "LASSO_SI_1_coverage": np.asarray(cov_single_task_selective2),
+             "MTL_SI_07_length": np.asarray(len1),
+             "MTL_SI_1_length": np.asarray(len2),
+             "Naive_length": np.asarray(len_naive),
+             "DS_67_length": np.asarray(len_data_splitting),
+             "DS_50_length": np.asarray(len_data_splitting2),
+             "LASSO_SI_07_length": np.asarray(len_single_task_selective),
+             "LASSO_SI_1_length": np.asarray(len_single_task_selective2),
+             "MTL_SI_07_sensitivity": np.asarray(sensitivity_list),
+             "MTL_SI_1_sensitivity": np.asarray(sensitivity_list2),
+             "Naive_sensitivity": np.asarray(sensitivity_list_naive),
+             "DS_67_sensitivity": np.asarray(sensitivity_list_ds),
+             "DS_50_sensitivity": np.asarray(sensitivity_list_ds2),
+             "LASSO_SI_07_sensitivity": np.asarray(sensitivity_list_single_task_selective),
+             "LASSO_SI_1_sensitivity": np.asarray(sensitivity_list_single_task_selective2),
+             "MTL_SI_07_specificity": np.asarray(specificity_list),
+             "MTL_SI_1_specificity": np.asarray(specificity_list2),
+             "Naive_specificity": np.asarray(specificity_list_naive),
+             "DS_67_specificity": np.asarray(specificity_list_ds),
+             "DS_50_specificity": np.asarray(specificity_list_ds2),
+             "LASSO_SI_07_specificity": np.asarray(specificity_list_single_task_selective),
+             "LASSO_SI_1_specificity": np.asarray(specificity_list_single_task_selective2),
+             "MTL_SI_07_error": np.mean(np.asarray(test_error_list)),
+             "MTL_SI_1_error": np.mean(np.asarray(test_error_list2)),
+             "Naive_error": np.mean(np.asarray(naive_test_error_list)),
+             "DS_67_error": np.mean(np.asarray(data_splitting_test_error_list)),
+             "DS_50_error": np.mean(np.asarray(data_splitting_test_error_list2)),
+             "LASSO_SI_07_error": np.mean(np.asarray(single_task_selective_test_error_list)),
+             "LASSO_SI_1_error": np.mean(np.asarray(single_task_selective_test_error_list2))})
