@@ -820,11 +820,16 @@ for i in range(length_path):
                                                                        n, 1]) * positive)
                     for n in range(nsim)]))
 
-def set_box_color(bp, color, linestyle):
+def set_boxplot_style(bp, color, linestyle):
     plt.setp(bp['boxes'], color=color, linestyle=linestyle,linewidth=2)
     plt.setp(bp['whiskers'], color=color, linestyle=linestyle,linewidth=2)
     plt.setp(bp['caps'], color=color,linewidth=2)
     plt.setp(bp['medians'], color=color,linewidth=2)
+
+def common_format(ax):
+    ax.grid(True, which='both', color='#f0f0f0')
+    ax.set_xlabel('Lambda Value', fontsize=16)
+    return ax
 
 length = len(feature_weight_list)
 
@@ -841,13 +846,13 @@ fourth = plt.boxplot(ds_coverage, positions=np.array(range(length)) * 3 + .9, sy
 fifth = plt.boxplot(ds_coverage2, positions=np.array(range(length)) * 3 + 1.2, sym='', widths=0.3)
 sixth = plt.boxplot(single_selective_coverage, positions=np.array(range(length)) * 3 + 1.5, sym='', widths=0.3)
 seventh = plt.boxplot(single_selective_coverage2, positions=np.array(range(length)) * 3 + 1.8, sym='', widths=0.3)
-set_box_color(first, '#D7191C', 'solid')
-set_box_color(second, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
-set_box_color(third, '#6baed6', '--')
-set_box_color(fourth, '#238443', 'solid')
-set_box_color(fifth, '#31a354', '--')
-set_box_color(sixth, '#fd8d3c', 'solid')
-set_box_color(seventh, '#feb24c', '--')
+set_boxplot_style(first, '#D7191C', 'solid')
+set_boxplot_style(second, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
+set_boxplot_style(third, '#6baed6', '--')
+set_boxplot_style(fourth, '#238443', 'solid')
+set_boxplot_style(fifth, '#31a354', '--')
+set_boxplot_style(sixth, '#fd8d3c', 'solid')
+set_boxplot_style(seventh, '#feb24c', '--')
 plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list],fontsize=14)
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.plot(np.argmin(selective_error) * 3 +.3, 1.01, 'o', c='#2b8cbe')
@@ -868,12 +873,12 @@ fourth = plt.boxplot(ds_lengths, positions=np.array(range(length)) * 3 + .6, sym
 fifth = plt.boxplot(ds_lengths2, positions=np.array(range(length)) * 3 + .9, sym='', widths=0.3)
 sixth = plt.boxplot(single_selective_lengths, positions=np.array(range(length)) * 3 + 1.2, sym='', widths=0.3)
 seventh = plt.boxplot(single_selective_lengths2, positions=np.array(range(length)) * 3 + 1.5, sym='', widths=0.3)
-set_box_color(second, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
-set_box_color(third, '#6baed6', '--')
-set_box_color(fourth, '#238443', 'solid')
-set_box_color(fifth, '#31a354', '--')
-set_box_color(sixth, '#fd8d3c', 'solid')
-set_box_color(seventh, '#feb24c', '--')
+set_boxplot_style(second, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
+set_boxplot_style(third, '#6baed6', '--')
+set_boxplot_style(fourth, '#238443', 'solid')
+set_boxplot_style(fifth, '#31a354', '--')
+set_boxplot_style(sixth, '#fd8d3c', 'solid')
+set_boxplot_style(seventh, '#feb24c', '--')
 plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list],fontsize=14)
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.tight_layout()
@@ -887,12 +892,12 @@ fourth = plt.boxplot(ds_f1, positions=np.array(range(length)) * 3 + .6, sym='', 
 fifth = plt.boxplot(ds2_f1, positions=np.array(range(length)) * 3 + .9, sym='', widths=0.3)
 sixth = plt.boxplot(single_selective_f1, positions=np.array(range(length)) * 3 + 1.2, sym='', widths=0.3)
 seventh = plt.boxplot(single_selective2_f1, positions=np.array(range(length)) * 3 + 1.5, sym='', widths=0.3)
-set_box_color(second, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
-set_box_color(third, '#6baed6', '--')
-set_box_color(fourth, '#238443', 'solid')
-set_box_color(fifth, '#31a354', '--')
-set_box_color(sixth, '#fd8d3c', 'solid')
-set_box_color(seventh, '#feb24c', '--')
+set_boxplot_style(second, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
+set_boxplot_style(third, '#6baed6', '--')
+set_boxplot_style(fourth, '#238443', 'solid')
+set_boxplot_style(fifth, '#31a354', '--')
+set_boxplot_style(sixth, '#fd8d3c', 'solid')
+set_boxplot_style(seventh, '#feb24c', '--')
 plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list],fontsize=14)
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.plot([], c='#D7191C', label='Naive', linewidth=2.5)
@@ -912,11 +917,6 @@ ax2.set_title("Length", y=1.01,fontsize=20)
 ax3.set_title("Accuracy", y=1.01,fontsize=20)
 
 ax3.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.6), fontsize=16)
-
-def common_format(ax):
-    ax.grid(True, which='both', color='#f0f0f0')
-    ax.set_xlabel('Lambda Value', fontsize=16)
-    return ax
 
 common_format(ax1)
 common_format(ax2)
