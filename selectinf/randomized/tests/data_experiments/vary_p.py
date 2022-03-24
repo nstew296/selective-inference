@@ -15,11 +15,11 @@ task_sparsity = 0.2
 length_path = 15
 lambdamin_ds = 1.0
 lambdamax_ds = 4.0
-feature_weight_list_ds = np.arange(lambdamin_ds, lambdamax_ds,(lambdamax_ds - lambdamin_ds) / (length_path))
+feature_weight_list_ds = np.linspace(lambdamin_ds, lambdamax_ds,length_path)
 
 lambdamin_si = 2.0
 lambdamax_si = 5.0
-feature_weight_list_si = np.arange(lambdamin_si, lambdamax_si,(lambdamax_si - lambdamin_si) / (length_path))
+feature_weight_list_si = np.linspace(lambdamin_si, lambdamax_si,length_path)
 
 p_list = [100,250,500,1000]
 #n_list = [100,100,100]
@@ -29,7 +29,6 @@ n_list = [100,100,100,100]
 coverage_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 length_by_p = {j: [[], [], [], [], [], [], []] for j in range(len(p_list))}
 f1_by_p = {j: [[], [], [], [], [], []] for j in range(len(p_list))}
-pivots_by_p = {j: [[], []] for j in range(len(p_list))}
 
 
 for j in range(len(p_list)):
@@ -49,7 +48,7 @@ for j in range(len(p_list)):
         weight.extend([feature_weight_list_ds[i]]*2)
         weight.extend([feature_weight_list_si[i]]*2)
         print(weight)
-        sims = test_inference(weight,[1.0,3.0],p_list[j],task_sparsity,global_sparsity[j],nsim=10,seed=0)
+        sims = test_inference(weight,[1.0,3.0],p_list[j],task_sparsity,global_sparsity[j],nsim=10,seed=5)
         selective_error.append(sims["MTL_SI_07_error"])
         selective_error2.append(sims["MTL_SI_1_error"])
         ds_error.append(sims["DS_67_error"])
@@ -70,37 +69,35 @@ for j in range(len(p_list)):
                            feature_weight_list_si[idx_min_k_random_lasso2]]
 
 
-    sims = test_inference(feature_weight_list2,[1.0,3.0],p_list[j],task_sparsity,global_sparsity[j],nsim=n_list[j],seed=5)
+    sims = test_inference(feature_weight_list2,[1.0,3.0],p_list[j],task_sparsity,global_sparsity[j],nsim=n_list[j]+10,seed=5)
 
-    pivots_by_p[j][0] = sims["MTL_SI_07_pivots"]
+    selective_coverage = coverage_by_p[j][0] = sims["MTL_SI_07_coverage"][10:]
+    selective_coverage2 = coverage_by_p[j][1] = sims["MTL_SI_1_coverage"][10:]
+    ds_coverage = coverage_by_p[j][3] = sims["DS_67_coverage"][10:]
+    ds_coverage2 = coverage_by_p[j][4] = sims["DS_50_coverage"][10:]
+    single_selective_coverage = coverage_by_p[j][5] = sims["LASSO_SI_07_coverage"][10:]
+    single_selective_coverage2 = coverage_by_p[j][6] = sims["LASSO_SI_1_coverage"][10:]
 
-    selective_coverage = coverage_by_p[j][0] = sims["MTL_SI_07_coverage"]
-    selective_coverage2 = coverage_by_p[j][1] = sims["MTL_SI_1_coverage"]
-    ds_coverage = coverage_by_p[j][3] = sims["DS_67_coverage"]
-    ds_coverage2 = coverage_by_p[j][4] = sims["DS_50_coverage"]
-    single_selective_coverage = coverage_by_p[j][5] = sims["LASSO_SI_07_coverage"]
-    single_selective_coverage2 = coverage_by_p[j][6] = sims["LASSO_SI_1_coverage"]
+    selective_lengths = length_by_p[j][0] = sims["MTL_SI_07_length"][10:]
+    selective_lengths2 = length_by_p[j][1] = sims["MTL_SI_1_length"][10:]
+    ds_lengths = length_by_p[j][3] = sims["DS_67_length"][10:]
+    ds_lengths2 = length_by_p[j][4] = sims["DS_50_length"][10:]
+    single_selective_lengths = length_by_p[j][5] = sims["LASSO_SI_07_length"][10:]
+    single_selective_lengths2 = length_by_p[j][6] = sims["LASSO_SI_1_length"][10:]
 
-    selective_lengths = length_by_p[j][0] = sims["MTL_SI_07_length"]
-    selective_lengths2 = length_by_p[j][1] = sims["MTL_SI_1_length"]
-    ds_lengths = length_by_p[j][3] = sims["DS_67_length"]
-    ds_lengths2 = length_by_p[j][4] = sims["DS_50_length"]
-    single_selective_lengths = length_by_p[j][5] = sims["LASSO_SI_07_length"]
-    single_selective_lengths2 = length_by_p[j][6] = sims["LASSO_SI_1_length"]
+    selective_sensitivity = sims["MTL_SI_07_sensitivity"][10:]
+    selective_sensitivity2 = sims["MTL_SI_1_sensitivity"][10:]
+    ds_sensitivity = sims["DS_67_sensitivity"][10:]
+    ds_sensitivity2 = sims["DS_50_sensitivity"][10:]
+    single_task_sensitivity = sims["LASSO_SI_07_sensitivity"][10:]
+    single_task_sensitivity2 = sims["LASSO_SI_1_sensitivity"][10:]
 
-    selective_sensitivity = sims["MTL_SI_07_sensitivity"]
-    selective_sensitivity2 = sims["MTL_SI_1_sensitivity"]
-    ds_sensitivity = sims["DS_67_sensitivity"]
-    ds_sensitivity2 = sims["DS_50_sensitivity"]
-    single_task_sensitivity = sims["LASSO_SI_07_sensitivity"]
-    single_task_sensitivity2 = sims["LASSO_SI_1_sensitivity"]
-
-    selective_specificity = sims["MTL_SI_07_specificity"]
-    selective_specificity2 = sims["MTL_SI_1_specificity"]
-    ds_specificity = sims["DS_67_specificity"]
-    ds_specificity2 = sims["DS_50_specificity"]
-    single_task_specificity = sims["LASSO_SI_07_specificity"]
-    single_task_specificity2 = sims["LASSO_SI_1_specificity"]
+    selective_specificity = sims["MTL_SI_07_specificity"][10:]
+    selective_specificity2 = sims["MTL_SI_1_specificity"][10:]
+    ds_specificity = sims["DS_67_specificity"][10:]
+    ds_specificity2 = sims["DS_50_specificity"][10:]
+    single_task_specificity = sims["LASSO_SI_07_specificity"][10:]
+    single_task_specificity2 = sims["LASSO_SI_1_specificity"][10:]
 
 
     selective_tp_fp_mat = np.asarray(
@@ -250,7 +247,7 @@ plt.ylabel('F1 per Simulation',fontsize=18)
 plt.yticks(fontsize=14)
 
 ax1.set_title("Coverage", y = 1.01,fontsize=20)
-ax2.set_title("Length", y = 1.01,fontsize=20)
+ax2.set_title("Mean Length", y = 1.01,fontsize=20)
 ax3.set_title("Accuracy", y = 1.01,fontsize=20)
 
 common_format(ax1)

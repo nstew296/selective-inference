@@ -562,7 +562,7 @@ def test_inference(weight, signal, p, ts, gs, nsim=100, seed=5):
     #Print SNR, PVE
     SIG = np.full((p, p), 0.3)
     np.fill_diagonal(SIG, 1.0)
-    SNR = beta.T.dot(SIG.dot(beta)) / 1000
+    SNR = beta.T.dot(SIG.dot(beta)) / 500
     SNR = np.diag(SNR)
     print(SNR, "SNR")
     print(SNR / (1 + SNR), "PVE")
@@ -613,7 +613,7 @@ def test_inference(weight, signal, p, ts, gs, nsim=100, seed=5):
 
         if list(coverage):
             cov.append(np.mean(np.asarray(coverage)))
-            len1.extend(length)
+            len1.append(np.mean(np.asarray(length)))
             pivots.extend(pivot)
         sensitivity_list.append(sns)
         specificity_list.append(spc)
@@ -633,7 +633,7 @@ def test_inference(weight, signal, p, ts, gs, nsim=100, seed=5):
 
         if list(coverage2):
             cov2.append(np.mean(np.asarray(coverage2)))
-            len2.extend(length2)
+            len2.append(np.mean(np.asarray(length2)))
             pivots2.extend(pivot2)
         sensitivity_list2.append(sns2)
         specificity_list2.append(spc2)
@@ -654,7 +654,7 @@ def test_inference(weight, signal, p, ts, gs, nsim=100, seed=5):
 
         if list(coverage_data_splitting):
             cov_data_splitting.append(np.mean(np.asarray(coverage_data_splitting)))
-            len_data_splitting.extend(length_data_splitting)
+            len_data_splitting.append(np.mean(np.asarray(length_data_splitting)))
             pivots_data_splitting.extend(pivot_data_splitting)
         sensitivity_list_ds.append(sns_ds)
         specificity_list_ds.append(spc_ds)
@@ -674,7 +674,7 @@ def test_inference(weight, signal, p, ts, gs, nsim=100, seed=5):
 
         if list(coverage_data_splitting2):
             cov_data_splitting2.append(np.mean(np.asarray(coverage_data_splitting2)))
-            len_data_splitting2.extend(length_data_splitting2)
+            len_data_splitting2.append(np.mean(np.asarray(length_data_splitting2)))
             pivots_data_splitting2.extend(pivot_data_splitting2)
         sensitivity_list_ds2.append(sns_ds2)
         specificity_list_ds2.append(spc_ds2)
@@ -695,7 +695,7 @@ def test_inference(weight, signal, p, ts, gs, nsim=100, seed=5):
 
         if list(coverage_single_task_selective):
             cov_single_task_selective.append(np.mean(np.asarray(coverage_single_task_selective)))
-            len_single_task_selective.extend(length_single_task_selective)
+            len_single_task_selective.append(np.mean(np.asarray(length_single_task_selective)))
         sensitivity_list_single_task_selective.append(sns_single_task)
         specificity_list_single_task_selective.append(spc_single_task)
         single_task_selective_test_error_list.append(err_single_selective)
@@ -715,10 +715,12 @@ def test_inference(weight, signal, p, ts, gs, nsim=100, seed=5):
 
         if list(coverage_single_task_selective2):
             cov_single_task_selective2.append(np.mean(np.asarray(coverage_single_task_selective2)))
-            len_single_task_selective2.extend(length_single_task_selective2)
+            len_single_task_selective2.append(np.mean(np.asarray(length_single_task_selective2)))
         sensitivity_list_single_task_selective2.append(sns_single_task2)
         specificity_list_single_task_selective2.append(spc_single_task2)
         single_task_selective_test_error_list2.append(err_single_selective2)
+
+        print(n)
 
     return ({"MTL_SI_07_pivots": pivots,
              "DS_67_pivots": pivots_data_splitting,

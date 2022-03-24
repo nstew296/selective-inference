@@ -35,7 +35,6 @@ g_test = np.genfromtxt('test.csv', delimiter=',')[1:,-12]
 
 print("HI")
 
-#Generate randomization variable
 def _noise(n, df=np.inf):
     if df == np.inf:
         return np.random.standard_normal(n)
@@ -43,6 +42,7 @@ def _noise(n, df=np.inf):
         sd_t = np.std(tdist.rvs(df, size=50000))
     return tdist.rvs(df, size=n) / sd_t
 
+#Generate randomization variable
 noise = _noise(predictors_train.shape[1])
 
 #Function to perform randomized model selection and conduct post-selection inference
@@ -113,28 +113,26 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
 
         error_list.append(error/ntask)
 
-    min_error = np.min(error_list)
-    error_list = error_list[:np.argmin(error_list)+1]
-    lambda_1se = np.argmin(np.abs(error_list - min_error))
-    final_estimates = estimates_dict[weight_list[lambda_1se]]
-    final_intervals = intervals_dict[weight_list[lambda_1se]]
-    final_coefs_var = coef_var_dict[weight_list[lambda_1se]]
+    min_error = np.argmin(error_list)
+    final_estimates = estimates_dict[weight_list[min_error]]
+    final_intervals = intervals_dict[weight_list[min_error]]
+    final_coefs_var = coef_var_dict[weight_list[min_error]]
 
     #Caculate final testing error and predictive r on test set
-    if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
+    if (active_dict[weight_list[min_error]] != 0).sum() > 0:
         final_error = 0
         predictive_r = []
         idx = 0
         for j in range(ntask):
-            idx_new = np.sum(active_dict[weight_list[lambda_1se]][:, j] != 0)
+            idx_new = np.sum(active_dict[weight_list[min_error]][:, j] != 0)
             if idx_new == 0:
                 final_error += np.sqrt(np.sum(np.square(response_test[j])) / sample_sizes_test)
             else:
                 final_error += np.sqrt(np.sum(
-                    np.square((response_test[j] - predictor_vars_test[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
-                        estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new])))) / sample_sizes_test)
-                predictive_r.append(np.corrcoef(response_test[j],predictor_vars_test[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
-                        estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))[0,1])
+                    np.square((response_test[j] - predictor_vars_test[:, (active_dict[weight_list[min_error]][:, j] != 0)].dot(
+                        estimates_dict[weight_list[min_error]][idx:idx + idx_new])))) / sample_sizes_test)
+                predictive_r.append(np.corrcoef(response_test[j],predictor_vars_test[:, (active_dict[weight_list[min_error]][:, j] != 0)].dot(
+                        estimates_dict[weight_list[min_error]][idx:idx + idx_new]))[0,1])
             idx = idx + idx_new
 
     else:
@@ -153,7 +151,7 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
     placeholder = 0
     for i in range(ntask):
         #Identify variables (by task) corresponding to the significant intervals
-        active_ = active_dict[weight_list[lambda_1se]][:, i] != 0
+        active_ = active_dict[weight_list[min_error]][:, i] != 0
         new_placeholder = np.sum(active_)
         all_variables[i] = np.nonzero(active_)[0]
         significant_variables[i] = np.nonzero(active_)[0][significant[placeholder:placeholder+new_placeholder]]
@@ -235,29 +233,27 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
         active_dict[weight] = active_signs
         error_list.append(error/ntask)
 
-    min_error = np.min(error_list)
-    error_list = error_list[:np.argmin(error_list)+1]
-    lambda_1se = np.argmin(np.abs(error_list - min_error))
+    min_error = np.argmin(error_list)
 
-    final_estimates = estimates_dict[weight_list[lambda_1se]]
-    final_intervals = intervals_dict[weight_list[lambda_1se]][1:, ]
-    final_coefs_var = coef_var_dict[weight_list[lambda_1se]]
+    final_estimates = estimates_dict[weight_list[min_error]]
+    final_intervals = intervals_dict[weight_list[min_error]][1:, ]
+    final_coefs_var = coef_var_dict[weight_list[min_error]]
 
     #Caculate final error and predictive r on test set
-    if (active_dict[weight_list[lambda_1se]] != 0).sum() > 0:
+    if (active_dict[weight_list[min_error]] != 0).sum() > 0:
         final_error = 0
         predictive_r = []
         idx = 0
         for j in range(ntask):
-            idx_new = np.sum(active_dict[weight_list[lambda_1se]][:, j] != 0)
+            idx_new = np.sum(active_dict[weight_list[min_error]][:, j] != 0)
             if idx_new == 0:
                 final_error += np.sqrt(np.sum(np.square(response_test[j])) / sample_sizes_test)
             else:
                 final_error += np.sqrt(np.sum(
-                    np.square((response_test[j] - predictor_vars_test[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
-                        estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new])))) / sample_sizes_test)
-                predictive_r.append(np.corrcoef(response_test[j], predictor_vars_test[:, (active_dict[weight_list[lambda_1se]][:, j] != 0)].dot(
-                        estimates_dict[weight_list[lambda_1se]][idx:idx + idx_new]))[0,1])
+                    np.square((response_test[j] - predictor_vars_test[:, (active_dict[weight_list[min_error]][:, j] != 0)].dot(
+                        estimates_dict[weight_list[min_error]][idx:idx + idx_new])))) / sample_sizes_test)
+                predictive_r.append(np.corrcoef(response_test[j], predictor_vars_test[:, (active_dict[weight_list[min_error]][:, j] != 0)].dot(
+                        estimates_dict[weight_list[min_error]][idx:idx + idx_new]))[0,1])
             idx = idx + idx_new
 
     else:
@@ -273,7 +269,7 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
     all_variables_ds = {}
     placeholder = 0
     for i in range(ntask):
-        active_ = active_dict[weight_list[lambda_1se]][:, i] != 0
+        active_ = active_dict[weight_list[min_error]][:, i] != 0
         new_placeholder = np.sum(active_)
         all_variables_ds[i] = np.nonzero(active_)[0]
         significant_variables[i] = np.nonzero(active_)[0][significant[placeholder:placeholder+new_placeholder]]
@@ -396,11 +392,11 @@ print("common",common)
 common_significant = {i:np.intersect1d(significant_variables_rand1[i],significant_variables_ds50[i]) for i in range(ntask)}
 print("common significant",common_significant)
 common_lengths = []
+#Compute length ratio for shared parameters
 for i in range(ntask):
     for predictor in common[i]:
         ratio_length = match_length_indx2[i][np.argwhere(all_variables_ds50[i]==predictor)[0][0]]/match_length_indx[i][np.argwhere(all_variables_rand1[i]==predictor)[0][0]]
         common_lengths.append(ratio_length)
-print(common_lengths)
 
 #-----------------------------------------------------------------
 #Compare selective inference to data splitting 67/33
@@ -516,19 +512,24 @@ for i in range(ntask):
         ratio_length = match_length_indx2[i][np.argwhere(all_variables_ds67[i]==predictor)[0][0]]/match_length_indx[i][np.argwhere(all_variables_rand07[i]==predictor)[0][0]]
         common_lengths_67.append(ratio_length)
 
-def set_box_color(bp, color, linestyle):
+def set_boxplot_style(bp, color, linestyle):
     plt.setp(bp['boxes'], color=color, linestyle=linestyle, linewidth=3.5)
     plt.setp(bp['whiskers'], color=color, linestyle=linestyle, linewidth=3.5)
     plt.setp(bp['caps'], color=color, linewidth=2.5)
     plt.setp(bp['medians'], color=color, linewidth=2.5)
+
+def common_format(ax):
+    ax.grid(True, which='both', color='#f0f0f0')
+    ax.set_xlabel('Method', fontsize=20)
+    return ax
 
 fig = plt.figure(figsize=(24 ,8))
 ax1 = fig.add_subplot(133)
 plt.sca(ax1)
 first = plt.boxplot([common_lengths_67], positions=np.asarray([1]), sym='', widths=0.3)
 second = plt.boxplot([common_lengths], positions=np.asarray([1.6]), sym='', widths=0.3)
-set_box_color(first, '#35978f', 'solid')  # colors are from http://colorbrewer2.org/
-set_box_color(second, '#35978f', '--')
+set_boxplot_style(first, '#35978f', 'solid')  # colors are from http://colorbrewer2.org/
+set_boxplot_style(second, '#35978f', '--')
 plt.xlim(0.7, 1.9)
 plt.tight_layout()
 plt.plot([], c='#35978f', label='DS (0.67): MTL (0.7) + SI', linewidth=2.5)
@@ -542,14 +543,8 @@ ax1.legend(loc='lower left', bbox_to_anchor=(0.08, -.3), fontsize=24)
 ax1.set_xticklabels([])
 ax1.set_xticks([])
 
-def common_format(ax):
-    ax.grid(True, which='both', color='#f0f0f0')
-    ax.set_xlabel('Method', fontsize=20)
-    return ax
-
 common_format(ax1)
 ax1.axhline(y=1.0, color='k', linestyle='--', linewidth=2.5)
-
 
 ax2 = fig.add_subplot(131)
 plt.sca(ax2)
@@ -557,10 +552,10 @@ first = plt.boxplot([selective07_intervals], positions=np.asarray([1]), sym='', 
 second = plt.boxplot([selective1_intervals], positions=np.asarray([1.8]), sym='', widths=0.3)
 third = plt.boxplot([ds67_intervals], positions=np.asarray([1.3]), sym='', widths=0.3)
 fourth = plt.boxplot([ds50_intervals], positions=np.asarray([2.1]), sym='', widths=0.3)
-set_box_color(first, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
-set_box_color(second, '#6baed6', '--')
-set_box_color(third, '#238443', 'solid')
-set_box_color(fourth, '#31a354', '--')
+set_boxplot_style(first, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
+set_boxplot_style(second, '#6baed6', '--')
+set_boxplot_style(third, '#238443', 'solid')
+set_boxplot_style(fourth, '#31a354', '--')
 plt.xlim(0.7, 2.4)
 plt.tight_layout()
 plt.plot([], c='#2b8cbe', label='MTL (0.7) + SI', linewidth=2.5)
@@ -581,10 +576,10 @@ first = plt.boxplot([coefs_var_rand07], positions=np.asarray([1]), sym='', width
 second = plt.boxplot([coefs_var_rand1], positions=np.asarray([1.8]), sym='', widths=0.3)
 third = plt.boxplot([coefs_var_ds67], positions=np.asarray([1.3]), sym='', widths=0.3)
 fourth= plt.boxplot([coefs_var_ds50], positions=np.asarray([2.1]), sym='', widths=0.3)
-set_box_color(first, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
-set_box_color(second, '#6baed6', '--')
-set_box_color(third, '#238443', 'solid')
-set_box_color(fourth, '#31a354', '--')
+set_boxplot_style(first, '#2b8cbe', 'solid')  # colors are from http://colorbrewer2.org/
+set_boxplot_style(second, '#6baed6', '--')
+set_boxplot_style(third, '#238443', 'solid')
+set_boxplot_style(fourth, '#31a354', '--')
 plt.xlim(0.7, 2.4)
 plt.tight_layout()
 plt.ylabel('Coefficient of Variation for Estimated Effects', fontsize=18)

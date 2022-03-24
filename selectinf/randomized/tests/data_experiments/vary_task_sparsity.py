@@ -10,11 +10,13 @@ p=100
 global_sparsity = 0.90
 
 length_path = 15
-lambdamin = 0.8
-lambdamax = 5.0
-feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
-print(feature_weight_list)
+lambdamin_ds = 0.5
+lambdamax_ds = 4.0
+feature_weight_list_ds = np.linspace(lambdamin_ds, lambdamax_ds,length_path)
 
+lambdamin_si = 1.5
+lambdamax_si = 5.0
+feature_weight_list_si = np.linspace(lambdamin_si, lambdamax_si,length_path)
 
 sparsity_list = [0.0,0.2,0.4,0.6]
 n_list = [100,100,100,100]
@@ -48,9 +50,11 @@ for j in range(len(sparsity_list)):
     selective_error, selective_error2, ds_error, ds_error2, single_selective_error, \
         single_selective_error2 = ([] for _ in range(6))
 
-    for i in range(len(feature_weight_list)):
+    for i in range(length_path):
         print((i,j),"(i,j)")
-        weight = [feature_weight_list[i]]*6
+        weight = [feature_weight_list_si[i]] * 2
+        weight.extend([feature_weight_list_ds[i]] * 2)
+        weight.extend([feature_weight_list_si[i]] * 2)
         sims = test_inference(weight,[1.0,3.0],p,sparsity_list[j],global_sparsity,nsim=n_list[j])
         selective_coverage.append(sims["MTL_SI_07_coverage"])
         selective_coverage2.append(sims["MTL_SI_1_coverage"])
@@ -264,7 +268,7 @@ plt.yticks(fontsize=14)
 
 
 ax1.set_title("Coverage", y = 1.01,fontsize=20)
-ax2.set_title("Length", y = 1.01,fontsize=20)
+ax2.set_title("Mean Length", y = 1.01,fontsize=20)
 ax3.set_title("Accuracy", y = 1.01,fontsize=20)
 
 
