@@ -13,10 +13,13 @@ global_sparsity = [0.9375,0.975,0.9875,0.99375]
 task_sparsity = 0.2
 
 length_path = 15
-lambdamin = 1.0
-lambdamax = 4.5
-feature_weight_list = np.arange(lambdamin, lambdamax,(lambdamax - lambdamin) / (length_path))
-print(feature_weight_list)
+lambdamin_ds = 1.0
+lambdamax_ds = 4.0
+feature_weight_list_ds = np.arange(lambdamin_ds, lambdamax_ds,(lambdamax_ds - lambdamin_ds) / (length_path))
+
+lambdamin_si = 2.0
+lambdamax_si = 5.0
+feature_weight_list_si = np.arange(lambdamin_si, lambdamax_si,(lambdamax_si - lambdamin_si) / (length_path))
 
 p_list = [100,250,500,1000]
 #n_list = [100,100,100]
@@ -35,20 +38,20 @@ for j in range(len(p_list)):
 
     selective_error = []
     selective_error2 = []
-    naive_error = []
     ds_error = []
     ds_error2 = []
     single_selective_error = []
     single_selective_error2 = []
 
-    for i in range(len(feature_weight_list)):
+    for i in range(length_path):
         print((i,j),"(i,j)")
-        weight = [feature_weight_list[i]]*7
+        weight = [feature_weight_list_si[i]]*2
+        weight.extend([feature_weight_list_ds[i]]*2)
+        weight.extend([feature_weight_list_si[i]]*2)
         print(weight)
-        sims = test_inference(weight,[1.0,3.0],p_list[j],task_sparsity,global_sparsity[j],nsim=3)
+        sims = test_inference(weight,[1.0,3.0],p_list[j],task_sparsity,global_sparsity[j],nsim=10,seed=0)
         selective_error.append(sims["MTL_SI_07_error"])
         selective_error2.append(sims["MTL_SI_1_error"])
-        naive_error.append(sims["Naive_error"])
         ds_error.append(sims["DS_67_error"])
         ds_error2.append(sims["DS_50_error"])
         single_selective_error.append(sims["LASSO_SI_07_error"])
@@ -56,26 +59,23 @@ for j in range(len(p_list)):
 
     idx_min_random_multitask = np.argmin(selective_error)
     idx_min_random_multitask2 = np.argmin(selective_error2)
-    idx_min_naive_multitask = np.argmin(naive_error)
     idx_min_data_splitting = np.argmin(ds_error)
     idx_min_data_splitting2 = np.argmin(ds_error2)
     idx_min_k_random_lasso = np.argmin(single_selective_error)
     idx_min_k_random_lasso2 = np.argmin(single_selective_error2)
 
-    feature_weight_list2 = [feature_weight_list[idx_min_random_multitask],feature_weight_list[idx_min_random_multitask2],
-                           feature_weight_list[idx_min_naive_multitask], feature_weight_list[idx_min_data_splitting],
-                           feature_weight_list[idx_min_data_splitting2],feature_weight_list[idx_min_k_random_lasso],
-                           feature_weight_list[idx_min_k_random_lasso2]]
+    feature_weight_list2 = [feature_weight_list_si[idx_min_random_multitask],feature_weight_list_si[idx_min_random_multitask2],
+                           feature_weight_list_ds[idx_min_data_splitting],
+                           feature_weight_list_ds[idx_min_data_splitting2],feature_weight_list_si[idx_min_k_random_lasso],
+                           feature_weight_list_si[idx_min_k_random_lasso2]]
 
 
-    sims = test_inference(feature_weight_list2,[1.0,3.0],p_list[j],task_sparsity,global_sparsity[j],nsim=n_list[j])
+    sims = test_inference(feature_weight_list2,[1.0,3.0],p_list[j],task_sparsity,global_sparsity[j],nsim=n_list[j],seed=5)
 
     pivots_by_p[j][0] = sims["MTL_SI_07_pivots"]
-    pivots_by_p[j][1] = sims["Naive_pivots"]
 
     selective_coverage = coverage_by_p[j][0] = sims["MTL_SI_07_coverage"]
     selective_coverage2 = coverage_by_p[j][1] = sims["MTL_SI_1_coverage"]
-    naive_coverage = coverage_by_p[j][2] = sims["Naive_coverage"]
     ds_coverage = coverage_by_p[j][3] = sims["DS_67_coverage"]
     ds_coverage2 = coverage_by_p[j][4] = sims["DS_50_coverage"]
     single_selective_coverage = coverage_by_p[j][5] = sims["LASSO_SI_07_coverage"]
@@ -83,7 +83,6 @@ for j in range(len(p_list)):
 
     selective_lengths = length_by_p[j][0] = sims["MTL_SI_07_length"]
     selective_lengths2 = length_by_p[j][1] = sims["MTL_SI_1_length"]
-    naive_lengths = length_by_p[j][2] = sims["Naive_length"]
     ds_lengths = length_by_p[j][3] = sims["DS_67_length"]
     ds_lengths2 = length_by_p[j][4] = sims["DS_50_length"]
     single_selective_lengths = length_by_p[j][5] = sims["LASSO_SI_07_length"]
@@ -91,7 +90,6 @@ for j in range(len(p_list)):
 
     selective_sensitivity = sims["MTL_SI_07_sensitivity"]
     selective_sensitivity2 = sims["MTL_SI_1_sensitivity"]
-    naive_sensitivity = sims["Naive_sensitivity"]
     ds_sensitivity = sims["DS_67_sensitivity"]
     ds_sensitivity2 = sims["DS_50_sensitivity"]
     single_task_sensitivity = sims["LASSO_SI_07_sensitivity"]
@@ -99,7 +97,6 @@ for j in range(len(p_list)):
 
     selective_specificity = sims["MTL_SI_07_specificity"]
     selective_specificity2 = sims["MTL_SI_1_specificity"]
-    naive_specificity = sims["Naive_specificity"]
     ds_specificity = sims["DS_67_specificity"]
     ds_specificity2 = sims["DS_50_specificity"]
     single_task_specificity = sims["LASSO_SI_07_specificity"]
@@ -266,57 +263,3 @@ ax1.axhline(y=0.9, color='k', linestyle='--', linewidth=2)
 plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 ax1.legend(loc='lower left', bbox_to_anchor=(0.7, -0.45),fontsize=18,ncol=3)
 plt.savefig('vary_p_n500_ts2.png', bbox_inches='tight')
-
-#Plot distribution of pivots
-pivots = pivots_by_p[0][0]
-pivots_naive = pivots_by_p[0][1]
-plt.clf()
-grid = np.linspace(0, 1, 101)
-points = [np.max(np.searchsorted(np.sort(np.asarray(pivots)), i, side='right')) / float(np.shape(pivots)[0]) for
-              i in np.linspace(0, 1, 101)]
-points_naive = [np.max(np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right')) / float(
-        np.shape(pivots_naive)[0]) for i in np.linspace(0, 1, 101)]
-fig = plt.figure(figsize=(32, 8))
-fig.tight_layout()
-fig.add_subplot(1, 3, 1)
-plt.plot(grid, points, c='blue', marker='^')
-plt.plot(grid, points_naive, c='red', marker='^')
-plt.plot(grid, grid, 'k--')
-plt.title('ECDF of Pivots, p=100',fontsize=24)
-plt.xticks(fontsize=16)
-plt.yticks(fontsize=16)
-plt.legend(['MTL (0.7) + SI','Naive'],fontsize=24,loc='lower right')
-
-pivots = pivots_by_p[1][0]
-pivots_naive = pivots_by_p[1][1]
-grid = np.linspace(0, 1, 101)
-points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / float(np.shape(pivots)[0]) for i in
-              np.linspace(0, 1, 101)]
-points_naive = [
-        np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / float(np.shape(pivots_naive)[0]) for i
-        in np.linspace(0, 1, 101)]
-fig.add_subplot(1, 3, 2)
-plt.plot(grid, points, c='blue', marker='^')
-plt.plot(grid, points_naive, c='red', marker='^')
-plt.plot(grid, grid, 'k--')
-plt.title('ECDF of Pivots, p=250',fontsize=24)
-plt.xticks(fontsize=16)
-plt.yticks(fontsize=16)
-
-pivots = pivots_by_p[2][0]
-pivots_naive = pivots_by_p[2][1]
-grid = np.linspace(0, 1, 101)
-points = [np.searchsorted(np.sort(np.asarray(pivots)), i, side='right') / float(np.shape(pivots)[0]) for i in
-              np.linspace(0, 1, 101)]
-points_naive = [
-        np.searchsorted(np.sort(np.asarray(pivots_naive)), i, side='right') / float(np.shape(pivots_naive)[0]) for i
-        in np.linspace(0, 1, 101)]
-fig.add_subplot(1, 3, 3)
-plt.plot(grid, points, c='blue', marker='^')
-plt.plot(grid, points_naive, c='red', marker='^')
-plt.plot(grid, grid, 'k--')
-plt.title('ECDF of Pivots, p=500',fontsize=24)
-plt.xticks(fontsize=16)
-plt.yticks(fontsize=16)
-
-plt.savefig("pivots_by_p_n500_ts2.png")

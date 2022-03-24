@@ -507,17 +507,14 @@ def _noise(n, df=np.inf):
 #################
 
 
-def test_inference(weight, signal, p, ts, gs, nsim=100):
-    np.random.seed(5)
+def test_inference(weight, signal, p, ts, gs, nsim=100, seed=5):
+    np.random.seed(seed)
     #Track intervals, pivots, sensitivity, specificity, and testing error for selective inference v1
     cov, len1, pivots, sensitivity_list, specificity_list, test_error_list = ([] for _ in range(6))
 
     # Track intervals, pivots, sensitivity, specificity, and testing error for selective inference v2
     cov2, len2, pivots2, sensitivity_list2, specificity_list2, test_error_list2 = ([] for _ in range(6))
 
-    # Track intervals, pivots, sensitivity, specificity, and testing error for naive inference
-    cov_naive, len_naive, pivots_naive, sensitivity_list_naive, specificity_list_naive, naive_test_error_list \
-        = ([] for _ in range(6))
 
     # Track intervals, pivots, sensitivity, specificity, and testing error for data splitting v1
     cov_data_splitting, len_data_splitting, pivots_data_splitting, sensitivity_list_ds, specificity_list_ds, \
@@ -642,24 +639,6 @@ def test_inference(weight, signal, p, ts, gs, nsim=100):
         specificity_list2.append(spc2)
         test_error_list2.append(err2)
 
-        # Record results for naive inference
-        coverage_naive, length_naive, pivot_naive, naive_sensitivity, naive_specificity, naive_err = \
-            test_multitask_lasso_naive(predictor_vars_train,
-                                       response_vars_train,
-                                       predictor_vars_test,
-                                       response_vars_test,
-                                       beta,
-                                       sigma,
-                                       weight[2],
-                                       link="identity")
-
-        if list(coverage_naive):
-            cov_naive.append(np.mean(np.asarray(coverage_naive)))
-            len_naive.extend(length_naive)
-            pivots_naive.extend(pivot_naive)
-        sensitivity_list_naive.append(naive_sensitivity)
-        specificity_list_naive.append(naive_specificity)
-        naive_test_error_list.append(naive_err)
 
         # Record results for data splitting v1
         coverage_data_splitting, length_data_splitting, pivot_data_splitting, sns_ds, spc_ds, ds_error = \
@@ -669,7 +648,7 @@ def test_inference(weight, signal, p, ts, gs, nsim=100):
                                                 response_vars_test,
                                                 beta,
                                                 sigma,
-                                                weight[3],
+                                                weight[2],
                                                 split=0.67,
                                                 link="identity")
 
@@ -689,7 +668,7 @@ def test_inference(weight, signal, p, ts, gs, nsim=100):
                                                 response_vars_test,
                                                 beta,
                                                 sigma,
-                                                weight[4],
+                                                weight[3],
                                                 split=0.5,
                                                 link="identity")
 
@@ -710,7 +689,7 @@ def test_inference(weight, signal, p, ts, gs, nsim=100):
                                                                                                beta,
                                                                                                gaussian_noise,
                                                                                                sigma,
-                                                                                               weight[5],
+                                                                                               weight[4],
                                                                                                randomizer_scale=0.7,
                                                                                                link="identity")
 
@@ -730,7 +709,7 @@ def test_inference(weight, signal, p, ts, gs, nsim=100):
                                                                                                  beta,
                                                                                                  gaussian_noise,
                                                                                                  sigma,
-                                                                                                 weight[6],
+                                                                                                 weight[5],
                                                                                                  randomizer_scale=1.0,
                                                                                                  link="identity")
 
@@ -741,46 +720,34 @@ def test_inference(weight, signal, p, ts, gs, nsim=100):
         specificity_list_single_task_selective2.append(spc_single_task2)
         single_task_selective_test_error_list2.append(err_single_selective2)
 
-        print("iteration completed ", n)
-        print("posi v1 coverage so far ", np.mean(np.asarray(cov)))
-        print("naive coverage so far ", np.mean(np.asarray(cov_naive)))
-        print("data splitting v1 coverage so far ", np.mean(np.asarray(cov_data_splitting)))
-        print("single-task selective inference v1 coverage so far ", np.mean(np.asarray(cov_single_task_selective)))
-
     return ({"MTL_SI_07_pivots": pivots,
-             "Naive_pivots": pivots_naive,
              "DS_67_pivots": pivots_data_splitting,
              "MTL_SI_07_coverage": np.asarray(cov),
              "MTL_SI_1_coverage": np.asarray(cov2),
-             "Naive_coverage": np.asarray(cov_naive),
              "DS_67_coverage": np.asarray(cov_data_splitting),
              "DS_50_coverage": np.asarray(cov_data_splitting2),
              "LASSO_SI_07_coverage": np.asarray(cov_single_task_selective),
              "LASSO_SI_1_coverage": np.asarray(cov_single_task_selective2),
              "MTL_SI_07_length": np.asarray(len1),
              "MTL_SI_1_length": np.asarray(len2),
-             "Naive_length": np.asarray(len_naive),
              "DS_67_length": np.asarray(len_data_splitting),
              "DS_50_length": np.asarray(len_data_splitting2),
              "LASSO_SI_07_length": np.asarray(len_single_task_selective),
              "LASSO_SI_1_length": np.asarray(len_single_task_selective2),
              "MTL_SI_07_sensitivity": np.asarray(sensitivity_list),
              "MTL_SI_1_sensitivity": np.asarray(sensitivity_list2),
-             "Naive_sensitivity": np.asarray(sensitivity_list_naive),
              "DS_67_sensitivity": np.asarray(sensitivity_list_ds),
              "DS_50_sensitivity": np.asarray(sensitivity_list_ds2),
              "LASSO_SI_07_sensitivity": np.asarray(sensitivity_list_single_task_selective),
              "LASSO_SI_1_sensitivity": np.asarray(sensitivity_list_single_task_selective2),
              "MTL_SI_07_specificity": np.asarray(specificity_list),
              "MTL_SI_1_specificity": np.asarray(specificity_list2),
-             "Naive_specificity": np.asarray(specificity_list_naive),
              "DS_67_specificity": np.asarray(specificity_list_ds),
              "DS_50_specificity": np.asarray(specificity_list_ds2),
              "LASSO_SI_07_specificity": np.asarray(specificity_list_single_task_selective),
              "LASSO_SI_1_specificity": np.asarray(specificity_list_single_task_selective2),
              "MTL_SI_07_error": np.mean(np.asarray(test_error_list)),
              "MTL_SI_1_error": np.mean(np.asarray(test_error_list2)),
-             "Naive_error": np.mean(np.asarray(naive_test_error_list)),
              "DS_67_error": np.mean(np.asarray(data_splitting_test_error_list)),
              "DS_50_error": np.mean(np.asarray(data_splitting_test_error_list2)),
              "LASSO_SI_07_error": np.mean(np.asarray(single_task_selective_test_error_list)),

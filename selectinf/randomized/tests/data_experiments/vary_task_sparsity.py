@@ -19,8 +19,8 @@ print(feature_weight_list)
 sparsity_list = [0.0,0.2,0.4,0.6]
 n_list = [100,100,100,100]
 #track coverage, length, and F1 score for each level of sparsity
-coverage_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(sparsity_list))}
-length_by_ts = {j: [[], [], [], [], [], [], []] for j in range(len(sparsity_list))}
+coverage_by_ts = {j: [[], [], [], [], [], []] for j in range(len(sparsity_list))}
+length_by_ts = {j: [[], [], [], [], [], []] for j in range(len(sparsity_list))}
 f1_by_ts = {j: [[], [], [], [], [], []] for j in range(len(sparsity_list))}
 
 
@@ -29,32 +29,31 @@ for j in range(len(sparsity_list)):
     negative = k*p - positive
 
     #Create empty lists to track length for each method by lambda at given sparsity level
-    selective_lengths, selective_lengths2, naive_lengths, ds_lengths, ds_lengths2, \
-        single_selective_lengths, single_selective_lengths2 = ([] for _ in range(7))
+    selective_lengths, selective_lengths2, ds_lengths, ds_lengths2, \
+        single_selective_lengths, single_selective_lengths2 = ([] for _ in range(6))
 
     #Create empty lists to track coverage for each method by lambda at given sparsity level
-    selective_coverage, selective_coverage2, naive_coverage, ds_coverage, ds_coverage2, \
-        single_selective_coverage, single_selective_coverage2 = ([] for _ in range(7))
+    selective_coverage, selective_coverage2, ds_coverage, ds_coverage2, \
+        single_selective_coverage, single_selective_coverage2 = ([] for _ in range(6))
 
     #Create empty lists to track sensitivity for each method by lambda at given sparsity level
-    selective_sensitivity, selective_sensitivity2, naive_sensitivity, ds_sensitivity, ds_sensitivity2, \
-        single_task_sensitivity, single_task_sensitivity2 = ([] for _ in range(7))
+    selective_sensitivity, selective_sensitivity2, ds_sensitivity, ds_sensitivity2, \
+        single_task_sensitivity, single_task_sensitivity2 = ([] for _ in range(6))
 
     #Create empty lists to track specificity for each method by lambda at given sparsity level
-    selective_specificity, selective_specificity2, naive_specificity, ds_specificity, ds_specificity2, \
-        single_task_specificity, single_task_specificity2 = ([] for _ in range(7))
+    selective_specificity, selective_specificity2, ds_specificity, ds_specificity2, \
+        single_task_specificity, single_task_specificity2 = ([] for _ in range(6))
 
     #Create empty lists to track validation error for each method by lambda at given sparsity level
-    selective_error, selective_error2, naive_error, ds_error, ds_error2, single_selective_error, \
-        single_selective_error2 = ([] for _ in range(7))
+    selective_error, selective_error2, ds_error, ds_error2, single_selective_error, \
+        single_selective_error2 = ([] for _ in range(6))
 
     for i in range(len(feature_weight_list)):
         print((i,j),"(i,j)")
-        weight = [feature_weight_list[i]]*7
+        weight = [feature_weight_list[i]]*6
         sims = test_inference(weight,[1.0,3.0],p,sparsity_list[j],global_sparsity,nsim=n_list[j])
         selective_coverage.append(sims["MTL_SI_07_coverage"])
         selective_coverage2.append(sims["MTL_SI_1_coverage"])
-        naive_coverage.append(sims["Naive_coverage"])
         ds_coverage.append(sims["DS_67_coverage"])
         ds_coverage2.append(sims["DS_50_coverage"])
         single_selective_coverage.append(sims["LASSO_SI_07_coverage"])
@@ -62,7 +61,6 @@ for j in range(len(sparsity_list)):
 
         selective_lengths.append(sims["MTL_SI_07_length"])
         selective_lengths2.append(sims["MTL_SI_1_length"])
-        naive_lengths.append(sims["Naive_length"])
         ds_lengths.append(sims["DS_67_length"])
         ds_lengths2.append(sims["DS_50_length"])
         single_selective_lengths.append(sims["LASSO_SI_07_length"])
@@ -70,7 +68,6 @@ for j in range(len(sparsity_list)):
 
         selective_sensitivity.append(sims["MTL_SI_07_sensitivity"])
         selective_sensitivity2.append(sims["MTL_SI_1_sensitivity"])
-        naive_sensitivity.append(sims["Naive_sensitivity"])
         ds_sensitivity.append(sims["DS_67_sensitivity"])
         ds_sensitivity2.append(sims["DS_50_sensitivity"])
         single_task_sensitivity.append(sims["LASSO_SI_07_sensitivity"])
@@ -78,7 +75,6 @@ for j in range(len(sparsity_list)):
 
         selective_specificity.append(sims["MTL_SI_07_specificity"])
         selective_specificity2.append(sims["MTL_SI_1_specificity"])
-        naive_specificity.append(sims["Naive_specificity"])
         ds_specificity.append(sims["DS_67_specificity"])
         ds_specificity2.append(sims["DS_50_specificity"])
         single_task_specificity.append(sims["LASSO_SI_07_specificity"])
@@ -86,7 +82,6 @@ for j in range(len(sparsity_list)):
 
         selective_error.append(sims["MTL_SI_07_error"])
         selective_error2.append(sims["MTL_SI_1_error"])
-        naive_error.append(sims["Naive_error"])
         ds_error.append(sims["DS_67_error"])
         ds_error2.append(sims["DS_50_error"])
         single_selective_error.append(sims["LASSO_SI_07_error"])
@@ -94,7 +89,6 @@ for j in range(len(sparsity_list)):
 
     idx_min_random_multitask = np.argmin(selective_error)
     idx_min_random_multitask2 = np.argmin(selective_error2)
-    idx_min_naive_multitask = np.argmin(naive_error)
     idx_min_data_splitting = np.argmin(ds_error)
     idx_min_data_splitting2 = np.argmin(ds_error2)
     idx_min_k_random_lasso = np.argmin(single_selective_error)
@@ -180,20 +174,17 @@ for j in range(len(sparsity_list)):
     coverage_by_ts[j][1] = selective_coverage2[idx_min_random_multitask2]
     length_by_ts[j][1] = selective_lengths2[idx_min_random_multitask2]
 
-    coverage_by_ts[j][2] = naive_coverage[idx_min_naive_multitask]
-    length_by_ts[j][2] = naive_lengths[idx_min_naive_multitask]
+    coverage_by_ts[j][2] = ds_coverage[idx_min_data_splitting]
+    length_by_ts[j][2] = ds_lengths[idx_min_data_splitting]
 
-    coverage_by_ts[j][3] = ds_coverage[idx_min_data_splitting]
-    length_by_ts[j][3] = ds_lengths[idx_min_data_splitting]
+    coverage_by_ts[j][3] = ds_coverage2[idx_min_data_splitting2]
+    length_by_ts[j][3] = ds_lengths2[idx_min_data_splitting2]
 
-    coverage_by_ts[j][4] = ds_coverage2[idx_min_data_splitting2]
-    length_by_ts[j][4] = ds_lengths2[idx_min_data_splitting2]
+    coverage_by_ts[j][4] = single_selective_coverage[idx_min_k_random_lasso]
+    length_by_ts[j][4] = single_selective_lengths[idx_min_k_random_lasso]
 
-    coverage_by_ts[j][5] = single_selective_coverage[idx_min_k_random_lasso]
-    length_by_ts[j][5] = single_selective_lengths[idx_min_k_random_lasso]
-
-    coverage_by_ts[j][6] = single_selective_coverage2[idx_min_k_random_lasso2]
-    length_by_ts[j][6] = single_selective_lengths2[idx_min_k_random_lasso2]
+    coverage_by_ts[j][5] = single_selective_coverage2[idx_min_k_random_lasso2]
+    length_by_ts[j][5] = single_selective_lengths2[idx_min_k_random_lasso2]
 
 #Visualize results
 length = len(sparsity_list)
@@ -210,10 +201,10 @@ ax3 = fig.add_subplot(133)
 plt.sca(ax1)
 first = plt.boxplot([coverage_by_ts[j][0] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
 second = plt.boxplot([coverage_by_ts[j][1] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.3, sym='', widths=0.3)
-third = plt.boxplot([coverage_by_ts[j][3] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.6, sym='', widths=0.3)
-fourth = plt.boxplot([coverage_by_ts[j][4] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.9, sym='', widths=0.3)
-fifth = plt.boxplot([coverage_by_ts[j][5] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.2, sym='',widths=0.3)
-sixth = plt.boxplot([coverage_by_ts[j][6] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.5, sym='',widths=0.3)
+third = plt.boxplot([coverage_by_ts[j][2] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.6, sym='', widths=0.3)
+fourth = plt.boxplot([coverage_by_ts[j][3] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.9, sym='', widths=0.3)
+fifth = plt.boxplot([coverage_by_ts[j][4] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.2, sym='',widths=0.3)
+sixth = plt.boxplot([coverage_by_ts[j][5] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.5, sym='',widths=0.3)
 set_boxplot_style(first, '#2b8cbe','solid')
 set_boxplot_style(second, '#6baed6','--')
 set_boxplot_style(third, '#238443','solid')
@@ -236,10 +227,10 @@ plt.yticks(fontsize=14)
 plt.sca(ax2)
 first = plt.boxplot([length_by_ts[j][0] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3, sym='', widths=0.3)
 second = plt.boxplot([length_by_ts[j][1] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 +.3, sym='', widths=0.3)
-third = plt.boxplot([length_by_ts[j][3] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + .6, sym='', widths=0.3)
-fourth = plt.boxplot([length_by_ts[j][4] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.9, sym='', widths=0.3)
-fifth = plt.boxplot([length_by_ts[j][5] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.2, sym='',widths=0.3)
-sixth = plt.boxplot([length_by_ts[j][6] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.5, sym='',widths=0.3)
+third = plt.boxplot([length_by_ts[j][2] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + .6, sym='', widths=0.3)
+fourth = plt.boxplot([length_by_ts[j][3] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 0.9, sym='', widths=0.3)
+fifth = plt.boxplot([length_by_ts[j][4] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.2, sym='',widths=0.3)
+sixth = plt.boxplot([length_by_ts[j][5] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3 + 1.5, sym='',widths=0.3)
 set_boxplot_style(first, '#2b8cbe','solid')
 set_boxplot_style(second, '#6baed6','--')
 set_boxplot_style(third, '#238443','solid')
