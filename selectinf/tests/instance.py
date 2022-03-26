@@ -421,7 +421,9 @@ def gaussian_multitask_instance(ntask,
             null_positions = np.random.choice(ntask, int(round(task_sparsity * ntask)), replace=False)
             beta[i, null_positions] = 0.
             non_null_positions = np.setdiff1d(np.arange(ntask), null_positions)
-            beta[i, non_null_positions] = np.linspace(float(signal[0]), float(signal[1]), num=ntask-null_positions.shape[0])
+            signals = np.linspace(float(signal[0]), float(signal[1]), num=ntask-null_positions.shape[0])
+            np.random.shuffle(signals)
+            beta[i, non_null_positions] = signals
 
     if random_signs:
         beta *= (2 * np.random.binomial(1, 0.5, size=(p,ntask)) - 1.)
