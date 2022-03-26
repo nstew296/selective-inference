@@ -559,7 +559,7 @@ def test_inference(weight, signal, p, ts, gs, nsim=100, seed=5):
     #Print SNR, PVE
     SIG = np.full((p, p), 0.3)
     np.fill_diagonal(SIG, 1.0)
-    SNR = beta.T.dot(SIG.dot(beta)) / 1000
+    SNR = beta.T.dot(SIG.dot(beta)) / 500
     SNR = np.diag(SNR)
     print(SNR, "SNR")
     print(SNR / (1 + SNR), "PVE")

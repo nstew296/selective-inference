@@ -9,7 +9,7 @@ k=5
 p=100
 global_sparsity = 0.90
 
-length_path = 15
+length_path = 10
 lambdamin_ds = 0.5
 lambdamax_ds = 4.0
 feature_weight_list_ds = np.linspace(lambdamin_ds, lambdamax_ds,length_path)
@@ -268,7 +268,7 @@ plt.yticks(fontsize=14)
 
 
 ax1.set_title("Coverage", y = 1.01,fontsize=20)
-ax2.set_title("Mean Length", y = 1.01,fontsize=20)
+ax2.set_title("Length", y = 1.01,fontsize=20)
 ax3.set_title("Accuracy", y = 1.01,fontsize=20)
 
 

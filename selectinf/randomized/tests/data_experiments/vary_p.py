@@ -12,7 +12,7 @@ global_sparsity = [0.9375,0.975,0.9875,0.99375]
 #task_sparsity = 0.4
 task_sparsity = 0.2
 
-length_path = 15
+length_path = 10
 lambdamin_ds = 1.0
 lambdamax_ds = 4.0
 feature_weight_list_ds = np.linspace(lambdamin_ds, lambdamax_ds,length_path)
@@ -21,7 +21,7 @@ lambdamin_si = 2.0
 lambdamax_si = 5.0
 feature_weight_list_si = np.linspace(lambdamin_si, lambdamax_si,length_path)
 
-p_list = [100,250,500,1000]
+p_list = [100,250]
 #n_list = [100,100,100]
 #p_list = [100,250,500,750]
 n_list = [100,100,100,100]
@@ -56,6 +56,13 @@ for j in range(len(p_list)):
         single_selective_error.append(sims["LASSO_SI_07_error"])
         single_selective_error2.append(sims["LASSO_SI_1_error"])
 
+        selective_length_index = len(sims["MTL_SI_07_length"])
+        selective_length_index2 = len (sims["MTL_SI_1_length"])
+        ds_length_index = len(sims["DS_67_length"])
+        ds_length_index2 = len(sims["DS_50_length"])
+        single_selective_length_index = len(sims["LASSO_SI_07_length"])
+        single_selective_length_index2 = len(sims["LASSO_SI_1_length"])
+
     idx_min_random_multitask = np.argmin(selective_error)
     idx_min_random_multitask2 = np.argmin(selective_error2)
     idx_min_data_splitting = np.argmin(ds_error)
@@ -78,12 +85,12 @@ for j in range(len(p_list)):
     single_selective_coverage = coverage_by_p[j][5] = sims["LASSO_SI_07_coverage"][10:]
     single_selective_coverage2 = coverage_by_p[j][6] = sims["LASSO_SI_1_coverage"][10:]
 
-    selective_lengths = length_by_p[j][0] = sims["MTL_SI_07_length"][10:]
-    selective_lengths2 = length_by_p[j][1] = sims["MTL_SI_1_length"][10:]
-    ds_lengths = length_by_p[j][3] = sims["DS_67_length"][10:]
-    ds_lengths2 = length_by_p[j][4] = sims["DS_50_length"][10:]
-    single_selective_lengths = length_by_p[j][5] = sims["LASSO_SI_07_length"][10:]
-    single_selective_lengths2 = length_by_p[j][6] = sims["LASSO_SI_1_length"][10:]
+    selective_lengths = length_by_p[j][0] = sims["MTL_SI_07_length"][selective_length_index:]
+    selective_lengths2 = length_by_p[j][1] = sims["MTL_SI_1_length"][selective_length_index2:]
+    ds_lengths = length_by_p[j][3] = sims["DS_67_length"][ds_length_index:]
+    ds_lengths2 = length_by_p[j][4] = sims["DS_50_length"][ds_length_index2:]
+    single_selective_lengths = length_by_p[j][5] = sims["LASSO_SI_07_length"][single_selective_length_index:]
+    single_selective_lengths2 = length_by_p[j][6] = sims["LASSO_SI_1_length"][single_selective_length_index2:]
 
     selective_sensitivity = sims["MTL_SI_07_sensitivity"][10:]
     selective_sensitivity2 = sims["MTL_SI_1_sensitivity"][10:]
