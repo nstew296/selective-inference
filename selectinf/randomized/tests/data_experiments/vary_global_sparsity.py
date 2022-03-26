@@ -10,7 +10,7 @@ p = 100
 #task_sparsity = 0.4
 task_sparsity = 0.2
 
-length_path = 5
+length_path = 15
 lambdamin_ds = 0.5
 lambdamax_ds = 4.5
 feature_weight_list_ds = np.linspace(lambdamin_ds, lambdamax_ds,length_path)
@@ -21,7 +21,7 @@ feature_weight_list_si = np.linspace(lambdamin_si, lambdamax_si,length_path)
 
 sparsity_list = [0.80,0.85,0.9,0.95]
 #sparsity_list = [0.70,0.80,0.9,0.99]
-n_list = [3,3,3,3]
+n_list = [100,100,100,100]
 ##n_list = [5,5,5,20,20]
 coverage_by_gs = {j: [[], [], [], [], [], []] for j in range(len(sparsity_list))}
 length_by_gs = {j: [[], [], [], [], [], []] for j in range(len(sparsity_list))}
