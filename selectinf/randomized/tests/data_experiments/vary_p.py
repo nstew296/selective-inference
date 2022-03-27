@@ -5,11 +5,9 @@ import matplotlib.pyplot as plt
 from selectinf.randomized.tests.test_multitask_lasso import test_inference
 
 k=5
-#global_sparsity = [0.9167,0.9667,0.9833,0.9888]
 #global_sparsity = [0.9375,0.975,0.9875,0.99167]
-global_sparsity = [0.9375,0.975,0.9875,0.99375]
-#global_sparsity = [0.83333,0.9667,0.9833]
-#task_sparsity = 0.4
+#global_sparsity = [0.9375,0.975,0.9875,0.99375]
+global_sparsity = [0.875,0.95,0.975,0.9875]
 task_sparsity = 0.2
 
 length_path = 10
@@ -21,7 +19,7 @@ lambdamin_si = 2.0
 lambdamax_si = 5.0
 feature_weight_list_si = np.linspace(lambdamin_si, lambdamax_si,length_path)
 
-p_list = [100,250]
+p_list = [100,250, 500, 1000]
 #n_list = [100,100,100]
 #p_list = [100,250,500,750]
 n_list = [100,100,100,100]
@@ -254,7 +252,7 @@ plt.ylabel('F1 per Simulation',fontsize=18)
 plt.yticks(fontsize=14)
 
 ax1.set_title("Coverage", y = 1.01,fontsize=20)
-ax2.set_title("Mean Length", y = 1.01,fontsize=20)
+ax2.set_title("Length", y = 1.01,fontsize=20)
 ax3.set_title("Accuracy", y = 1.01,fontsize=20)
 
 common_format(ax1)
