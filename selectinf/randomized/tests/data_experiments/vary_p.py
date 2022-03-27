@@ -6,8 +6,8 @@ from selectinf.randomized.tests.test_multitask_lasso import test_inference
 
 k=5
 #global_sparsity = [0.9375,0.975,0.9875,0.99167]
-#global_sparsity = [0.9375,0.975,0.9875,0.99375]
-global_sparsity = [0.875,0.95,0.975,0.9875]
+global_sparsity = [0.9375,0.975,0.9875,0.99375]
+#global_sparsity = [0.875,0.95,0.975,0.9875]
 task_sparsity = 0.2
 
 length_path = 10
