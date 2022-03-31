@@ -882,7 +882,7 @@ set_boxplot_style(seventh, '#feb24c', '--')
 plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list],fontsize=14)
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.tight_layout()
-plt.ylabel('Interval Length', fontsize=16)
+plt.ylabel('Interval Lengths', fontsize=16)
 plt.yticks(fontsize=14)
 
 plt.sca(ax3)
@@ -909,12 +909,12 @@ plt.plot([], c='#fd8d3c', label='LASSO (0.7) + SI', linewidth=2.5)
 plt.plot([], c='#feb24c', label='LASSO (1.0) + SI', linestyle='--', linewidth=2.5)
 plt.legend()
 plt.tight_layout()
-plt.ylabel('F1 Score', fontsize=16)
+plt.ylabel('F1 Score per Simulation', fontsize=16)
 plt.yticks(fontsize=14)
 
 ax1.set_title("Coverage", y=1.01,fontsize=20)
 ax2.set_title("Length", y=1.01,fontsize=20)
-ax3.set_title("Accuracy", y=1.01,fontsize=20)
+ax3.set_title("F1 Score", y=1.01,fontsize=20)
 
 ax3.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.6), fontsize=16)
 

@@ -245,7 +245,7 @@ set_boxplot_style(sixth,'#feb24c','--')
 plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in sparsity_list],fontsize=14)
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.tight_layout()
-plt.ylabel('Interval Length',fontsize=18)
+plt.ylabel('Interval Lengths',fontsize=18)
 plt.yticks(fontsize=14)
 
 plt.sca(ax3)
@@ -270,7 +270,7 @@ plt.yticks(fontsize=14)
 
 ax1.set_title("Coverage", y = 1.01,fontsize=20)
 ax2.set_title("Length", y = 1.01,fontsize=20)
-ax3.set_title("Accuracy", y = 1.01,fontsize=20)
+ax3.set_title("F1 Score", y = 1.01,fontsize=20)
 
 
 def common_format(ax):

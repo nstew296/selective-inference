@@ -5,9 +5,8 @@ import matplotlib.pyplot as plt
 from selectinf.randomized.tests.test_multitask_lasso import test_inference
 
 k=5
-#global_sparsity = [0.9375,0.975,0.9875,0.99167]
-global_sparsity = [0.9375,0.975,0.9875,0.99375]
-#global_sparsity = [0.875,0.95,0.975,0.9875]
+#global_sparsity = [0.9375,0.975,0.9875,0.99375]
+global_sparsity = [0.875,0.95,0.975,0.9875]
 task_sparsity = 0.2
 
 length_path = 10
@@ -229,7 +228,7 @@ set_boxplot_style(sixth,'#feb24c','--')
 plt.xticks(range(1, (length) * 3 + 1, 3), p_list,fontsize=14)
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.tight_layout()
-plt.ylabel('Interval Length',fontsize=18)
+plt.ylabel('Interval Lengths',fontsize=18)
 plt.yticks(fontsize=14)
 
 plt.sca(ax3)
@@ -253,7 +252,7 @@ plt.yticks(fontsize=14)
 
 ax1.set_title("Coverage", y = 1.01,fontsize=20)
 ax2.set_title("Length", y = 1.01,fontsize=20)
-ax3.set_title("Accuracy", y = 1.01,fontsize=20)
+ax3.set_title("F1 Score", y = 1.01,fontsize=20)
 
 common_format(ax1)
 common_format(ax2)
