@@ -268,9 +268,9 @@ plt.ylabel('F1 per Simulation',fontsize=18)
 plt.yticks(fontsize=14)
 
 
-ax1.set_title("Coverage", y = 1.01,fontsize=20)
-ax2.set_title("Length", y = 1.01,fontsize=20)
-ax3.set_title("F1 Score", y = 1.01,fontsize=20)
+#ax1.set_title("Coverage", y = 1.01,fontsize=20)
+#ax2.set_title("Length", y = 1.01,fontsize=20)
+#ax3.set_title("F1 Score", y = 1.01,fontsize=20)
 
 
 def common_format(ax):

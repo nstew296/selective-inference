@@ -912,9 +912,9 @@ plt.tight_layout()
 plt.ylabel('F1 Score per Simulation', fontsize=16)
 plt.yticks(fontsize=14)
 
-ax1.set_title("Coverage", y=1.01,fontsize=20)
-ax2.set_title("Length", y=1.01,fontsize=20)
-ax3.set_title("F1 Score", y=1.01,fontsize=20)
+#ax1.set_title("Coverage", y=1.01,fontsize=20)
+#ax2.set_title("Length", y=1.01,fontsize=20)
+#ax3.set_title("F1 Score", y=1.01,fontsize=20)
 
 ax3.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.6), fontsize=16)
 
