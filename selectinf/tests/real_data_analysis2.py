@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
+import seaborn as sns
 from scipy.stats import t as tdist
 from scipy.stats import norm as ndist
 import regreg.api as rr
@@ -22,8 +23,12 @@ responses_test = {}
 
 for i in range(ntask):
     responses_train[i] = np.genfromtxt('train.csv', delimiter=',')[1:,-ntask+i]
+    scale = np.std(responses_train[i])
+    responses_train[i] /= scale
     responses_validate[i] = np.genfromtxt('validate.csv', delimiter=',')[1:,-ntask+i]
+    responses_validate[i] /=  scale
     responses_test[i] = np.genfromtxt('test.csv', delimiter=',')[1:,-ntask+i]
+    responses_test[i] /= scale
 
 #PC loadings and singular values
 V = np.genfromtxt('V.csv', delimiter=',')[1:,:]
@@ -43,7 +48,7 @@ def _noise(n, df=np.inf):
     return tdist.rvs(df, size=n) / sd_t
 
 #Generate randomization variable
-noise = _noise(predictors_train.shape[1])
+noise = _noise(predictors_train.shape[1]*ntask)
 
 #Function to perform randomized model selection and conduct post-selection inference
 #Takes as input the training data, validation data, testing data, lambda path (weight list), randomization variable, and randomizer scale
@@ -72,7 +77,7 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
     dispersions = [noise_levels[i] ** 2 for i in range(len(noise_levels))]
     randomizer_scales = rand_scale * np.asarray([noise_levels[i] for i in range(ntask)])
     randomizers = {i: randomization.isotropic_gaussian((nfeatures,), randomizer_scales[i]) for i in range(ntask)}
-    perturbations = np.array([randomizer_scales[i] * noise for i in range(ntask)]).T
+    perturbations = np.array([randomizer_scales[i] * noise[i*nfeatures:(i+1)*nfeatures] for i in range(ntask)]).T
 
     #Perform inference for given tuning parameter
     for weight in weight_list:
@@ -87,6 +92,145 @@ def rand_multi_task_selection_inference(predictor_vars_train,predictor_vars_vali
         #Track the active variables, selective MLE, post-selection intervals, and coefficient of varation for each lambda
         estimates_dict[weight] = estimate
         coef_var_dict[weight] = np.sqrt(np.diag(observed_info_mean)) / np.abs(estimate)
+        intervals_dict[weight] = intervals
+        active_dict[weight] = active_signs
+
+        #Caculate error on validation data for given lambda
+        if (active_signs != 0).sum() > 0:
+            error = 0
+            idx = 0
+            for j in range(ntask):
+                idx_new = np.sum(active_signs[:, j] != 0)
+                if idx_new == 0:
+                    error += np.sqrt(np.sum(np.square(response_validate[j])) / sample_sizes_validate)
+                else:
+                    #If there are no active predictors for task j
+                    error += np.sqrt(np.sum(
+                        np.square((response_validate[j] - predictor_vars_validate[:, (active_signs[:, j] != 0)].dot(
+                            estimate[idx:idx + idx_new])))) / sample_sizes_validate)
+                idx = idx + idx_new
+
+        else:
+            #If there are no active predictors for any task
+            error = 0
+            for j in range(ntask):
+                error += np.qrt((np.linalg.norm(response_validate[j], 2) ** 2) / sample_sizes_validate)
+
+        error_list.append(error/ntask)
+
+    min_error = np.argmin(error_list)
+    final_estimates = estimates_dict[weight_list[min_error]]
+    final_intervals = intervals_dict[weight_list[min_error]]
+    final_coefs_var = coef_var_dict[weight_list[min_error]]
+
+    #Caculate final testing error and predictive r on test set
+    if (active_dict[weight_list[min_error]] != 0).sum() > 0:
+        final_error = 0
+        predictive_r = []
+        idx = 0
+        for j in range(ntask):
+            idx_new = np.sum(active_dict[weight_list[min_error]][:, j] != 0)
+            if idx_new == 0:
+                final_error += np.sqrt(np.sum(np.square(response_test[j])) / sample_sizes_test)
+            else:
+                final_error += np.sqrt(np.sum(
+                    np.square((response_test[j] - predictor_vars_test[:, (active_dict[weight_list[min_error]][:, j] != 0)].dot(
+                        estimates_dict[weight_list[min_error]][idx:idx + idx_new])))) / sample_sizes_test)
+                predictive_r.append(np.corrcoef(response_test[j],predictor_vars_test[:, (active_dict[weight_list[min_error]][:, j] != 0)].dot(
+                        estimates_dict[weight_list[min_error]][idx:idx + idx_new]))[0,1])
+            idx = idx + idx_new
+
+    else:
+        final_error = 0
+        predictive_r = []
+        for j in range(ntask):
+            final_error += np.sqrt(np.linalg.norm(response_test[j], 2) ** 2 / sample_sizes_test)
+
+    #Average final testing error by task
+    final_avg_error = final_error/ntask
+
+    #Identify intervals that do not cover zero
+    all_variables = {}
+    significant = [final_intervals[j, 0] > 0 or final_intervals[j, 1] < 0 for j in range(np.shape(final_intervals)[0])]
+    significant_variables = {}
+    placeholder = 0
+    for i in range(ntask):
+        #Identify variables (by task) corresponding to the significant intervals
+        active_ = active_dict[weight_list[min_error]][:, i] != 0
+        new_placeholder = np.sum(active_)
+        all_variables[i] = np.nonzero(active_)[0]
+        significant_variables[i] = np.nonzero(active_)[0][significant[placeholder:placeholder+new_placeholder]]
+        placeholder = placeholder + new_placeholder
+
+    selective_interval_lengths = np.asarray(final_intervals[:,1]-final_intervals[:,0])
+
+    return(final_estimates, final_intervals,selective_interval_lengths,all_variables,significant_variables,
+           final_avg_error,predictive_r,final_coefs_var)
+
+def rand_single_task_selection_inference(predictor_vars_train,predictor_vars_validate,predictor_vars_test,response_train,
+                                        response_validate,response_test,weight_list,noise,rand_scale=0.7):
+
+    sample_sizes = predictor_vars_train.shape[0]
+    sample_sizes_validate = predictor_vars_validate.shape[0]
+    sample_sizes_test = predictor_vars_test.shape[0]
+    nfeatures = predictor_vars_train.shape[1]
+    estimates_dict = {}
+    coef_var_dict = {}
+    intervals_dict = {}
+    active_dict = {}
+    error_list = []
+
+    #Setup for post-selection inference
+    noise_levels = []
+    for i in range(ntask):
+        noise_levels.append(np.sqrt(np.sum(np.array(response_train[i] - predictor_vars_train.dot(
+            np.linalg.pinv(predictor_vars_train).dot(response_train[i]))) ** 2) / (sample_sizes - nfeatures)))
+    randomizer_scales = rand_scale * np.asarray([noise_levels[i] for i in range(ntask)])
+
+    #Perform inference for given tuning parameter
+    for weight in weight_list:
+        estimate = np.asarray([])
+        intervals = np.asarray([[0, 0]])
+        coef_vars = np.asarray([])
+        active_signs = np.zerso((nfeatures,ntask))
+
+        for i in range(ntask):
+
+            W = np.ones(nfeatures) * weight
+            single_task_lasso = lasso.gaussian(predictor_vars_train[i],
+                                               response_train[i],
+                                               W,
+                                               sigma=noise_levels[i],
+                                               ridge_term=0.,
+                                               randomizer_scale=randomizer_scales[i])
+
+            initial_omega = np.array(randomizer_scales[i] * noise_levels[i] * noise[i*nfeatures:(i+1)*nfeatures]).T
+            signs = single_task_lasso.fit(perturb=initial_omega)
+            nonzero = signs != 0
+
+            (observed_target, cov_target, cov_target_score, alternatives) = \
+                selected_targets(single_task_lasso.loglike, single_task_lasso._W, nonzero, dispersion=noise_levels[i] ** 2)
+
+            try:
+                MLE_result, observed_fi = single_task_lasso.selective_MLE(
+                    observed_target,
+                    cov_target,
+                    cov_target_score,
+                    level=0.90)[0:2]
+
+                estimate.extend(MLE_result['MLE'])
+                task_intervals = np.asarray(MLE_result[['lower_confidence', 'upper_confidence']])
+                intervals = np.vstack([intervals, task_intervals])
+                coef_vars.extend(np.sqrt(np.diag(observed_fi)) / np.abs(estimate))
+
+            except:
+                pass
+
+            active_signs[i,:] = signs
+
+        #Track the active variables, selective MLE, post-selection intervals, and coefficient of varation for each lambda
+        estimates_dict[weight] = estimate
+        coef_var_dict[weight] = coef_vars
         intervals_dict[weight] = intervals
         active_dict[weight] = active_signs
 
@@ -283,7 +427,7 @@ def ds_multi_task_selection_inference(predictor_vars_selection,predictor_vars_in
 #Compare selective inference with 50/50 data split
 final_estimates_rand1, final_intervals_rand1, selective1_intervals, all_variables_rand1, significant_variables_rand1, final_err_rand1, pred_r_rand1, coefs_var_rand1 = \
     rand_multi_task_selection_inference(predictors_train,predictors_validate,predictors_test, responses_train,
-                                        responses_validate, responses_test,np.arange(41,50,0.3),noise,rand_scale=1.0)
+                                        responses_validate, responses_test,np.arange(2,4,0.25),noise,rand_scale=1.0)
 
 print(final_err_rand1, "Average testing error per task, rand scale 1.0")
 print(pred_r_rand1, "Predictive r, rand scale 1.0")
@@ -358,7 +502,7 @@ predictors_inference = predictors_train[inference,:]
 
 final_estimates_ds50, final_intervals_ds50, ds50_intervals, all_variables_ds50, significant_variables_ds50, final_err_ds50, pred_r_ds50, coefs_var_ds50 = \
     ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
-                                        responses_validate, responses_test, weight_list = np.arange(20,30,0.3))
+                                        responses_validate, responses_test, weight_list = np.arange(0.5,3.5,0.25))
 
 
 print(final_err_ds50, "Average testing error per task, data split 50/50")
@@ -403,7 +547,32 @@ for i in range(ntask):
 
 final_estimates_rand07, final_intervals_rand07, selective07_intervals, all_variables_rand07, significant_variables_rand07, final_err_rand07, pred_r_rand07, coefs_var_rand07 = \
     rand_multi_task_selection_inference(predictors_train,predictors_validate,predictors_test, responses_train,
-                                        responses_validate, responses_test,np.arange(41,52,0.3),noise,rand_scale=0.7)
+                                        responses_validate, responses_test,np.arange(2,4,0.25),noise,rand_scale=0.7)
+
+
+jacard_matrix = np.zeros((11,11))
+
+for i in range(11):
+    for j in range(11):
+        jacard_matrix[i,j] = round(len(np.intersect1d(significant_variables_rand07[i],significant_variables_rand07[j]))/len(np.union1d(significant_variables_rand07[i],significant_variables_rand07[j])),2)
+
+print(jacard_matrix)
+
+j_list = []
+for i in range(11):
+    for j in range(11):
+        if j>i:
+            j_list.append(jacard_matrix[i,j])
+
+print(np.mean(j_list))
+
+mat = sns.heatmap(jacard_matrix,vmin=0,vmax=1,cmap="viridis_r")
+mat.set_xticklabels(['PV','FT','LS','CS','PC','PS','RC','Ravlt-Sd','Ravlt-Ld','Matrix','LMT'],rotation=90)
+mat.set_yticklabels(['PV','FT','LS','CS','PC','PS','RC','Ravlt-Sd','Ravlt-Ld','Matrix','LMT'],rotation=0)
+fig = mat.get_figure()
+fig.tight_layout()
+fig.savefig("jaccard_MTL.png")
+
 
 print(final_err_rand07, "Average testing error per task, rand scale 0.7")
 print(pred_r_rand07, "Predictive r, rand scale 0.7")
@@ -474,7 +643,7 @@ predictors_inference = predictors_train[inference,:]
 
 final_estimates_ds67, final_intervals_ds67, ds67_intervals, all_variables_ds67, significant_variables_ds67, final_err_ds67, pred_r_ds67, coefs_var_ds67 = \
     ds_multi_task_selection_inference(predictors_selection,predictors_inference,predictors_validate,predictors_test, responses_selection, responses_inference,
-                                        responses_validate, responses_test,weight_list = np.arange(24,35,0.3))
+                                        responses_validate, responses_test,weight_list = np.arange(0.5,3.5,0.25))
 
 #24-38
 print(final_err_ds67, "Average testing error per task, data split 67/33")
@@ -528,17 +697,17 @@ ax1 = fig.add_subplot(133)
 plt.sca(ax1)
 first = plt.boxplot([common_lengths_67], positions=np.asarray([1]), sym='', widths=0.3)
 second = plt.boxplot([common_lengths], positions=np.asarray([1.6]), sym='', widths=0.3)
-set_boxplot_style(first, 'OrangeRed4', 'solid')  # colors are from http://colorbrewer2.org/
-set_boxplot_style(second, 'OrangeRed4', '--')
+set_boxplot_style(first, '#984ea3', 'solid')  # colors are from http://colorbrewer2.org/
+set_boxplot_style(second, '#984ea3', '--')
 plt.xlim(0.7, 1.9)
 plt.tight_layout()
-plt.plot([], c='OrangeRed4', label='DS (0.67): MTL (0.7) + SI', linewidth=2.5)
-plt.plot([], c='OrangeRed4', label='DS (0.5): MTL (1.0) + SI', linestyle='--', linewidth=2.5)
+plt.plot([], c='#984ea3', label='DS (0.67): MTL (0.7) + SI', linewidth=2.5)
+plt.plot([], c='#984ea3', label='DS (0.5): MTL (1.0) + SI', linestyle='--', linewidth=2.5)
 plt.legend()
 plt.ylabel('Ratio of Lengths for Common Parameters', fontsize=20)
 plt.yticks(fontsize=18)
 
-ax1.set_title("Ratio of Interval Lengths", y=1.01 ,fontsize=24)
+#ax1.set_title("Ratio of Interval Lengths", y=1.01 ,fontsize=24)
 ax1.legend(loc='lower left', bbox_to_anchor=(0.08, -.3), fontsize=24)
 ax1.set_xticklabels([])
 ax1.set_xticks([])
@@ -552,20 +721,20 @@ first = plt.boxplot([selective07_intervals], positions=np.asarray([1]), sym='', 
 second = plt.boxplot([selective1_intervals], positions=np.asarray([1.8]), sym='', widths=0.3)
 third = plt.boxplot([ds67_intervals], positions=np.asarray([1.3]), sym='', widths=0.3)
 fourth = plt.boxplot([ds50_intervals], positions=np.asarray([2.1]), sym='', widths=0.3)
-set_boxplot_style(first, 'blue2', 'solid')  # colors are from http://colorbrewer2.org/
-set_boxplot_style(second, 'lime green', '--')
-set_boxplot_style(third, 'blue2', 'solid')
-set_boxplot_style(fourth, 'lime green', '--')
+set_boxplot_style(first, '#377eb8', 'solid')  # colors are from http://colorbrewer2.org/
+set_boxplot_style(second, '#377eb8', '--')
+set_boxplot_style(third, '#4daf4a', 'solid')
+set_boxplot_style(fourth, '#4daf4a', '--')
 plt.xlim(0.7, 2.4)
 plt.tight_layout()
-plt.plot([], c='blue2', label='MTL (0.7) + SI', linewidth=2.5)
-plt.plot([], c='lime green', label='DS (0.67)', linewidth=2.5)
-plt.plot([], c='blue2', label='MTL (1.0) + SI', linestyle='--', linewidth=2.5)
-plt.plot([], c='lime green', label='DS (0.5)', linestyle='--', linewidth=2.5)
+plt.plot([], c='#377eb8', label='MTL (0.7) + SI', linewidth=2.5)
+plt.plot([], c='#4daf4a', label='DS (0.67)', linewidth=2.5)
+plt.plot([], c='#377eb8', label='MTL (1.0) + SI', linestyle='--', linewidth=2.5)
+plt.plot([], c='#4daf4a', label='DS (0.5)', linestyle='--', linewidth=2.5)
 plt.legend()
 plt.ylabel('Interval Length', fontsize=20)
 plt.yticks(fontsize=18)
-ax2.set_title("Distribution of Interval Lengths", y=1.01 ,fontsize=24)
+#ax2.set_title("Distribution of Interval Lengths", y=1.01 ,fontsize=24)
 ax2.set_xticklabels([])
 ax2.set_xticks([])
 common_format(ax2)
@@ -576,16 +745,16 @@ first = plt.boxplot([coefs_var_rand07], positions=np.asarray([1]), sym='', width
 second = plt.boxplot([coefs_var_rand1], positions=np.asarray([1.8]), sym='', widths=0.3)
 third = plt.boxplot([coefs_var_ds67], positions=np.asarray([1.3]), sym='', widths=0.3)
 fourth= plt.boxplot([coefs_var_ds50], positions=np.asarray([2.1]), sym='', widths=0.3)
-set_boxplot_style(first, 'blue2', 'solid')  # colors are from http://colorbrewer2.org/
-set_boxplot_style(second, 'lime green', '--')
-set_boxplot_style(third, 'blue2', 'solid')
-set_boxplot_style(fourth, 'lime green', '--')
+set_boxplot_style(first, '#377eb8', 'solid')  # colors are from http://colorbrewer2.org/
+set_boxplot_style(second, '#377eb8', '--')
+set_boxplot_style(third, '#4daf4a', 'solid')
+set_boxplot_style(fourth, '#4daf4a', '--')
 plt.xlim(0.7, 2.4)
 plt.tight_layout()
 plt.ylabel('Coefficient of Variation for Estimated Effects', fontsize=18)
 plt.yticks(fontsize=18)
 
-ax3.set_title("Distribution of Coefficient of Variation", y=1.01 ,fontsize=24)
+#ax3.set_title("Distribution of Coefficient of Variation", y=1.01 ,fontsize=24)
 ax3.set_xticklabels([])
 ax3.set_xticks([])
 common_format(ax3)
