@@ -588,6 +588,9 @@ def test_inference(weight, signal, p, ts, gs, nsim=100, seed=5):
                                     rhos,
                                     random_signs=True,
                                     equicorrelated=True)[:6]
+    
+    for n in range(nsim):
+        
         # For each iteration, generate independent training errors, testing errors, and randomization variables
         # Compute new responses from the new errors
         if n >= 1:
