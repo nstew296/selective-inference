@@ -7,7 +7,6 @@ from selectinf.tests.instance import gaussian_multitask_instance, gaussian_multi
     gaussian_multitask_instance_two_ts
 from selectinf.randomized.lasso import lasso, selected_targets
 
-
 # Compute intervals, pivots, coverage, sensitivity, specificity, and testing error for post-selection inference
 def test_multitask_lasso_selective_inference(predictor_vars_train,
                                              response_vars_train,
@@ -589,9 +588,6 @@ def test_inference(weight, signal, p, ts, gs, nsim=100, seed=5):
                                     rhos,
                                     random_signs=True,
                                     equicorrelated=True)[:6]
-
-    for n in range(nsim):
-
         # For each iteration, generate independent training errors, testing errors, and randomization variables
         # Compute new responses from the new errors
         if n >= 1:
@@ -724,7 +720,6 @@ def test_inference(weight, signal, p, ts, gs, nsim=100, seed=5):
              "DS_50_error": np.mean(np.asarray(data_splitting_test_error_list2)),
              "LASSO_SI_07_error": np.mean(np.asarray(single_task_selective_test_error_list))})
 
-
 def test_inference_mixed_ts(weight, signal, p, ts, gs, nsim=100, seed=5):
     np.random.seed(seed)
     # Track intervals, pivots, sensitivity, specificity, and testing error for selective inference
@@ -737,7 +732,7 @@ def test_inference_mixed_ts(weight, signal, p, ts, gs, nsim=100, seed=5):
     # Track intervals, pivots, sensitivity, specificity, and testing error for data splitting v2
     cov_data_splitting2, len_data_splitting2, pivots_data_splitting2, sensitivity_list_ds2, \
         specificity_list_ds2, data_splitting_test_error_list2 = ([] for _ in range(6))
-
+    
     # Track intervals, sensitivity, specificity, and testing error for single-task selective inference
     cov_single_task_selective, len_single_task_selective, sensitivity_list_single_task_selective, \
         specificity_list_single_task_selective, single_task_selective_test_error_list = ([] for _ in range(5))
