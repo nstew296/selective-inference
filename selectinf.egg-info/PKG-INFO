@@ -1,8 +1,9 @@
 Metadata-Version: 2.1
 Name: selectinf
-Version: 0+untagged.3290.g2c84bbe
+Version: 0+untagged.3401.g3586cbb.dirty
 Summary: Testing a fixed value of lambda
 Home-page: http://github.org/jonathan.taylor/selective-inference
+Download-URL: 
 Author: fixed_lambda developers
 Author-email: 
 Maintainer: Jonathan Taylor
@@ -65,6 +66,4 @@ Potential speedups
 
 -  Learning a higher dimensional function can perhaps save some time –
    proper conditioning has to be checked.
-
-
 

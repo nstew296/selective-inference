@@ -27,7 +27,7 @@ testing_set <- scale(testing_set,center=means,scale=FALSE)
 #Retain first 500 PCs
 PC <- prcomp(training_set,rank=500)
 
-# Following simulations, scale features by sigma * sqrt(p) for use in MTL
+# Following simulations, scale features by sigma * sqrt(n) for use in MTL
 # Scaling ensures all features are penalized equally. The penalty is 
 # inversely-proportional to the sum of coefficients, so low variance features
 # might otherwise be penalized less than high variance ones

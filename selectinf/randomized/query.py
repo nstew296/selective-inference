@@ -280,7 +280,7 @@ class gaussian_query(query):
                       target_cov,
                       target_score_cov,
                       level=0.9,
-                      solve_args={'tol': 1.e-12}):
+                      solve_args={'tol': 1.e-20}):
         """
         Parameters
         ----------
@@ -1570,14 +1570,14 @@ def selective_MLE(observed_target,
 
     conjugate_arg = prec_opt.dot(cond_mean)
 
-    useC = False
+    useC = True
 
     if useC:
         solver = solve_barrier_affine_C
     else:
         solver = _solve_barrier_affine_py
         
-    print("check ", useC)
+    # print("check ", useC)
     
     val, soln, hess = solver(conjugate_arg,
                              prec_opt,

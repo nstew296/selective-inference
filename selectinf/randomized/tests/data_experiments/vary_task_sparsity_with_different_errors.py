@@ -1,7 +1,3 @@
-import numpy as np
-import matplotlib
-
-matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from selectinf.randomized.tests.test_multitask_lasso import test_inference_error_comparison
 
@@ -14,20 +10,22 @@ extract_results_tarball(tar_filename, tar_extract_folder)
 
 k = 4
 p = 500
+n_list = [100, 100, 100]
 global_sparsity = 0.85
 
+sparsity_list = [0, 0.25, 0.5]
+n_setups = len(sparsity_list)
+
+# track coverage, length, and F1 score for each level of sparsity
+coverage_by_ts = {j: [[] for _ in range(3)] for j in range(n_setups)}
+
 length_path = 6
-lambdamin_si = 100.5
+lambdamin_si = 1.5
 lambdamax_si = 4.0
 feature_weight_list_si = np.linspace(lambdamin_si, lambdamax_si, length_path)
 print(feature_weight_list_si)
 
-sparsity_list = [0, 0.25, 0.5]
-n_list = [100, 100, 100]
-# track coverage, length, and F1 score for each level of sparsity
-coverage_by_ts = {j: [[], [], [], []] for j in range(len(sparsity_list))}
-
-for j in range(len(sparsity_list)):
+for j in range(n_setups):
     # Create lists to track coverage for each method by lambda at given sparsity level
     gaussian_coverage, exponential_coverage, laplace_coverage = ([] for _ in range(3))
 
@@ -69,6 +67,12 @@ def set_boxplot_style(bp, color, linestyle):
     plt.setp(bp['medians'], color=color, linewidth=2)
 
 
+def common_format(ax):
+    ax.grid(True, which='both', color='#f0f0f0')
+    ax.set_xlabel('Task Sparsity', fontsize=18)
+    return ax
+
+
 fig = plt.figure(figsize=(10, 7))
 ax1 = fig.add_subplot(111)
 first = plt.boxplot([coverage_by_ts[j][0] for j in range(len(sparsity_list))], positions=np.array(range(length)) * 3,
@@ -89,13 +93,6 @@ plt.legend(loc='lower left')
 plt.tight_layout()
 plt.ylabel('Coverage per Simulation', fontsize=18)
 plt.yticks(fontsize=14)
-
-
-def common_format(ax):
-    ax.grid(True, which='both', color='#f0f0f0')
-    ax.set_xlabel('Task Sparsity', fontsize=18)
-    return ax
-
 
 common_format(ax1)
 

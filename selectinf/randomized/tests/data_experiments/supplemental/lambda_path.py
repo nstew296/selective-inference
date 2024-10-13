@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib
+
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from scipy.stats import norm as ndist
@@ -11,14 +12,14 @@ from selectinf.randomized.lasso import lasso, selected_targets
 
 
 def test_multitask_lasso_selective_inference(predictor_vars_train,
-                                response_vars_train,
-                                predictor_vars_test,
-                                response_vars_test,
-                                beta,
-                                gaussian_noise,
-                                sigma,
-                                weight=1.0,
-                                randomizer_scale=0.7):
+                                             response_vars_train,
+                                             predictor_vars_test,
+                                             response_vars_test,
+                                             beta,
+                                             gaussian_noise,
+                                             sigma,
+                                             weight=1.0,
+                                             randomizer_scale=0.7):
     ntask = len(predictor_vars_train.keys())
     nsamples_test = np.asarray([np.shape(predictor_vars_test[i])[0] for i in range(ntask)])
     p = np.shape(beta)[0]
@@ -26,8 +27,7 @@ def test_multitask_lasso_selective_inference(predictor_vars_train,
     feature_weight = weight * np.ones(p)
     randomizer_scales = randomizer_scale * np.array([sigma[i] for i in range(ntask)])
     initial_omega = np.array(
-        [randomizer_scales[i] * gaussian_noise[p*i:p*(i+1)] for i in range(ntask)]).T
-
+        [randomizer_scales[i] * gaussian_noise[p * i:p * (i + 1)] for i in range(ntask)]).T
 
     try:
         multi_lasso = multi_task_lasso.gaussian(predictor_vars_train,
@@ -43,7 +43,6 @@ def test_multitask_lasso_selective_inference(predictor_vars_train,
 
     except:
         active_signs = np.asarray([])
-
 
     coverage = []
     pivot = []
@@ -111,14 +110,14 @@ def test_multitask_lasso_selective_inference(predictor_vars_train,
     return np.asarray(coverage), intervals[:, 1] - intervals[:,
                                                    0], pivot, sensitivity_inference, specificity_inference, error
 
-def test_multitask_lasso_naive(predictor_vars_train,
-                                      response_vars_train,
-                                      predictor_vars_test,
-                                      response_vars_test,
-                                      beta,
-                                      sigma,
-                                      weight = 1.0,):
 
+def test_multitask_lasso_naive(predictor_vars_train,
+                               response_vars_train,
+                               predictor_vars_test,
+                               response_vars_test,
+                               beta,
+                               sigma,
+                               weight=1.0, ):
     ntask = len(predictor_vars_train.keys())
     nsamples_test = np.asarray([np.shape(predictor_vars_test[i])[0] for i in range(ntask)])
     p = np.shape(beta)[0]
@@ -129,23 +128,22 @@ def test_multitask_lasso_naive(predictor_vars_train,
 
     try:
         multi_lasso = multi_task_lasso.gaussian(predictor_vars_train,
-                                            response_vars_train,
-                                            feature_weight,
-                                            ridge_term=None,
-                                            randomizer_scales=1. * sigmas_,
-                                            perturbations=perturbations)
+                                                response_vars_train,
+                                                feature_weight,
+                                                ridge_term=None,
+                                                randomizer_scales=1. * sigmas_,
+                                                perturbations=perturbations)
         active_signs = multi_lasso.fit()
 
     except:
 
         active_signs = np.asarray([])
 
-
     dispersions = sigma ** 2
 
     coverage = []
     pivot = []
-    CIs = [[0,0]]
+    CIs = [[0, 0]]
 
     error = 0
     if (active_signs != 0).sum() > 0:
@@ -160,26 +158,25 @@ def test_multitask_lasso_naive(predictor_vars_train,
             quantile = ndist.ppf(1 - alpha / 2.)
             intervals = np.vstack([observed_target - quantile * np.sqrt(np.diag(cov_target)),
                                    observed_target + quantile * np.sqrt(np.diag(cov_target))]).T
-            CIs = np.vstack([CIs,intervals])
+            CIs = np.vstack([CIs, intervals])
             coverage.extend((beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1]))
             pivot_ = ndist.cdf((observed_target - beta_target) / np.sqrt(np.diag(cov_target)))
             pivot.extend(2 * np.minimum(pivot_, 1. - pivot_))
 
             idx_new = np.sum(active_signs[:, i] != 0)
             if idx_new == 0:
-                error += (0.5 * np.sum(np.square(response_vars_test[i])))/nsamples_test[i]
+                error += (0.5 * np.sum(np.square(response_vars_test[i]))) / nsamples_test[i]
                 continue
             observed_target = np.linalg.pinv(X[:, (active_signs[:, i] != 0)]).dot(y)
             error += (0.5 * np.sum(np.square(
                 response_vars_test[i] - (predictor_vars_test[i])[:, (active_signs[:, i] != 0)].dot(
-                    observed_target))))/nsamples_test[i]
+                    observed_target)))) / nsamples_test[i]
 
     else:
-        error=0
+        error = 0
         for j in range(ntask):
-            error += (0.5 * np.linalg.norm(response_vars_test[j], 2) ** 2)/nsamples_test[j]
-        CIs = np.asarray([[0, 0],[np.nan,np.nan]])
-
+            error += (0.5 * np.linalg.norm(response_vars_test[j], 2) ** 2) / nsamples_test[j]
+        CIs = np.asarray([[0, 0], [np.nan, np.nan]])
 
     # Compute snesitivity and specificity after inference
     true_active = np.transpose(np.nonzero(np.transpose(beta)))
@@ -196,22 +193,20 @@ def test_multitask_lasso_naive(predictor_vars_train,
         num_true_positive_inference = 0
         num_false_positive_inference = 0
     num_negative = np.shape(beta)[0] * np.shape(beta)[1] - num_positive
-    sensitivity_inference = float(num_true_positive_inference) / np.maximum(float(num_positive),1)
-    specificity_inference = 1.0 - float(num_false_positive_inference) / np.maximum(float(num_negative),1)
-
+    sensitivity_inference = float(num_true_positive_inference) / np.maximum(float(num_positive), 1)
+    specificity_inference = 1.0 - float(num_false_positive_inference) / np.maximum(float(num_negative), 1)
 
     return np.asarray(coverage), CIs[1:, 1] - CIs[1:, 0], pivot, sensitivity_inference, specificity_inference, error
 
 
 def test_multitask_lasso_data_splitting(predictor_vars_train,
-                                      response_vars_train,
-                                      predictor_vars_test,
-                                      response_vars_test,
-                                      beta,
-                                      sigma,
-                                      weight = 1.0,
-                                      split = 0.5):
-
+                                        response_vars_train,
+                                        predictor_vars_test,
+                                        response_vars_test,
+                                        beta,
+                                        sigma,
+                                        weight=1.0,
+                                        split=0.5):
     ntask = len(predictor_vars_train.keys())
     nsamples = np.asarray([np.shape(predictor_vars_train[i])[0] for i in range(ntask)])
     nsamples_test = np.asarray([np.shape(predictor_vars_test[i])[0] for i in range(ntask)])
@@ -229,14 +224,13 @@ def test_multitask_lasso_data_splitting(predictor_vars_train,
     sigmas_ = sigma
     perturbations = np.zeros((p, ntask))
 
-
     try:
         multi_lasso = multi_task_lasso.gaussian(predictor_vars_selection,
-                                            response_vars_selection,
-                                            feature_weight,
-                                            ridge_term=None,
-                                            randomizer_scales=1. * sigmas_,
-                                            perturbations=perturbations)
+                                                response_vars_selection,
+                                                feature_weight,
+                                                ridge_term=None,
+                                                randomizer_scales=1. * sigmas_,
+                                                perturbations=perturbations)
 
         active_signs = multi_lasso.fit()
 
@@ -244,11 +238,10 @@ def test_multitask_lasso_data_splitting(predictor_vars_train,
 
         active_signs = np.asarray([])
 
-
     dispersions = sigma ** 2
     coverage = []
     pivot = []
-    CIs = [[0,0]]
+    CIs = [[0, 0]]
 
     if (active_signs != 0).sum() > 0:
 
@@ -268,22 +261,21 @@ def test_multitask_lasso_data_splitting(predictor_vars_train,
             coverage.extend((beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1]))
             pivot_ = ndist.cdf((observed_target - beta_target) / np.sqrt(np.diag(cov_target)))
             pivot.extend(2 * np.minimum(pivot_, 1. - pivot_))
-            CIs = np.vstack([CIs,intervals])
+            CIs = np.vstack([CIs, intervals])
 
             idx_new = np.sum(active_signs[:, i] != 0)
             if idx_new == 0:
-                error += (0.5 * np.sum(np.square(response_vars_test[i])))/nsamples_test[i]
+                error += (0.5 * np.sum(np.square(response_vars_test[i]))) / nsamples_test[i]
                 continue
             error += (0.5 * np.sum(np.square(
                 response_vars_test[i] - (predictor_vars_test[i])[:, (active_signs[:, i] != 0)].dot(
-                    observed_target))))/nsamples_test[i]
+                    observed_target)))) / nsamples_test[i]
 
     else:
-        error=0
+        error = 0
         for j in range(ntask):
-            error += (0.5 * np.linalg.norm(response_vars_test[j], 2) ** 2)/nsamples_test[j]
-        CIs = np.asarray([[0, 0],[np.nan,np.nan]])
-
+            error += (0.5 * np.linalg.norm(response_vars_test[j], 2) ** 2) / nsamples_test[j]
+        CIs = np.asarray([[0, 0], [np.nan, np.nan]])
 
     # Compute snesitivity and specificity after inference
     true_active = np.transpose(np.nonzero(np.transpose(beta)))
@@ -292,9 +284,9 @@ def test_multitask_lasso_data_splitting(predictor_vars_train,
         selected_active = np.transpose(np.nonzero(np.transpose(active_signs)))
         true_positive_selected = [x in true_active.tolist() for x in selected_active.tolist()]
         num_true_positive_inference = np.sum(
-          [true_positive_selected[i] * (CIs[i+1, 1] < 0 or CIs[i+1, 0] > 0) for i in
-            range(len(true_positive_selected))])
-        num_false_positive_inference = np.sum([(CIs[i+1, 1] < 0 or CIs[i+1, 0] > 0) for i in range(
+            [true_positive_selected[i] * (CIs[i + 1, 1] < 0 or CIs[i + 1, 0] > 0) for i in
+             range(len(true_positive_selected))])
+        num_false_positive_inference = np.sum([(CIs[i + 1, 1] < 0 or CIs[i + 1, 0] > 0) for i in range(
             len(true_positive_selected))]) - num_true_positive_inference
     else:
         num_true_positive_inference = 0
@@ -313,19 +305,18 @@ def test_multitask_lasso_data_splitting(predictor_vars_train,
     # sensitivity = np.float(num_true_positive) / np.float(num_positive)
     # specificity = 1.0 - np.float(num_false_positive) / np.float(num_negative)
 
-
     return np.asarray(coverage), CIs[1:, 1] - CIs[1:, 0], pivot, sensitivity_inference, specificity_inference, error
 
 
 def test_single_task_lasso_selective_inference(predictor_vars_train,
-                                       response_vars_train,
-                                       predictor_vars_test,
-                                       response_vars_test,
-                                       beta,
-                                       gaussian_noise,
-                                       sigma,
-                                       weight,
-                                       randomizer_scale=1.0):
+                                               response_vars_train,
+                                               predictor_vars_test,
+                                               response_vars_test,
+                                               beta,
+                                               gaussian_noise,
+                                               sigma,
+                                               weight,
+                                               randomizer_scale=1.0):
     ntask = len(predictor_vars_train.keys())
     nsamples_test = np.asarray([np.shape(predictor_vars_test[i])[0] for i in range(ntask)])
     p = np.shape(beta)[0]
@@ -346,7 +337,7 @@ def test_single_task_lasso_selective_inference(predictor_vars_train,
                                            ridge_term=0.,
                                            randomizer_scale=randomizer_scale)
 
-        initial_omega = np.array(randomizer_scale * sigma[i] * gaussian_noise[p*i:p*(i+1)]).T
+        initial_omega = np.array(randomizer_scale * sigma[i] * gaussian_noise[p * i:p * (i + 1)]).T
         signs = single_task_lasso.fit(perturb=initial_omega)
         nonzero = signs != 0
 
@@ -402,6 +393,7 @@ def test_single_task_lasso_selective_inference(predictor_vars_train,
     return np.asarray(coverage), CIs[1:, 1] - CIs[1:, 0], np.asarray(
         pivot), sensitivity_inference, specificity_inference, error
 
+
 np.random.seed(5)
 
 ntask = 5
@@ -419,17 +411,17 @@ nsamples_test = nsamples_test.astype(int)
 signal = np.sqrt(signal_fac * 2 * np.log(p))
 
 response_vars_train, predictor_vars_train, response_vars_test, predictor_vars_test, beta, gaussian_noise = gaussian_multitask_instance(
-        ntask,
-        nsamples,
-        nsamples_test,
-        p,
-        global_sparsity,
-        task_sparsity,
-        sigma,
-        signal,
-        rhos,
-        random_signs=True,
-        equicorrelated=True)[:6]
+    ntask,
+    nsamples,
+    nsamples_test,
+    p,
+    global_sparsity,
+    task_sparsity,
+    sigma,
+    signal,
+    rhos,
+    random_signs=True,
+    equicorrelated=True)[:6]
 
 # Print SNR, PVE
 SIG = np.full((p, p), 0.3)
@@ -446,7 +438,7 @@ lambdamax = 4.0
 feature_weight_list = np.arange(lambdamin, lambdamax, (lambdamax - lambdamin) / (length_path))
 print(feature_weight_list)
 
-#Track results across lambda path with nested list
+# Track results across lambda path with nested list
 selective_lengths = []
 selective_lengths2 = []
 naive_lengths = []
@@ -489,8 +481,8 @@ single_selective_error2 = []
 
 for i in range(len(feature_weight_list)):
     weight = feature_weight_list[i]
-    #For each weight, run n=nsim simulations
-    #Lists to record coverage, length, pivots, sensitivity, specificity, and hold-out error
+    # For each weight, run n=nsim simulations
+    # Lists to record coverage, length, pivots, sensitivity, specificity, and hold-out error
     # across repetitions of same simulation
     cov = []
     len1 = []
@@ -552,6 +544,7 @@ for i in range(len(feature_weight_list)):
                     sd_t = np.std(tdist.rvs(df, size=50000))
                 return tdist.rvs(df, size=n) / sd_t
 
+
             gaussian_noise = _noise(nsamples.sum() + nsamples_test.sum() + p * ntask)
             response_vars_train = {}
             response_vars_test = {}
@@ -580,14 +573,14 @@ for i in range(len(feature_weight_list)):
         print(n, "n sim")
 
         coverage, length, pivot, sns, spc, err = test_multitask_lasso_selective_inference(predictor_vars_train,
-                                                                         response_vars_train,
-                                                                         predictor_vars_test,
-                                                                         response_vars_test,
-                                                                         beta,
-                                                                         gaussian_noise,
-                                                                         sigma,
-                                                                         weight=weight,
-                                                                         randomizer_scale= 0.7)
+                                                                                          response_vars_train,
+                                                                                          predictor_vars_test,
+                                                                                          response_vars_test,
+                                                                                          beta,
+                                                                                          gaussian_noise,
+                                                                                          sigma,
+                                                                                          weight=weight,
+                                                                                          randomizer_scale=0.7)
 
         if list(coverage):
             cov.append(np.mean(np.asarray(coverage)))
@@ -598,14 +591,14 @@ for i in range(len(feature_weight_list)):
         test_error_list.append(err)
 
         coverage2, length2, pivot2, sns2, spc2, err2 = test_multitask_lasso_selective_inference(predictor_vars_train,
-                                                                             response_vars_train,
-                                                                             predictor_vars_test,
-                                                                             response_vars_test,
-                                                                             beta,
-                                                                             gaussian_noise,
-                                                                             sigma,
-                                                                             weight=weight,
-                                                                             randomizer_scale=1.0)
+                                                                                                response_vars_train,
+                                                                                                predictor_vars_test,
+                                                                                                response_vars_test,
+                                                                                                beta,
+                                                                                                gaussian_noise,
+                                                                                                sigma,
+                                                                                                weight=weight,
+                                                                                                randomizer_scale=1.0)
 
         if list(coverage2):
             cov2.append(np.mean(np.asarray(coverage2)))
@@ -615,14 +608,14 @@ for i in range(len(feature_weight_list)):
         specificity_list2.append(spc2)
         test_error_list2.append(err2)
 
-
-        coverage_naive, length_naive, pivot_naive, sensitivity_naive, specificity_naive, naive_err = test_multitask_lasso_naive(predictor_vars_train,
-                                                                             response_vars_train,
-                                                                             predictor_vars_test,
-                                                                             response_vars_test,
-                                                                             beta,
-                                                                             sigma,
-                                                                             weight)
+        coverage_naive, length_naive, pivot_naive, sensitivity_naive, specificity_naive, naive_err = test_multitask_lasso_naive(
+            predictor_vars_train,
+            response_vars_train,
+            predictor_vars_test,
+            response_vars_test,
+            beta,
+            sigma,
+            weight)
 
         if list(coverage_naive):
             cov_naive.append(np.mean(np.asarray(coverage_naive)))
@@ -632,15 +625,15 @@ for i in range(len(feature_weight_list)):
         specificity_list_naive.append(specificity_naive)
         naive_test_error_list.append(naive_err)
 
-
-        coverage_data_splitting, length_data_splitting, pivot_data_splitting, sns_ds, spc_ds, error_ds = test_multitask_lasso_data_splitting(predictor_vars_train,
-                                                                             response_vars_train,
-                                                                             predictor_vars_test,
-                                                                             response_vars_test,
-                                                                             beta,
-                                                                             sigma,
-                                                                             weight,
-                                                                             split = 0.67)
+        coverage_data_splitting, length_data_splitting, pivot_data_splitting, sns_ds, spc_ds, error_ds = test_multitask_lasso_data_splitting(
+            predictor_vars_train,
+            response_vars_train,
+            predictor_vars_test,
+            response_vars_test,
+            beta,
+            sigma,
+            weight,
+            split=0.67)
 
         if list(coverage_data_splitting):
             cov_data_splitting.append(np.mean(np.asarray(coverage_data_splitting)))
@@ -651,14 +644,14 @@ for i in range(len(feature_weight_list)):
         data_splitting_test_error_list.append(error_ds)
 
         coverage_data_splitting2, length_data_splitting2, pivot_data_splitting2, sns_ds2, spc_ds2, error_ds2 = test_multitask_lasso_data_splitting(
-                                                                            predictor_vars_train,
-                                                                            response_vars_train,
-                                                                            predictor_vars_test,
-                                                                            response_vars_test,
-                                                                            beta,
-                                                                            sigma,
-                                                                            weight,
-                                                                            split=0.5)
+            predictor_vars_train,
+            response_vars_train,
+            predictor_vars_test,
+            response_vars_test,
+            beta,
+            sigma,
+            weight,
+            split=0.5)
 
         if list(coverage_data_splitting2):
             cov_data_splitting2.append(np.mean(np.asarray(coverage_data_splitting2)))
@@ -668,16 +661,16 @@ for i in range(len(feature_weight_list)):
         specificity_list_ds2.append(spc_ds2)
         data_splitting_test_error_list2.append(error_ds2)
 
-        coverage_single_task_selective, length_single_task_selective, pivot_single_task_selective, sns_single_task, spc_single_task, err_single_selective = test_single_task_lasso_selective_inference(predictor_vars_train,
-                                      response_vars_train,
-                                      predictor_vars_test,
-                                      response_vars_test,
-                                      beta,
-                                      gaussian_noise,
-                                      sigma,
-                                      weight,
-                                      randomizer_scale = 0.7)
-
+        coverage_single_task_selective, length_single_task_selective, pivot_single_task_selective, sns_single_task, spc_single_task, err_single_selective = test_single_task_lasso_selective_inference(
+            predictor_vars_train,
+            response_vars_train,
+            predictor_vars_test,
+            response_vars_test,
+            beta,
+            gaussian_noise,
+            sigma,
+            weight,
+            randomizer_scale=0.7)
 
         if list(coverage_single_task_selective):
             cov_single_task_selective.append(np.mean(np.asarray(coverage_single_task_selective)))
@@ -746,7 +739,7 @@ for i in range(len(feature_weight_list)):
     single_selective_error.append(np.mean(np.asarray(single_task_selective_test_error_list)))
     single_selective_error2.append(np.mean(np.asarray(single_task_selective_test_error_list2)))
 
-#Converyt sensitivity and specificity to F1
+# Converyt sensitivity and specificity to F1
 selective_f1 = []
 selective2_f1 = []
 ds_f1 = []
@@ -757,12 +750,15 @@ positive = (1. - task_sparsity) * (1. - global_sparsity) * ntask * p
 negative = 5 * 100 - positive
 for i in range(length_path):
     selective_tp_fp_mat = np.asarray(
-        [np.asarray([1.0 - np.asarray(selective_specificity)[i, :][n] for n in range(nsim)]), np.asarray(selective_sensitivity)[i, :]]).T
+        [np.asarray([1.0 - np.asarray(selective_specificity)[i, :][n] for n in range(nsim)]),
+         np.asarray(selective_sensitivity)[i, :]]).T
 
-
-    selective_f1.append(np.asarray([2.0 * selective_tp_fp_mat[n, 1] * positive / (2.0 * selective_tp_fp_mat[n, 1] * positive +
-                                                       selective_tp_fp_mat[n, 0] * negative + (1.0 -
-                                                       selective_tp_fp_mat[n, 1]) * positive) for n in range(nsim)]))
+    selective_f1.append(
+        np.asarray([2.0 * selective_tp_fp_mat[n, 1] * positive / (2.0 * selective_tp_fp_mat[n, 1] * positive +
+                                                                  selective_tp_fp_mat[n, 0] * negative + (1.0 -
+                                                                                                          selective_tp_fp_mat[
+                                                                                                              n, 1]) * positive)
+                    for n in range(nsim)]))
 
     selective2_tp_fp_mat = np.asarray(
         [np.asarray([1.0 - np.asarray(selective_specificity2)[i, :][n] for n in range(nsim)]),
@@ -770,9 +766,9 @@ for i in range(length_path):
 
     selective2_f1.append(
         np.asarray([2.0 * selective2_tp_fp_mat[n, 1] * positive / (2.0 * selective2_tp_fp_mat[n, 1] * positive +
-                                                                  selective2_tp_fp_mat[n, 0] * negative + (1.0 -
-                                                                                                          selective2_tp_fp_mat[
-                                                                                                              n, 1]) * positive)
+                                                                   selective2_tp_fp_mat[n, 0] * negative + (1.0 -
+                                                                                                            selective2_tp_fp_mat[
+                                                                                                                n, 1]) * positive)
                     for n in range(nsim)]))
 
     ds_tp_fp_mat = np.asarray(
@@ -781,9 +777,9 @@ for i in range(length_path):
 
     ds_f1.append(
         np.asarray([2.0 * ds_tp_fp_mat[n, 1] * positive / (2.0 * ds_tp_fp_mat[n, 1] * positive +
-                                                                  ds_tp_fp_mat[n, 0] * negative + (1.0 -
-                                                                                                          ds_tp_fp_mat[
-                                                                                                              n, 1]) * positive)
+                                                           ds_tp_fp_mat[n, 0] * negative + (1.0 -
+                                                                                            ds_tp_fp_mat[
+                                                                                                n, 1]) * positive)
                     for n in range(nsim)]))
 
     ds2_tp_fp_mat = np.asarray(
@@ -792,9 +788,9 @@ for i in range(length_path):
 
     ds2_f1.append(
         np.asarray([2.0 * ds2_tp_fp_mat[n, 1] * positive / (2.0 * ds2_tp_fp_mat[n, 1] * positive +
-                                                           ds2_tp_fp_mat[n, 0] * negative + (1.0 -
-                                                                                            ds2_tp_fp_mat[
-                                                                                                n, 1]) * positive)
+                                                            ds2_tp_fp_mat[n, 0] * negative + (1.0 -
+                                                                                              ds2_tp_fp_mat[
+                                                                                                  n, 1]) * positive)
                     for n in range(nsim)]))
 
     single_selective_tp_fp_mat = np.asarray(
@@ -802,11 +798,12 @@ for i in range(length_path):
          np.asarray(single_task_sensitivity)[i, :]]).T
 
     single_selective_f1.append(
-        np.asarray([2.0 * single_selective_tp_fp_mat[n, 1] * positive / (2.0 * single_selective_tp_fp_mat[n, 1] * positive +
-                                                           single_selective_tp_fp_mat[n, 0] * negative + (1.0 -
-                                                                                            single_selective_tp_fp_mat[
-                                                                                                n, 1]) * positive)
-                    for n in range(nsim)]))
+        np.asarray(
+            [2.0 * single_selective_tp_fp_mat[n, 1] * positive / (2.0 * single_selective_tp_fp_mat[n, 1] * positive +
+                                                                  single_selective_tp_fp_mat[n, 0] * negative + (1.0 -
+                                                                                                                 single_selective_tp_fp_mat[
+                                                                                                                     n, 1]) * positive)
+             for n in range(nsim)]))
 
     single_selective2_tp_fp_mat = np.asarray(
         [np.asarray([1.0 - np.asarray(single_task_specificity2)[i, :][n] for n in range(nsim)]),
@@ -814,22 +811,25 @@ for i in range(length_path):
 
     single_selective2_f1.append(
         np.asarray([2.0 * single_selective2_tp_fp_mat[n, 1] * positive / (
-                    2.0 * single_selective2_tp_fp_mat[n, 1] * positive +
-                    single_selective2_tp_fp_mat[n, 0] * negative + (1.0 -
-                                                                   single_selective2_tp_fp_mat[
-                                                                       n, 1]) * positive)
+                2.0 * single_selective2_tp_fp_mat[n, 1] * positive +
+                single_selective2_tp_fp_mat[n, 0] * negative + (1.0 -
+                                                                single_selective2_tp_fp_mat[
+                                                                    n, 1]) * positive)
                     for n in range(nsim)]))
 
+
 def set_boxplot_style(bp, color, linestyle):
-    plt.setp(bp['boxes'], color=color, linestyle=linestyle,linewidth=2)
-    plt.setp(bp['whiskers'], color=color, linestyle=linestyle,linewidth=2)
-    plt.setp(bp['caps'], color=color,linewidth=2)
-    plt.setp(bp['medians'], color=color,linewidth=2)
+    plt.setp(bp['boxes'], color=color, linestyle=linestyle, linewidth=2)
+    plt.setp(bp['whiskers'], color=color, linestyle=linestyle, linewidth=2)
+    plt.setp(bp['caps'], color=color, linewidth=2)
+    plt.setp(bp['medians'], color=color, linewidth=2)
+
 
 def common_format(ax):
     ax.grid(True, which='both', color='#f0f0f0')
     ax.set_xlabel('Lambda Value', fontsize=16)
     return ax
+
 
 length = len(feature_weight_list)
 
@@ -840,8 +840,8 @@ ax3 = fig.add_subplot(313)
 
 plt.sca(ax1)
 first = plt.boxplot(naive_coverage, positions=np.array(range(length)) * 3, sym='', widths=0.3)
-second = plt.boxplot(selective_coverage,positions=np.array(range(length)) * 3 + 0.3, sym='', widths=0.3)
-third = plt.boxplot(selective_coverage2,positions=np.array(range(length)) * 3 + .6, sym='', widths=0.3)
+second = plt.boxplot(selective_coverage, positions=np.array(range(length)) * 3 + 0.3, sym='', widths=0.3)
+third = plt.boxplot(selective_coverage2, positions=np.array(range(length)) * 3 + .6, sym='', widths=0.3)
 fourth = plt.boxplot(ds_coverage, positions=np.array(range(length)) * 3 + .9, sym='', widths=0.3)
 fifth = plt.boxplot(ds_coverage2, positions=np.array(range(length)) * 3 + 1.2, sym='', widths=0.3)
 sixth = plt.boxplot(single_selective_coverage, positions=np.array(range(length)) * 3 + 1.5, sym='', widths=0.3)
@@ -853,11 +853,11 @@ set_boxplot_style(fourth, '#238443', 'solid')
 set_boxplot_style(fifth, '#31a354', '--')
 set_boxplot_style(sixth, '#fd8d3c', 'solid')
 set_boxplot_style(seventh, '#feb24c', '--')
-plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list],fontsize=14)
+plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list], fontsize=14)
 plt.xlim(-1, (length - 1) * 3 + 3)
-plt.plot(np.argmin(selective_error) * 3 +.3, 1.01, 'o', c='#2b8cbe')
+plt.plot(np.argmin(selective_error) * 3 + .3, 1.01, 'o', c='#2b8cbe')
 plt.plot(np.argmin(selective_error2) * 3 + .6, 1.01, 'o', c='#6baed6')
-#plt.plot(np.argmin(naive_error) * 3, 1.01, 'o', c='#D7191C')
+# plt.plot(np.argmin(naive_error) * 3, 1.01, 'o', c='#D7191C')
 plt.plot(np.argmin(ds_error) * 3 + .9, 1.01, 'o', c='#238443')
 plt.plot(np.argmin(ds_error2) * 3 + 1.2, 1.01, 'o', c='#31a354')
 plt.plot(np.argmin(single_selective_error) * 3 + 1.5, 1.01, 'o', c='#fd8d3c')
@@ -879,14 +879,14 @@ set_boxplot_style(fourth, '#238443', 'solid')
 set_boxplot_style(fifth, '#31a354', '--')
 set_boxplot_style(sixth, '#fd8d3c', 'solid')
 set_boxplot_style(seventh, '#feb24c', '--')
-plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list],fontsize=14)
+plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list], fontsize=14)
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.tight_layout()
 plt.ylabel('Interval Lengths', fontsize=16)
 plt.yticks(fontsize=14)
 
 plt.sca(ax3)
-second = plt.boxplot(selective_f1, positions=np.array(range(length)) * 3 , sym='', widths=0.3)
+second = plt.boxplot(selective_f1, positions=np.array(range(length)) * 3, sym='', widths=0.3)
 third = plt.boxplot(selective2_f1, positions=np.array(range(length)) * 3 + .3, sym='', widths=0.3)
 fourth = plt.boxplot(ds_f1, positions=np.array(range(length)) * 3 + .6, sym='', widths=0.3)
 fifth = plt.boxplot(ds2_f1, positions=np.array(range(length)) * 3 + .9, sym='', widths=0.3)
@@ -898,7 +898,7 @@ set_boxplot_style(fourth, '#238443', 'solid')
 set_boxplot_style(fifth, '#31a354', '--')
 set_boxplot_style(sixth, '#fd8d3c', 'solid')
 set_boxplot_style(seventh, '#feb24c', '--')
-plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list],fontsize=14)
+plt.xticks(range(1, (length) * 3 + 1, 3), [round(num, 2) for num in feature_weight_list], fontsize=14)
 plt.xlim(-1, (length - 1) * 3 + 3)
 plt.plot([], c='#D7191C', label='Naive', linewidth=2.5)
 plt.plot([], c='#2b8cbe', label='MTL (0.7) + SI', linewidth=2.5)
@@ -912,9 +912,9 @@ plt.tight_layout()
 plt.ylabel('F1 Score per Simulation', fontsize=16)
 plt.yticks(fontsize=14)
 
-#ax1.set_title("Coverage", y=1.01,fontsize=20)
-#ax2.set_title("Length", y=1.01,fontsize=20)
-#ax3.set_title("F1 Score", y=1.01,fontsize=20)
+# ax1.set_title("Coverage", y=1.01,fontsize=20)
+# ax2.set_title("Length", y=1.01,fontsize=20)
+# ax3.set_title("F1 Score", y=1.01,fontsize=20)
 
 ax3.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.6), fontsize=16)
 

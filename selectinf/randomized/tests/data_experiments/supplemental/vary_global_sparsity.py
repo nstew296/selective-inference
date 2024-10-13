@@ -20,9 +20,7 @@ lambdamax_si = 5.5
 feature_weight_list_si = np.linspace(lambdamin_si, lambdamax_si,length_path)
 
 sparsity_list = [0.80,0.85,0.9,0.95]
-#sparsity_list = [0.70,0.80,0.9,0.99]
 n_list = [100,100,100,100]
-##n_list = [5,5,5,20,20]
 coverage_by_gs = {j: [[], [], [], [], [], []] for j in range(len(sparsity_list))}
 length_by_gs = {j: [[], [], [], [], [], []] for j in range(len(sparsity_list))}
 f1_by_gs = {j: [[], [], [], [], [], []] for j in range(len(sparsity_list))}

@@ -384,6 +384,15 @@ def HIV_NRTI(drug='3TC',
     return X_NRTI, Y, np.array(NRTI_muts)
 
 
+# noise model
+def _noise(n, df=np.inf):
+    if df == np.inf:
+        return np.random.standard_normal(n)
+    else:
+        sd_t = np.std(tdist.rvs(df, size=50000))
+    return tdist.rvs(df, size=n) / sd_t
+
+
 def gaussian_multitask_instance(ntask,
                                 nsamples_train,
                                 nsamples_test,
@@ -435,24 +444,17 @@ def gaussian_multitask_instance(ntask,
     if random_signs:
         beta *= (2 * np.random.binomial(1, 0.5, size=(p, ntask)) - 1.)
 
-    beta /= np.sqrt(nsamples_train)
+    scaling_factor = np.sqrt(nsamples_train)
+    beta /= scaling_factor
 
     if scale:
-        scalings_train = {i: predictor_vars_train[i].std(0) * np.sqrt(nsamples_train[i]) for i in range(ntask)}
-        predictor_vars_train = {i: predictor_vars_train[i] / (scalings_train[i][None, :]) for i in range(ntask)}
-        predictor_vars_test = {i: predictor_vars_test[i] / (scalings_train[i][None, :]) for i in range(ntask)}
-        beta *= np.sqrt(nsamples_train)
+        scalings_train = {i: predictor_vars_train[i].std(0) * scaling_factor[i] for i in range(ntask)}
+        predictor_vars_train = {i: predictor_vars_train[i] / scalings_train[i][None, :] for i in range(ntask)}
+        predictor_vars_test = {i: predictor_vars_test[i] / scalings_train[i][None, :] for i in range(ntask)}
+        beta *= scaling_factor
 
     active = np.zeros((p, ntask), np.bool)
     active[beta != 0] = True
-
-    # noise model
-    def _noise(n, df=np.inf):
-        if df == np.inf:
-            return np.random.standard_normal(n)
-        else:
-            sd_t = np.std(tdist.rvs(df, size=50000))
-        return tdist.rvs(df, size=n) / sd_t
 
     gaussian_noise = _noise(nsamples_train.sum() + nsamples_test.sum() + p * ntask, df)
     response_vars_train = {}
@@ -461,47 +463,91 @@ def gaussian_multitask_instance(ntask,
     nsamples_test_cumsum = np.cumsum([nsamples_test[i] for i in range(ntask)])
     for i in range(ntask):
         if i == 0:
-            response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]) + gaussian_noise[
-                                                                                :nsamples_train_cumsum[i]]) * sigma[i]
-            response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i]) + gaussian_noise[nsamples_train.sum()
-                                                                                             :nsamples_train.sum() +
-                                                                                              nsamples_test_cumsum[
-                                                                                                  i]]) * sigma[i]
+            train_noise = gaussian_noise[:nsamples_train_cumsum[i]] * sigma[i]
+            response_vars_train[i] = predictor_vars_train[i].dot(beta[:, i]) + train_noise
+
+            test_noise = gaussian_noise[nsamples_train.sum():nsamples_train.sum() + nsamples_test_cumsum[i]] * sigma[i]
+            response_vars_test[i] = predictor_vars_test[i].dot(beta[:, i]) + test_noise
         else:
-            response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]) + gaussian_noise[
-                                                                                nsamples_train_cumsum[i - 1]:
-                                                                                nsamples_train_cumsum[i]]) * sigma[i]
-            response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i]) + gaussian_noise[nsamples_train.sum() +
-                                                                                             nsamples_test_cumsum[
-                                                                                                 i - 1]: nsamples_train.sum() +
-                                                                                                         nsamples_test_cumsum[
-                                                                                                             i]]) * \
-                                    sigma[i]
+            train_noise = gaussian_noise[nsamples_train_cumsum[i - 1]:nsamples_train_cumsum[i]] * sigma[i]
+            response_vars_train[i] = predictor_vars_train[i].dot(beta[:, i]) + train_noise
 
-    return response_vars_train, predictor_vars_train, response_vars_test, predictor_vars_test, beta * sigma, gaussian_noise[
-                                                                                                             nsamples_train.sum() + nsamples_test.sum():], np.nonzero(
-        active), sigma
+            test_noise = gaussian_noise[nsamples_train.sum() + nsamples_test_cumsum[i - 1]:
+                                        nsamples_train.sum() + nsamples_test_cumsum[i]] * sigma[i]
+            response_vars_test[i] = predictor_vars_test[i].dot(beta[:, i]) + test_noise
+
+    return (
+        response_vars_train,
+        predictor_vars_train,
+        response_vars_test,
+        predictor_vars_test,
+        beta,
+        gaussian_noise[nsamples_train.sum() + nsamples_test.sum():],
+        np.nonzero(active),
+        sigma
+    )
 
 
-def gaussian_multitask_instance_two_ts(ntask,
-                                       nsamples_train,
-                                       nsamples_test,
-                                       p,
-                                       global_sparsity,
-                                       task_sparsity_low,
-                                       task_sparsity_high,
-                                       sigma,
-                                       signal,
-                                       rhos,  # list of correlation parameters
-                                       random_signs=False,
-                                       df=np.inf,
-                                       scale=True,
-                                       center=True,
-                                       equicorrelated=False):
-    np.random.seed(5)
+def gaussian_multitask_instance_high_low_ts(ntask,
+                                            nsamples_train,
+                                            nsamples_test,
+                                            p,
+                                            global_sparsity,
+                                            task_sparsity_low,
+                                            task_sparsity_high,
+                                            sigma,
+                                            signal,
+                                            rhos,  # list of correlation parameters
+                                            random_signs=False,
+                                            df=np.inf,
+                                            scale=True,
+                                            center=True,
+                                            equicorrelated=False,
+                                            seed=5):
+    """
+    This function generates multi-task learning datasets with Gaussian noise. A percentage of coefficients
+    are set to zero for all tasks, as determined by the global sparsity level. Remaining features are split into high
+    task sparsity and low task sparsity groups. A portion of the coefficients are set to zero for each group, determined
+    by task_sparisty_high and task_sparsity_low, respectively. The signal parameter sets non-zero beta coefficients
+    uniformly for a single value, or variably across a range for an array of values.
+
+    Parameters:
+    - ntask: Number of tasks.
+    - nsamples_train: List of training sample sizes for each task.
+    - nsamples_test: List of test sample sizes for each task.
+    - p: Number of features (predictor variables).
+    - global_sparsity: Proportion of features that are globally null (zero across all tasks).
+    - task_sparsity_low: Lower sparsity level for the tasks (proportion of non-global nulls set to zero).
+    - task_sparsity_high: Higher sparsity level for the tasks. Of the non-global nulls, half will randomly be assigned
+     to the low task sparsity level, and the remaining half will be assigned to the high task sparsity level.
+    - sigma: Standard deviation of Gaussian noise. Can be a single value or a list for each task.
+    - signal: Signal strength. Can be a single value or a range [low, high] for varying signal.
+    - rhos: List of correlation parameters for each task.
+    - random_signs : If True, randomly assigns positive or negative signs to the coefficients. Default is False.
+    - df: Degrees of freedom for the t-distribution. Default is np.inf (normal distribution).
+    - scale: If True, scales the predictor variables. Default is True.
+    - center: If True, centers the predictor variables by subtracting the mean. Default is True.
+    - equicorrelated: If True, uses an equicorrelated design for the correlation structure. Default is False.
+    - seed: Random seed.
+
+    Returns:
+    - response_vars_train (dict): Training response variables for each task.
+    - predictor_vars_train (dict): Training predictor variables for each task.
+    - response_vars_test (dict): Test response variables for each task.
+    - predictor_vars_test (dict): Test predictor variables for each task.
+    - beta (numpy.ndarray): Beta coefficients used for generating the response variables.
+    - gaussian_noise (numpy.ndarray): The generated randomization variables (length p*ntask)
+    - active (numpy.ndarray): Indicator of active features (where beta != 0).
+    - sigma (float or list): Standard deviation of Gaussian noise (same as input or scaled if scale=True).
+    """
+
+    np.random.seed(seed)
+
+    # Generate training and test predictor variables for each task
     predictor_vars_train = {i: _design(nsamples_train[i], p, rhos[i], equicorrelated)[0] for i in range(ntask)}
     predictor_vars_test = {i: _design(nsamples_test[i], p, rhos[i], equicorrelated)[0] for i in range(ntask)}
 
+    # Center the predictor variables if specified
     if center:
         predictor_vars_train = {i: predictor_vars_train[i] - predictor_vars_train[i].mean(0)[None, :] for i in
                                 range(ntask)}
@@ -524,17 +570,17 @@ def gaussian_multitask_instance_two_ts(ntask,
             beta[i, np.random.choice(ntask, int(round(task_sparsity_low * ntask)), replace=False)] = 0.
 
     else:
+        # Generate beta coefficients based on the specified global sparsity and task sparsity structure
         beta = np.ones((p, ntask))
         nsignal = int(round(global_sparsity * p))
         global_nulls = np.random.choice(p, nsignal, replace=False)
-        beta[global_nulls, :] = np.zeros((ntask,))
+        beta[global_nulls, :] = 0
 
         non_null = np.delete(range(p), global_nulls)
         np.random.shuffle(non_null)
         high_sparsity = non_null[0:int(np.floor(len(non_null) / 2))]
         low_sparsity = np.setdiff1d(non_null, high_sparsity)
 
-        # print(np.delete(range(p), global_nulls))
         for i in high_sparsity:
             null_positions = np.random.choice(ntask, int(round(task_sparsity_high * ntask)), replace=False)
             beta[i, null_positions] = 0.
@@ -557,69 +603,110 @@ def gaussian_multitask_instance_two_ts(ntask,
             np.random.shuffle(signals)
             beta[i, non_null_positions] = signals
 
+    # Randomly assign signs to the coefficients if specified
     if random_signs:
         beta *= (2 * np.random.binomial(1, 0.5, size=(p, ntask)) - 1.)
 
-    beta /= np.sqrt(nsamples_train)
+    scaling_factor = np.sqrt(nsamples_train)
+    beta /= scaling_factor
 
+    # Scale the predictor variables if specified
     if scale:
-        scalings_train = {i: predictor_vars_train[i].std(0) * np.sqrt(nsamples_train[i]) for i in range(ntask)}
-        predictor_vars_train = {i: predictor_vars_train[i] / (scalings_train[i][None, :]) for i in range(ntask)}
-        predictor_vars_test = {i: predictor_vars_test[i] / (scalings_train[i][None, :]) for i in range(ntask)}
-        beta *= np.sqrt(nsamples_train)
+        scalings_train = {i: predictor_vars_train[i].std(0) * scaling_factor[i] for i in range(ntask)}
+        predictor_vars_train = {i: predictor_vars_train[i] / scalings_train[i] for i in range(ntask)}
+        predictor_vars_test = {i: predictor_vars_test[i] / scalings_train[i] for i in range(ntask)}
+        beta *= scaling_factor
 
     active = np.zeros((p, ntask), np.bool)
     active[beta != 0] = True
 
-    # noise model
-    def _noise(n, df=np.inf):
-        if df == np.inf:
-            return np.random.standard_normal(n)
-        else:
-            sd_t = np.std(tdist.rvs(df, size=50000))
-        return tdist.rvs(df, size=n) / sd_t
-
+    # Compute and store response variables with Gaussian noise for training and test sets
     gaussian_noise = _noise(nsamples_train.sum() + nsamples_test.sum() + p * ntask, df)
     response_vars_train = {}
     response_vars_test = {}
-    nsamples_train_cumsum = np.cumsum([nsamples_train[i] for i in range(ntask)])
-    nsamples_test_cumsum = np.cumsum([nsamples_test[i] for i in range(ntask)])
-    for i in range(ntask):
-        if i == 0:
-            response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]) +
-                                      gaussian_noise[:nsamples_train_cumsum[i]]) * sigma[i]
-            response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i]) +
-                                     gaussian_noise[nsamples_train.sum():
-                                                    nsamples_train.sum() + nsamples_test_cumsum[i]]) * sigma[i]
-        else:
-            response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]) +
-                                      gaussian_noise[nsamples_train_cumsum[i - 1]: nsamples_train_cumsum[i]]) * sigma[i]
-            response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i]) +
-                                     gaussian_noise[nsamples_train.sum() + nsamples_test_cumsum[i - 1]:
-                                                    nsamples_train.sum() + nsamples_test_cumsum[i]]) * sigma[i]
 
-    return response_vars_train, predictor_vars_train, response_vars_test, predictor_vars_test, beta * sigma, \
+    nsamples_train_cumsum = np.cumsum(nsamples_train)
+    nsamples_test_cumsum = np.cumsum(nsamples_test)
+
+    for i in range(ntask):
+        # The first task (i == 0) is handled separately to correctly index into the Gaussian noise array.
+        # For subsequent tasks (i > 0), the indices are adjusted based on the cumulative sum of sample sizes for the
+        # preceding tasks. This ensures that each task uses a unique segment of the noise array
+        if i == 0:
+            train_noise = gaussian_noise[:nsamples_train_cumsum[i]] * sigma[i]
+            response_vars_train[i] = predictor_vars_train[i].dot(beta[:, i]) + train_noise
+
+            test_noise = gaussian_noise[nsamples_train.sum():nsamples_train.sum() + nsamples_test_cumsum[i]] * sigma[i]
+            response_vars_test[i] = predictor_vars_test[i].dot(beta[:, i]) + test_noise
+        else:
+            train_noise = gaussian_noise[nsamples_train_cumsum[i - 1]: nsamples_train_cumsum[i]] * sigma[i]
+            response_vars_train[i] = predictor_vars_train[i].dot(beta[:, i]) + train_noise
+
+            test_noise = gaussian_noise[nsamples_train.sum() + nsamples_test_cumsum[i - 1]:
+                                        nsamples_train.sum() + nsamples_test_cumsum[i]] * sigma[i]
+            response_vars_test[i] = predictor_vars_test[i].dot(beta[:, i]) + test_noise
+
+    return response_vars_train, predictor_vars_train, response_vars_test, predictor_vars_test, beta, \
         gaussian_noise[nsamples_train.sum() + nsamples_test.sum():], np.nonzero(active), sigma
 
 
-def gaussian_multitask_instance_v2(ntask,
-                                   nsamples_train,
-                                   nsamples_test,
-                                   p,
-                                   global_sparsity,
-                                   structure,
-                                   sigma,
-                                   signal,
-                                   rhos,  # list of correlation parameters
-                                   random_signs=False,
-                                   df=np.inf,
-                                   scale=True,
-                                   center=True,
-                                   equicorrelated=False):
-    np.random.seed(5)
+def gaussian_multitask_instance_joint_pairwise(ntask,
+                                               nsamples_train,
+                                               nsamples_test,
+                                               p,
+                                               global_sparsity,
+                                               structure,
+                                               sigma,
+                                               signal,
+                                               rhos,  # list of correlation parameters
+                                               random_signs=False,
+                                               df=np.inf,
+                                               scale=True,
+                                               center=True,
+                                               equicorrelated=False,
+                                               seed=5):
+    """
+    This function generates multi-task learning datasets with Gaussian noise. A percentage of coefficients
+    are set to zero for all tasks, as determined by the global sparsity level. For the remaining features, the
+    coefficients are set to zero for half of the tasks, as determined by the task sparsity structure. If the structure
+    is joint, the zero coefficients are chosen randomly, ensuring shared structure across all tasks. If the structure is
+    pairwise, the tasks are divided into two halves, and the coefficients for one half are set to zero.
+
+    Parameters:
+    - ntask: Number of tasks.
+    - nsamples_train: List of training sample sizes for each task.
+    - nsamples_test: List of test sample sizes for each task.
+    - p: Number of features (predictor variables).
+    - global_sparsity: Proportion of features that are globally null (zero across all tasks).
+    - structure: Sparsity structure across tasks ('joint' or 'pairwise'). A task-sparsity level of 50% is assumed.
+    - sigma: Standard deviation of Gaussian noise. Can be a single value or a list for each task.
+    - signal: Signal strength range array [low, high].
+    - rhos: List of correlation parameters for each task.
+    - random_signs : If True, randomly assigns positive or negative signs to the coefficients. Default is False.
+    - df: Degrees of freedom for the t-distribution. Default is np.inf (normal distribution).
+    - scale: If True, scales the predictor variables. Default is True.
+    - center: If True, centers the predictor variables by subtracting the mean. Default is True.
+    - equicorrelated: If True, uses an equicorrelated design for the correlation structure. Default is False.
+    - seed: Random seed.
+
+    Returns:
+    - response_vars_train (dict): Training response variables for each task.
+    - predictor_vars_train (dict): Training predictor variables for each task.
+    - response_vars_test (dict): Test response variables for each task.
+    - predictor_vars_test (dict): Test predictor variables for each task.
+    - beta (numpy.ndarray): Beta coefficients used for generating the response variables.
+    - gaussian_noise (numpy.ndarray): The generated randomization variables (length p*ntask)
+    - active (numpy.ndarray): Indicator of active features (where beta != 0).
+    - sigma (float or list): Standard deviation of Gaussian noise (same as input or scaled if scale=True).
+    """
+
+    np.random.seed(seed)
+
+    # Generate training and test predictor variables for each task
     predictor_vars_train = {i: _design(nsamples_train[i], p, rhos[i], equicorrelated)[0] for i in range(ntask)}
     predictor_vars_test = {i: _design(nsamples_test[i], p, rhos[i], equicorrelated)[0] for i in range(ntask)}
 
+    # Center the predictor variables if specified
     if center:
         predictor_vars_train = {i: predictor_vars_train[i] - predictor_vars_train[i].mean(0)[None, :] for i in
                                 range(ntask)}
@@ -629,24 +716,25 @@ def gaussian_multitask_instance_v2(ntask,
     signal = np.atleast_1d(signal)
 
     if signal.shape == (1,):
-        print("Specify lower and upper signal bounds as an array")
+        raise TypeError("Specify lower and upper signal bounds as an array")
 
     else:
+        # Generate beta coefficients based on the specified global sparsity and task structure
         beta = np.ones((p, ntask))
         nsignal = int(round(global_sparsity * p))
         global_nulls = np.random.choice(p, nsignal, replace=False)
-        beta[global_nulls, :] = np.zeros((ntask,))
+        beta[global_nulls, :] = 0
 
         for i in np.delete(range(p), global_nulls):
             if structure == 'joint':
-                null_positions = np.random.choice(4, 2, replace=False)
+                null_positions = np.random.choice(ntask, ntask // 2, replace=False)
                 beta[i, null_positions] = 0.
                 non_null_positions = np.setdiff1d(np.arange(ntask), null_positions)
                 signals = np.linspace(float(signal[0]), float(signal[1]), num=ntask - null_positions.shape[0])
                 np.random.shuffle(signals)
                 beta[i, non_null_positions] = signals
             elif structure == 'pairwise':
-                task_groups = np.asarray([[0, 1], [2, 3]])
+                task_groups = np.asarray([np.arange(ntask)[:ntask // 2], np.arange(ntask)[ntask // 2:]])
                 null_positions = np.random.choice(2, 1)
                 null_positions = task_groups[null_positions, :][0]
                 beta[i, null_positions] = 0.
@@ -655,138 +743,50 @@ def gaussian_multitask_instance_v2(ntask,
                 np.random.shuffle(signals)
                 beta[i, non_null_positions] = signals
             else:
-                print("Specify joint or pairwise task sparsity structure")
+                raise ValueError("Specify joint or pairwise task sparsity structure")
 
+    # Randomly assign signs to the coefficients if specified
     if random_signs:
         beta *= (2 * np.random.binomial(1, 0.5, size=(p, ntask)) - 1.)
 
-    beta /= np.sqrt(nsamples_train)
+    scaling_factor = np.sqrt(nsamples_train)
+    beta /= scaling_factor
 
+    # Scale the predictor variables if specified
     if scale:
-        scalings_train = {i: predictor_vars_train[i].std(0) * np.sqrt(nsamples_train[i]) for i in range(ntask)}
-        predictor_vars_train = {i: predictor_vars_train[i] / (scalings_train[i][None, :]) for i in range(ntask)}
-        predictor_vars_test = {i: predictor_vars_test[i] / (scalings_train[i][None, :]) for i in range(ntask)}
-        beta *= np.sqrt(nsamples_train)
+        scalings_train = {i: predictor_vars_train[i].std(0) * scaling_factor[i] for i in range(ntask)}
+        predictor_vars_train = {i: predictor_vars_train[i] / scalings_train[i] for i in range(ntask)}
+        predictor_vars_test = {i: predictor_vars_test[i] / scalings_train[i] for i in range(ntask)}
+        beta *= scaling_factor
 
     active = np.zeros((p, ntask), np.bool)
     active[beta != 0] = True
 
-    # noise model
-    def _noise(n, df=np.inf):
-        if df == np.inf:
-            return np.random.standard_normal(n)
-        else:
-            sd_t = np.std(tdist.rvs(df, size=50000))
-        return tdist.rvs(df, size=n) / sd_t
-
+    # Compute and store response variables with Gaussian noise for training and test sets
     gaussian_noise = _noise(nsamples_train.sum() + nsamples_test.sum() + p * ntask, df)
     response_vars_train = {}
     response_vars_test = {}
-    nsamples_train_cumsum = np.cumsum([nsamples_train[i] for i in range(ntask)])
-    nsamples_test_cumsum = np.cumsum([nsamples_test[i] for i in range(ntask)])
-    for i in range(ntask):
-        if i == 0:
-            response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]) +
-                                      gaussian_noise[:nsamples_train_cumsum[i]]) * sigma[i]
-            response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i]) +
-                                     gaussian_noise[nsamples_train.sum():
-                                                    nsamples_train.sum() + nsamples_test_cumsum[i]]) * sigma[i]
-        else:
-            response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]) +
-                                      gaussian_noise[nsamples_train_cumsum[i - 1]:nsamples_train_cumsum[i]]) * sigma[i]
-            response_vars_test[i] = (predictor_vars_test[i].dot(beta[:, i]) +
-                                     gaussian_noise[nsamples_train.sum() + nsamples_test_cumsum[i - 1]:
-                                                    nsamples_train.sum() + nsamples_test_cumsum[i]]) * sigma[i]
 
-    return response_vars_train, predictor_vars_train, response_vars_test, predictor_vars_test, beta * sigma, \
+    nsamples_train_cumsum = np.cumsum(nsamples_train)
+    nsamples_test_cumsum = np.cumsum(nsamples_test)
+
+    for i in range(ntask):
+        # The first task (i == 0) is handled separately to correctly index into the Gaussian noise array.
+        # For subsequent tasks (i > 0), the indices are adjusted based on the cumulative sum of sample sizes for the
+        # preceding tasks. This ensures that each task uses a unique segment of the noise array
+        if i == 0:
+            train_noise = gaussian_noise[:nsamples_train_cumsum[i]] * sigma[i]
+            response_vars_train[i] = predictor_vars_train[i].dot(beta[:, i]) + train_noise
+
+            test_noise = gaussian_noise[nsamples_train.sum():nsamples_train.sum() + nsamples_test_cumsum[i]] * sigma[i]
+            response_vars_test[i] = predictor_vars_test[i].dot(beta[:, i]) + test_noise
+        else:
+            train_noise = gaussian_noise[nsamples_train_cumsum[i - 1]:nsamples_train_cumsum[i]] * sigma[i]
+            response_vars_train[i] = predictor_vars_train[i].dot(beta[:, i]) + train_noise
+
+            test_noise = gaussian_noise[nsamples_train.sum() + nsamples_test_cumsum[i - 1]:
+                                        nsamples_train.sum() + nsamples_test_cumsum[i]] * sigma[i]
+            response_vars_test[i] = predictor_vars_test[i].dot(beta[:, i]) + test_noise
+
+    return response_vars_train, predictor_vars_train, response_vars_test, predictor_vars_test, beta, \
         gaussian_noise[nsamples_train.sum() + nsamples_test.sum():], np.nonzero(active), sigma
-
-
-def gaussian_multitask_instance_cor(ntask,
-                                    nsamples_train,
-                                    nsamples_test,
-                                    p,
-                                    global_sparsity,
-                                    task_sparsity,
-                                    cov,
-                                    signal,
-                                    rhos,  # list of correlation parameters
-                                    random_signs=False,
-                                    scale=True,
-                                    center=True,
-                                    equicorrelated=False):
-    np.random.seed(5)
-    predictor_vars_train = {i: _design(nsamples_train[i], p, rhos[i], equicorrelated)[0] for i in range(ntask)}
-    predictor_vars_test = {i: _design(nsamples_test[i], p, rhos[i], equicorrelated)[0] for i in range(ntask)}
-
-    if center:
-        predictor_vars_train = {i: predictor_vars_train[i] - predictor_vars_train[i].mean(0)[None, :] for i in
-                                range(ntask)}
-        predictor_vars_test = {i: predictor_vars_test[i] - predictor_vars_test[i].mean(0)[None, :] for i in
-                               range(ntask)}
-
-    signal = np.atleast_1d(signal)
-
-    if signal.shape == (1,):
-        beta = float(signal[0]) * np.ones((p, ntask))
-        global_nulls = np.random.choice(p, int(round(global_sparsity * p)), replace=False)
-        beta[global_nulls, :] = np.zeros((ntask,))
-        for i in np.delete(range(p), global_nulls):
-            beta[i, np.random.choice(ntask, int(round(task_sparsity * ntask)), replace=False)] = 0.
-
-    else:
-        beta = np.ones((p, ntask))
-        nsignal = int(round(global_sparsity * p))
-        global_nulls = np.random.choice(p, nsignal, replace=False)
-        beta[global_nulls, :] = np.zeros((ntask,))
-
-        # print(np.delete(range(p), global_nulls))
-        for i in np.delete(range(p), global_nulls):
-            null_positions = np.random.choice(ntask, int(round(task_sparsity * ntask)), replace=False)
-            beta[i, null_positions] = 0.
-            non_null_positions = np.setdiff1d(np.arange(ntask), null_positions)
-            beta[i, non_null_positions] = np.linspace(float(signal[0]), float(signal[1]),
-                                                      num=ntask - null_positions.shape[0])
-
-    if random_signs:
-        beta *= (2 * np.random.binomial(1, 0.5, size=(p, ntask)) - 1.)
-
-    beta /= np.sqrt(nsamples_train)
-
-    if scale:
-        scalings_train = {i: predictor_vars_train[i].std(0) * np.sqrt(nsamples_train[i]) for i in range(ntask)}
-        predictor_vars_train = {i: predictor_vars_train[i] / (scalings_train[i][None, :]) for i in range(ntask)}
-        predictor_vars_test = {i: predictor_vars_test[i] / (scalings_train[i][None, :]) for i in range(ntask)}
-        beta *= np.sqrt(nsamples_train)
-
-    active = np.zeros((p, ntask), np.bool)
-    active[beta != 0] = True
-
-    # noise model
-    def _noise(n, cov):
-        sample = np.random.multivariate_normal(np.zeros(n), cov)
-        return sample
-
-    cov_response_randomization = block_diag(cov, np.identity(p * ntask))
-    gaussian_noise_train = _noise(nsamples_train.sum() + p * ntask, cov_response_randomization)
-    gaussian_noise_test = _noise(nsamples_test.sum(), cov)
-    response_vars_train = {}
-    response_vars_test = {}
-    nsamples_train_cumsum = np.cumsum([nsamples_train[i] for i in range(ntask)])
-    nsamples_test_cumsum = np.cumsum([nsamples_test[i] for i in range(ntask)])
-    for i in range(ntask):
-        if i == 0:
-            response_vars_train[i] = (
-                    predictor_vars_train[i].dot(beta[:, i]) + gaussian_noise_train[:nsamples_train_cumsum[i]])
-            response_vars_test[i] = (
-                    predictor_vars_test[i].dot(beta[:, i]) + gaussian_noise_test[:nsamples_test_cumsum[i]])
-        else:
-            response_vars_train[i] = (predictor_vars_train[i].dot(beta[:, i]) + gaussian_noise_train[
-                                                                                nsamples_train_cumsum[i - 1]:
-                                                                                nsamples_train_cumsum[i]])
-            response_vars_test[i] = (
-                    predictor_vars_test[i].dot(beta[:, i]) + gaussian_noise_test[nsamples_test_cumsum[i - 1]:
-                                                                                 nsamples_test_cumsum[i]])
-
-    return response_vars_train, predictor_vars_train, response_vars_test, predictor_vars_test, beta * np.diag(cov)[
-        0], gaussian_noise_train[nsamples_train.sum():], np.nonzero(active)
